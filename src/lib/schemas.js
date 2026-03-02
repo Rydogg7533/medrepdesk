@@ -298,6 +298,53 @@ export const commissionInsertSchema = commissionSchema.omit({
 });
 
 // ============================================================
+// REFERRALS
+// ============================================================
+export const referralSchema = z.object({
+  id: z.string().uuid(),
+  referrer_account_id: z.string().uuid(),
+  referred_account_id: z.string().uuid().nullable().optional(),
+  referral_code_used: z.string(),
+  status: z.enum(['active', 'expired', 'cancelled']).default('active'),
+  commission_rate: z.coerce.number().default(0.25),
+  commission_months: z.number().int().default(12),
+  months_paid: z.number().int().default(0),
+  total_earned: z.coerce.number().default(0),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
+export const referralInsertSchema = referralSchema.omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+// ============================================================
+// REFERRAL PAYOUTS
+// ============================================================
+export const referralPayoutSchema = z.object({
+  id: z.string().uuid(),
+  referral_id: z.string().uuid(),
+  referrer_account_id: z.string().uuid(),
+  period_month: z.number().int().min(1).max(12),
+  period_year: z.number().int(),
+  subscription_amount: z.coerce.number(),
+  commission_amount: z.coerce.number(),
+  status: z.enum(['pending', 'paid', 'failed']).default('pending'),
+  stripe_transfer_id: z.string().nullable().optional(),
+  paid_at: z.string().nullable().optional(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
+export const referralPayoutInsertSchema = referralPayoutSchema.omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+// ============================================================
 // NOTIFICATIONS
 // ============================================================
 export const notificationSchema = z.object({
@@ -315,5 +362,104 @@ export const notificationSchema = z.object({
   related_type: z.string().nullable().optional(),
   is_read: z.boolean().default(false),
   sent_at: z.string(),
+  created_at: z.string(),
+});
+
+// ============================================================
+// PO EMAIL LOGS
+// ============================================================
+export const poEmailLogSchema = z.object({
+  id: z.string().uuid(),
+  account_id: z.string().uuid(),
+  po_id: z.string().uuid().nullable().optional(),
+  case_id: z.string().uuid().nullable().optional(),
+  sent_by: z.string(),
+  sent_to: z.array(z.string()),
+  sent_cc: z.array(z.string()).nullable().optional(),
+  subject: z.string(),
+  body_snapshot: z.string().nullable().optional(),
+  resend_email_id: z.string().nullable().optional(),
+  status: z.enum(['sent', 'failed', 'bounced']).default('sent'),
+  created_at: z.string(),
+});
+
+export const poEmailLogInsertSchema = poEmailLogSchema.omit({
+  id: true,
+  created_at: true,
+});
+
+// ============================================================
+// CASE DOCUMENTS
+// ============================================================
+export const caseDocumentSchema = z.object({
+  id: z.string().uuid(),
+  account_id: z.string().uuid(),
+  case_id: z.string().uuid(),
+  po_id: z.string().uuid().nullable().optional(),
+  document_type: z.enum(['po_photo', 'bill_sheet', 'invoice', 'contract', 'other']),
+  file_name: z.string(),
+  storage_path: z.string(),
+  ai_extracted: z.boolean().default(false),
+  extracted_data: z.record(z.unknown()).nullable().optional(),
+  created_by: z.string().uuid().nullable().optional(),
+  created_at: z.string(),
+});
+
+export const caseDocumentInsertSchema = caseDocumentSchema.omit({
+  id: true,
+  created_at: true,
+});
+
+// ============================================================
+// AI EXTRACTIONS
+// ============================================================
+export const aiExtractionSchema = z.object({
+  id: z.string().uuid(),
+  account_id: z.string().uuid(),
+  extraction_type: z.enum(['po_document', 'case_entry', 'commission_check']),
+  input_type: z.enum(['image', 'text', 'pdf']).nullable().optional(),
+  storage_path: z.string().nullable().optional(),
+  raw_response: z.record(z.unknown()).nullable().optional(),
+  extracted_fields: z.record(z.unknown()).nullable().optional(),
+  was_corrected: z.boolean().default(false),
+  correction_notes: z.string().nullable().optional(),
+  created_at: z.string(),
+});
+
+export const aiExtractionInsertSchema = aiExtractionSchema.omit({
+  id: true,
+  created_at: true,
+});
+
+// ============================================================
+// PUSH SUBSCRIPTIONS
+// ============================================================
+export const pushSubscriptionSchema = z.object({
+  id: z.string().uuid(),
+  user_id: z.string().uuid(),
+  subscription: z.record(z.unknown()),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
+export const pushSubscriptionInsertSchema = pushSubscriptionSchema.omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+// ============================================================
+// AUDIT LOGS
+// ============================================================
+export const auditLogSchema = z.object({
+  id: z.string().uuid(),
+  account_id: z.string().uuid().nullable().optional(),
+  user_id: z.string().uuid().nullable().optional(),
+  action: z.string(),
+  table_name: z.string(),
+  record_id: z.string().uuid(),
+  old_values: z.record(z.unknown()).nullable().optional(),
+  new_values: z.record(z.unknown()).nullable().optional(),
+  ip_address: z.string().nullable().optional(),
   created_at: z.string(),
 });
