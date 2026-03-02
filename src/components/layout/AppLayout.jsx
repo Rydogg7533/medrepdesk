@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Bell, Plus, Briefcase, MessageSquare, UserPlus, FileText } from 'lucide-react';
+import { Plus, Briefcase, MessageSquare, UserPlus, FileText } from 'lucide-react';
 import BottomNav from './BottomNav';
 import BottomSheet from '@/components/ui/BottomSheet';
+import NotificationBell from '@/components/ui/NotificationBell';
+import OfflineBanner from '@/components/ui/OfflineBanner';
+import PageTransition from '@/components/ui/PageTransition';
 
 export default function AppLayout() {
   const [fabOpen, setFabOpen] = useState(false);
@@ -18,18 +21,16 @@ export default function AppLayout() {
       {/* Header */}
       <header className="fixed inset-x-0 top-0 z-30 flex min-h-touch items-center justify-between border-b border-gray-200 bg-white px-4 pt-safe-top dark:border-gray-700 dark:bg-gray-800">
         <span className="text-lg font-bold text-brand-800 dark:text-brand-400">MedRepDesk</span>
-        <button
-          className="relative flex min-h-touch items-center justify-center p-2 text-gray-500 dark:text-gray-400"
-          onClick={() => navigate('/notifications')}
-        >
-          <Bell className="h-5 w-5" />
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
-        </button>
+        <NotificationBell />
       </header>
+
+      <OfflineBanner />
 
       {/* Content */}
       <main className="flex-1 overflow-y-auto pt-[calc(44px+env(safe-area-inset-top))] pb-[calc(68px+env(safe-area-inset-bottom))]">
-        <Outlet />
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
       </main>
 
       {/* FAB */}

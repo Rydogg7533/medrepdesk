@@ -16,6 +16,9 @@ export default defineConfig({
         background_color: '#F8FAFC',
         display: 'standalone',
         orientation: 'portrait',
+        start_url: '/',
+        scope: '/',
+        categories: ['medical', 'business', 'productivity'],
         icons: [
           {
             src: '/icon-192.png',
@@ -26,6 +29,12 @@ export default defineConfig({
             src: '/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
+          },
+          {
+            src: '/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
           },
         ],
       },

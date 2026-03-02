@@ -40,21 +40,21 @@ export const PROCEDURE_TYPES = [
 export const PLAN_LIMITS = {
   solo: {
     label: 'Solo Rep',
-    price: 129,
+    price: 99,
     maxUsers: 1,
     aiExtractions: 50,
     aiDigests: 4,
   },
   assistant: {
     label: 'Rep + Assistant',
-    price: 199,
+    price: 149,
     maxUsers: 2,
     aiExtractions: 100,
     aiDigests: 8,
   },
   distributorship: {
     label: 'Distributorship',
-    price: 299,
+    price: 249,
     maxUsers: 5,
     aiExtractions: 500,
     aiDigests: -1, // unlimited

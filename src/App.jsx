@@ -1,10 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { ToastProvider } from '@/components/ui/Toast';
 import ProtectedRoute from '@/components/layout/ProtectedRoute';
 import AppLayout from '@/components/layout/AppLayout';
 import Spinner from '@/components/ui/Spinner';
+import { idbPersister } from '@/lib/queryPersist';
 
 // Auth pages
 import SignUp from '@/pages/SignUp';
@@ -35,12 +38,22 @@ import FacilityForm from '@/pages/FacilityForm';
 import Surgeons from '@/pages/Surgeons';
 import SurgeonForm from '@/pages/SurgeonForm';
 import ContactImport from '@/pages/ContactImport';
+import Notifications from '@/pages/Notifications';
+import Pricing from '@/pages/Pricing';
+import Settings from '@/pages/Settings';
+import Referrals from '@/pages/Referrals';
+import JoinReferral from '@/pages/JoinReferral';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5,
       retry: 1,
+      gcTime: 1000 * 60 * 60 * 24, // 24h — keep data for offline
+    },
+    mutations: {
+      retry: 1,
+      networkMode: 'offlineFirst',
     },
   },
 });
@@ -74,16 +87,18 @@ function PlaceholderPage({ title }) {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider client={queryClient} persistOptions={{ persister: idbPersister, maxAge: 1000 * 60 * 60 * 24 }}>
       <BrowserRouter>
         <AuthProvider>
           <ThemeProvider>
+          <ToastProvider>
           <Routes>
             {/* Auth routes (no AppLayout) */}
             <Route path="/signin" element={<PublicRoute><SignIn /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><SignUp /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/join" element={<JoinReferral />} />
 
             {/* Protected routes with AppLayout */}
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
@@ -116,15 +131,17 @@ function App() {
               <Route path="/surgeons" element={<Surgeons />} />
               <Route path="/surgeons/new" element={<SurgeonForm />} />
               <Route path="/surgeons/:id/edit" element={<SurgeonForm />} />
-              <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
-              <Route path="/referrals" element={<PlaceholderPage title="Referrals" />} />
-              <Route path="/notifications" element={<PlaceholderPage title="Notifications" />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/referrals" element={<Referrals />} />
+              <Route path="/notifications" element={<Notifications />} />
             </Route>
           </Routes>
+          </ToastProvider>
           </ThemeProvider>
         </AuthProvider>
       </BrowserRouter>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }
 
