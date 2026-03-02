@@ -5,6 +5,9 @@ const Input = forwardRef(function Input(
   { label, error, type = 'text', className, ...rest },
   ref
 ) {
+  const isEmpty = rest.value === '' || rest.value == null;
+  const isDateOrTime = type === 'date' || type === 'time';
+
   return (
     <div className="w-full">
       {label && (
@@ -22,6 +25,7 @@ const Input = forwardRef(function Input(
           error
             ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
             : 'border-gray-300',
+          isDateOrTime && isEmpty && 'text-gray-400',
           className
         )}
         {...rest}

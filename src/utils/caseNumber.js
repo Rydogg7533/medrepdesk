@@ -9,7 +9,7 @@ export async function generateCaseNumber(supabase, accountId) {
 
   if (accountError || !account) throw new Error('Account not found');
 
-  const prefix = account.referral_code.substring(0, 4).toUpperCase();
+  const prefix = account.referral_code.slice(-4).toUpperCase();
 
   const { count, error: countError } = await supabase
     .from('cases')

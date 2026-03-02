@@ -31,7 +31,9 @@ export default function CaseForm() {
     distributor_id: '',
     procedure_type: '',
     scheduled_date: '',
-    scheduled_time: '',
+    time_hour: '',
+    time_minute: '',
+    time_period: 'AM',
     case_value: '',
     notes: '',
   });
@@ -40,13 +42,23 @@ export default function CaseForm() {
 
   useEffect(() => {
     if (existingCase && isEdit) {
+      let hour = '', minute = '', period = 'AM';
+      if (existingCase.scheduled_time) {
+        const [h, m] = existingCase.scheduled_time.split(':');
+        const h24 = parseInt(h);
+        period = h24 >= 12 ? 'PM' : 'AM';
+        hour = String(h24 % 12 || 12);
+        minute = m?.slice(0, 2) || '00';
+      }
       setForm({
         surgeon_id: existingCase.surgeon_id || '',
         facility_id: existingCase.facility_id || '',
         distributor_id: existingCase.distributor_id || '',
         procedure_type: existingCase.procedure_type || '',
         scheduled_date: existingCase.scheduled_date || '',
-        scheduled_time: existingCase.scheduled_time?.slice(0, 5) || '',
+        time_hour: hour,
+        time_minute: minute,
+        time_period: period,
         case_value: existingCase.case_value ?? '',
         notes: existingCase.notes || '',
       });
@@ -63,13 +75,21 @@ export default function CaseForm() {
     e.preventDefault();
     setServerError('');
 
+    let scheduled_time = null;
+    if (form.time_hour && form.time_minute) {
+      let h = parseInt(form.time_hour);
+      if (form.time_period === 'PM' && h !== 12) h += 12;
+      if (form.time_period === 'AM' && h === 12) h = 0;
+      scheduled_time = `${String(h).padStart(2, '0')}:${form.time_minute}`;
+    }
+
     const payload = {
       surgeon_id: form.surgeon_id || null,
       facility_id: form.facility_id || null,
       distributor_id: form.distributor_id || null,
       procedure_type: form.procedure_type || null,
       scheduled_date: form.scheduled_date || null,
-      scheduled_time: form.scheduled_time || null,
+      scheduled_time,
       case_value: form.case_value ? Number(form.case_value) : null,
       notes: form.notes ? DOMPurify.sanitize(form.notes) : null,
     };
@@ -152,22 +172,47 @@ export default function CaseForm() {
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Date"
-              name="scheduled_date"
-              type="date"
-              value={form.scheduled_date}
-              onChange={onChange}
-              error={errors.scheduled_date}
-            />
-            <Input
-              label="Time"
-              name="scheduled_time"
-              type="time"
-              value={form.scheduled_time}
-              onChange={onChange}
-            />
+          <Input
+            label="Date"
+            name="scheduled_date"
+            type="date"
+            value={form.scheduled_date}
+            onChange={onChange}
+            error={errors.scheduled_date}
+          />
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Time</label>
+            <div className="flex gap-2">
+              <select
+                value={form.time_hour}
+                onChange={(e) => setForm((p) => ({ ...p, time_hour: e.target.value }))}
+                className="min-h-touch flex-1 rounded-lg border border-gray-300 bg-white px-2 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+              >
+                <option value="">Hr</option>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                  <option key={h} value={h}>{h}</option>
+                ))}
+              </select>
+              <select
+                value={form.time_minute}
+                onChange={(e) => setForm((p) => ({ ...p, time_minute: e.target.value }))}
+                className="min-h-touch flex-1 rounded-lg border border-gray-300 bg-white px-2 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+              >
+                <option value="">Min</option>
+                {['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'].map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+              <select
+                value={form.time_period}
+                onChange={(e) => setForm((p) => ({ ...p, time_period: e.target.value }))}
+                className="min-h-touch rounded-lg border border-gray-300 bg-white px-2 py-2.5 text-sm font-medium outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+              >
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
+            </div>
           </div>
 
           <Input
