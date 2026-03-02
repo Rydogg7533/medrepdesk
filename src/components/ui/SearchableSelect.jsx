@@ -42,7 +42,7 @@ export default function SearchableSelect({
   return (
     <div ref={wrapperRef} className="relative w-full">
       {label && (
-        <label className="mb-1 block text-sm font-medium text-gray-700">
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
           {label}
         </label>
       )}
@@ -50,9 +50,10 @@ export default function SearchableSelect({
         type="text"
         className={clsx(
           'min-h-touch w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors',
-          'placeholder:text-gray-400',
+          'placeholder:text-gray-400 dark:placeholder:text-gray-500',
           'focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20',
-          error ? 'border-red-500' : 'border-gray-300'
+          'dark:bg-gray-700 dark:text-white',
+          error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
         )}
         placeholder={selectedOption ? selectedOption[displayKey] : placeholder}
         value={open ? query : selectedOption ? selectedOption[displayKey] : ''}
@@ -64,15 +65,15 @@ export default function SearchableSelect({
       />
 
       {open && (
-        <div className="absolute z-30 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+        <div className="absolute z-30 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-700">
           {filtered.length === 0 && (
-            <div className="px-3 py-2.5 text-sm text-gray-400">No results</div>
+            <div className="px-3 py-2.5 text-sm text-gray-400 dark:text-gray-500">No results</div>
           )}
           {filtered.map((opt) => (
             <button
               key={opt[valueKey]}
               type="button"
-              className="min-h-touch w-full px-3 py-2.5 text-left text-sm hover:bg-gray-50"
+              className="min-h-touch w-full px-3 py-2.5 text-left text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-600"
               onClick={() => handleSelect(opt)}
             >
               {opt[displayKey]}
@@ -81,7 +82,7 @@ export default function SearchableSelect({
           {onAddNew && (
             <button
               type="button"
-              className="min-h-touch w-full border-t border-gray-100 px-3 py-2.5 text-left text-sm font-medium text-brand-800 hover:bg-gray-50"
+              className="min-h-touch w-full border-t border-gray-100 px-3 py-2.5 text-left text-sm font-medium text-brand-800 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-600"
               onClick={() => {
                 setOpen(false);
                 onAddNew();

@@ -115,9 +115,9 @@ export default function POForm() {
     <div className="p-4">
       <div className="mb-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="min-h-touch p-1">
-          <ArrowLeft className="h-5 w-5 text-gray-600" />
+          <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </button>
-        <h1 className="text-lg font-bold text-gray-900">
+        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">
           {isEdit ? 'Edit PO' : 'New Purchase Order'}
         </h1>
       </div>
@@ -140,8 +140,8 @@ export default function POForm() {
 
           {preselectedCaseId && selectedCase && (
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Case</label>
-              <p className="text-sm text-gray-700">{selectedCase.case_number}</p>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Case</label>
+              <p className="text-sm text-gray-700 dark:text-gray-300">{selectedCase.case_number}</p>
             </div>
           )}
 
@@ -197,13 +197,13 @@ export default function POForm() {
           />
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Notes</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
             <textarea
               name="notes"
               rows={3}
               value={form.notes}
               onChange={onChange}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               placeholder="Any additional notes..."
             />
           </div>

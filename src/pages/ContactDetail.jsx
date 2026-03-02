@@ -32,20 +32,20 @@ export default function ContactDetail() {
   }
 
   if (!contact) {
-    return <div className="p-4 text-center text-gray-500">Contact not found</div>;
+    return <div className="p-4 text-center text-gray-500 dark:text-gray-400">Contact not found</div>;
   }
 
   return (
     <div className="p-4">
       <div className="mb-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="min-h-touch p-1">
-          <ArrowLeft className="h-5 w-5 text-gray-600" />
+          <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </button>
         <div className="flex-1">
-          <h1 className="text-lg font-bold text-gray-900">{contact.full_name}</h1>
-          {contact.role && <p className="text-sm text-gray-500">{contact.role}</p>}
+          <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">{contact.full_name}</h1>
+          {contact.role && <p className="text-sm text-gray-500 dark:text-gray-400">{contact.role}</p>}
         </div>
-        <button onClick={() => navigate(`/contacts/${id}/edit`)} className="min-h-touch p-2 text-gray-500">
+        <button onClick={() => navigate(`/contacts/${id}/edit`)} className="min-h-touch p-2 text-gray-500 dark:text-gray-400">
           <Edit2 className="h-5 w-5" />
         </button>
       </div>
@@ -60,8 +60,8 @@ export default function ContactDetail() {
           )}
           {contact.phone && (
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Phone</span>
-              <a href={`tel:${contact.phone}`} className="flex items-center gap-1 font-medium text-brand-800">
+              <span className="text-gray-400 dark:text-gray-500">Phone</span>
+              <a href={`tel:${contact.phone}`} className="flex items-center gap-1 font-medium text-brand-800 dark:text-brand-400">
                 <Phone className="h-3.5 w-3.5" />
                 {contact.phone}
               </a>
@@ -69,8 +69,8 @@ export default function ContactDetail() {
           )}
           {contact.email && (
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Email</span>
-              <a href={`mailto:${contact.email}`} className="flex items-center gap-1 font-medium text-brand-800">
+              <span className="text-gray-400 dark:text-gray-500">Email</span>
+              <a href={`mailto:${contact.email}`} className="flex items-center gap-1 font-medium text-brand-800 dark:text-brand-400">
                 <Mail className="h-3.5 w-3.5" />
                 {contact.email}
               </a>
@@ -84,14 +84,14 @@ export default function ContactDetail() {
 
       {contact.notes && (
         <Card className="mb-4">
-          <h3 className="mb-1 text-xs font-semibold uppercase text-gray-400">Notes</h3>
-          <p className="text-sm text-gray-700 whitespace-pre-wrap">{contact.notes}</p>
+          <h3 className="mb-1 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Notes</h3>
+          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{contact.notes}</p>
         </Card>
       )}
 
       <Card className="mb-4">
-        <h3 className="text-xs font-semibold uppercase text-gray-400">Communications</h3>
-        <p className="mt-1 text-sm text-gray-400">Communication history coming soon</p>
+        <h3 className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Communications</h3>
+        <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">Communication history coming soon</p>
       </Card>
 
       {user?.role === 'owner' && (
@@ -121,8 +121,8 @@ export default function ContactDetail() {
 function InfoRow({ label, value }) {
   return (
     <div className="flex justify-between text-sm">
-      <span className="text-gray-400">{label}</span>
-      <span className="font-medium text-gray-700">{value || '—'}</span>
+      <span className="text-gray-400 dark:text-gray-500">{label}</span>
+      <span className="font-medium text-gray-700 dark:text-gray-300">{value || '—'}</span>
     </div>
   );
 }

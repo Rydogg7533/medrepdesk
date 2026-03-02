@@ -19,7 +19,7 @@ export default function Surgeons() {
   return (
     <div className="p-4">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-lg font-bold text-gray-900">Surgeons</h1>
+        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">Surgeons</h1>
         <Button size="sm" onClick={() => navigate('/surgeons/new')}>
           <Plus className="h-4 w-4" /> Add
         </Button>
@@ -31,7 +31,7 @@ export default function Surgeons() {
         <>
           {own.length > 0 && (
             <div className="mb-4">
-              <h2 className="mb-2 text-xs font-semibold uppercase text-gray-400">Your Surgeons</h2>
+              <h2 className="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Your Surgeons</h2>
               <div className="space-y-2">
                 {own.map((s) => (
                   <SurgeonCard key={s.id} surgeon={s} onClick={() => navigate(`/surgeons/${s.id}/edit`)} />
@@ -41,7 +41,7 @@ export default function Surgeons() {
           )}
           {global.length > 0 && (
             <div>
-              <h2 className="mb-2 flex items-center gap-1 text-xs font-semibold uppercase text-gray-400">
+              <h2 className="mb-2 flex items-center gap-1 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">
                 <Globe className="h-3 w-3" /> Global Surgeons
               </h2>
               <div className="space-y-2">
@@ -61,10 +61,10 @@ function SurgeonCard({ surgeon, onClick, readOnly }) {
   return (
     <div
       onClick={readOnly ? undefined : onClick}
-      className={`rounded-xl bg-white p-4 shadow-sm ${readOnly ? 'opacity-75' : 'cursor-pointer active:bg-gray-50'}`}
+      className={`rounded-xl bg-white dark:bg-gray-800 p-4 shadow-sm ${readOnly ? 'opacity-75' : 'cursor-pointer active:bg-gray-50 dark:active:bg-gray-700'}`}
     >
-      <p className="font-medium text-gray-800">{surgeon.full_name}</p>
-      <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-500">
+      <p className="font-medium text-gray-800 dark:text-gray-200">{surgeon.full_name}</p>
+      <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
         {surgeon.specialty && <span>{surgeon.specialty}</span>}
         {surgeon.primary_facility?.name && (
           <span className="ml-auto truncate">{surgeon.primary_facility.name}</span>

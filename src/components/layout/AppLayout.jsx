@@ -14,12 +14,12 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="fixed inset-x-0 top-0 z-30 flex min-h-touch items-center justify-between border-b border-gray-200 bg-white px-4 pt-safe-top">
-        <span className="text-lg font-bold text-brand-800">MedRepDesk</span>
+      <header className="fixed inset-x-0 top-0 z-30 flex min-h-touch items-center justify-between border-b border-gray-200 bg-white px-4 pt-safe-top dark:border-gray-700 dark:bg-gray-800">
+        <span className="text-lg font-bold text-brand-800 dark:text-brand-400">MedRepDesk</span>
         <button
-          className="relative flex min-h-touch items-center justify-center p-2 text-gray-500"
+          className="relative flex min-h-touch items-center justify-center p-2 text-gray-500 dark:text-gray-400"
           onClick={() => navigate('/notifications')}
         >
           <Bell className="h-5 w-5" />
@@ -45,31 +45,31 @@ export default function AppLayout() {
         <div className="flex flex-col gap-1">
           <button
             onClick={() => handleAction('/cases/new')}
-            className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50"
+            className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
           >
-            <Briefcase className="h-5 w-5 text-brand-800" />
-            <span className="text-sm font-medium text-gray-700">New Case</span>
+            <Briefcase className="h-5 w-5 text-brand-800 dark:text-brand-400" />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">New Case</span>
           </button>
           <button
             onClick={() => handleAction('/po/new')}
-            className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50"
+            className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
           >
-            <FileText className="h-5 w-5 text-brand-800" />
-            <span className="text-sm font-medium text-gray-700">Log PO</span>
+            <FileText className="h-5 w-5 text-brand-800 dark:text-brand-400" />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Log PO</span>
           </button>
           <button
             onClick={() => handleAction('/communications/new')}
-            className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50"
+            className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
           >
-            <MessageSquare className="h-5 w-5 text-brand-800" />
-            <span className="text-sm font-medium text-gray-700">Log Communication</span>
+            <MessageSquare className="h-5 w-5 text-brand-800 dark:text-brand-400" />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Log Communication</span>
           </button>
           <button
             onClick={() => handleAction('/contacts/new')}
-            className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50"
+            className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
           >
-            <UserPlus className="h-5 w-5 text-brand-800" />
-            <span className="text-sm font-medium text-gray-700">Add Contact</span>
+            <UserPlus className="h-5 w-5 text-brand-800 dark:text-brand-400" />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Add Contact</span>
           </button>
         </div>
       </BottomSheet>

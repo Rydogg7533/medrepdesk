@@ -47,18 +47,18 @@ export default function ForgotPassword() {
         <h1 className="mb-1 text-center text-2xl font-bold text-brand-800">
           Reset Password
         </h1>
-        <p className="mb-6 text-center text-sm text-gray-500">
+        <p className="mb-6 text-center text-sm text-gray-500 dark:text-gray-400">
           Enter your email and we&apos;ll send you a reset link
         </p>
 
         {sent ? (
-          <div className="rounded-lg bg-green-50 p-4 text-center text-sm text-green-700">
+          <div className="rounded-lg bg-green-50 dark:bg-green-900/30 p-4 text-center text-sm text-green-700">
             Check your email for a reset link.
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {error && (
-              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+              <div className="rounded-lg bg-red-50 dark:bg-red-900/30 p-3 text-sm text-red-600">
                 {error}
               </div>
             )}
@@ -80,7 +80,7 @@ export default function ForgotPassword() {
           </form>
         )}
 
-        <p className="mt-5 text-center text-sm text-gray-500">
+        <p className="mt-5 text-center text-sm text-gray-500 dark:text-gray-400">
           <Link to="/signin" className="font-medium text-brand-800 hover:underline">
             Back to Sign In
           </Link>

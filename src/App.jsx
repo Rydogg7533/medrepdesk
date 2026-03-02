@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { ThemeProvider } from '@/context/ThemeContext';
 import ProtectedRoute from '@/components/layout/ProtectedRoute';
 import AppLayout from '@/components/layout/AppLayout';
 import Spinner from '@/components/ui/Spinner';
@@ -64,8 +65,8 @@ function PublicRoute({ children }) {
 function PlaceholderPage({ title }) {
   return (
     <div className="flex flex-col items-center justify-center p-8 text-center">
-      <h1 className="text-lg font-bold text-gray-900">{title}</h1>
-      <p className="mt-1 text-sm text-gray-500">Coming soon</p>
+      <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">{title}</h1>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Coming soon</p>
     </div>
   );
 }
@@ -75,6 +76,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
+          <ThemeProvider>
           <Routes>
             {/* Auth routes (no AppLayout) */}
             <Route path="/signin" element={<PublicRoute><SignIn /></PublicRoute>} />
@@ -117,6 +119,7 @@ function App() {
               <Route path="/notifications" element={<PlaceholderPage title="Notifications" />} />
             </Route>
           </Routes>
+          </ThemeProvider>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

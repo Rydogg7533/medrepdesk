@@ -117,9 +117,9 @@ export default function CaseForm() {
     <div className="p-4">
       <div className="mb-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="min-h-touch p-1">
-          <ArrowLeft className="h-5 w-5 text-gray-600" />
+          <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </button>
-        <h1 className="text-lg font-bold text-gray-900">
+        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">
           {isEdit ? 'Edit Case' : 'New Case'}
         </h1>
       </div>
@@ -156,14 +156,14 @@ export default function CaseForm() {
           />
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Procedure Type
             </label>
             <select
               name="procedure_type"
               value={form.procedure_type}
               onChange={onChange}
-              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+              className="min-h-touch w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
             >
               <option value="">Select type</option>
               {PROCEDURE_TYPES.map((p) => (
@@ -182,12 +182,12 @@ export default function CaseForm() {
           />
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Time</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Time</label>
             <div className="flex gap-2">
               <select
                 value={form.time_hour}
                 onChange={(e) => setForm((p) => ({ ...p, time_hour: e.target.value }))}
-                className="min-h-touch flex-1 rounded-lg border border-gray-300 bg-white px-2 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+                className="min-h-touch flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
               >
                 <option value="">Hr</option>
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
@@ -197,7 +197,7 @@ export default function CaseForm() {
               <select
                 value={form.time_minute}
                 onChange={(e) => setForm((p) => ({ ...p, time_minute: e.target.value }))}
-                className="min-h-touch flex-1 rounded-lg border border-gray-300 bg-white px-2 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+                className="min-h-touch flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
               >
                 <option value="">Min</option>
                 {['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'].map((m) => (
@@ -207,7 +207,7 @@ export default function CaseForm() {
               <select
                 value={form.time_period}
                 onChange={(e) => setForm((p) => ({ ...p, time_period: e.target.value }))}
-                className="min-h-touch rounded-lg border border-gray-300 bg-white px-2 py-2.5 text-sm font-medium outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+                className="min-h-touch rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-2.5 text-sm dark:text-white font-medium outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
               >
                 <option value="AM">AM</option>
                 <option value="PM">PM</option>
@@ -226,13 +226,13 @@ export default function CaseForm() {
           />
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Notes</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
             <textarea
               name="notes"
               rows={3}
               value={form.notes}
               onChange={onChange}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
               placeholder="Any additional notes..."
             />
           </div>

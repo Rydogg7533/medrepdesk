@@ -3,7 +3,7 @@ import clsx from 'clsx';
 function SkeletonBase({ className }) {
   return (
     <div
-      className={clsx('animate-pulse rounded bg-gray-200', className)}
+      className={clsx('animate-pulse rounded bg-gray-200 dark:bg-gray-700', className)}
     />
   );
 }

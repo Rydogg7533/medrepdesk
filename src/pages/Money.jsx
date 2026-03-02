@@ -66,7 +66,7 @@ export default function Money() {
 
   return (
     <div className="p-4">
-      <h1 className="mb-4 text-lg font-bold text-gray-900">Money</h1>
+      <h1 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">Money</h1>
 
       <div className="mb-4 flex gap-2">
         {tabs.map((tab) => (
@@ -77,7 +77,7 @@ export default function Money() {
               'flex-1 rounded-lg py-2.5 text-sm font-medium transition-colors',
               activeTab === tab.key
                 ? 'bg-brand-800 text-white'
-                : 'bg-gray-100 text-gray-600'
+                : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
             )}
           >
             {tab.label}
@@ -91,10 +91,10 @@ export default function Money() {
           <Card className="mb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-500">Outstanding</p>
-                <p className="text-xl font-bold text-gray-900">{formatCurrency(totalOutstanding)}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Outstanding</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{formatCurrency(totalOutstanding)}</p>
               </div>
-              <div className="text-right text-xs text-gray-500">
+              <div className="text-right text-xs text-gray-500 dark:text-gray-400">
                 {outstandingPOs.length} PO{outstandingPOs.length !== 1 ? 's' : ''}
               </div>
             </div>
@@ -108,7 +108,7 @@ export default function Money() {
                 onClick={() => setPOFilter(f.key)}
                 className={clsx(
                   'shrink-0 rounded-full px-3 py-1.5 text-xs font-medium',
-                  poFilter === f.key ? 'bg-brand-800 text-white' : 'bg-gray-100 text-gray-600'
+                  poFilter === f.key ? 'bg-brand-800 text-white' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
                 )}
               >
                 {f.label}
@@ -136,35 +136,35 @@ export default function Money() {
                 return (
                   <Card
                     key={po.id}
-                    className={clsx('cursor-pointer active:bg-gray-50', overdue && 'border-l-4 border-l-red-400')}
+                    className={clsx('cursor-pointer active:bg-gray-50 dark:active:bg-gray-700', overdue && 'border-l-4 border-l-red-400')}
                     onClick={() => navigate(`/po/${po.id}`)}
                   >
                     <div className="flex items-center justify-between">
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-gray-800">
+                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
                           {po.case?.case_number || 'No case'}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           INV: {po.invoice_number}
                           {po.po_number && ` · PO: ${po.po_number}`}
                         </p>
                         <div className="mt-1 flex items-center gap-2">
-                          <span className="text-sm font-semibold text-gray-900">
+                          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                             {formatCurrency(po.amount)}
                           </span>
                           {po.facility?.name && (
-                            <span className="text-xs text-gray-400">{po.facility.name}</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500">{po.facility.name}</span>
                           )}
                         </div>
                         {po.expected_payment_date && (
-                          <p className={clsx('text-xs', overdue ? 'text-red-500 font-medium' : 'text-gray-400')}>
+                          <p className={clsx('text-xs', overdue ? 'text-red-500 font-medium' : 'text-gray-400 dark:text-gray-500')}>
                             {overdue ? 'Overdue: ' : 'Expected: '}{formatDate(po.expected_payment_date)}
                           </p>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
                         <StatusBadge status={po.status} type="po" />
-                        <ChevronRight className="h-4 w-4 text-gray-300" />
+                        <ChevronRight className="h-4 w-4 text-gray-300 dark:text-gray-600" />
                       </div>
                     </div>
                   </Card>
@@ -181,15 +181,15 @@ export default function Money() {
           <Card className="mb-4">
             <div className="grid grid-cols-3 gap-3 text-center">
               <div>
-                <p className="text-xs text-gray-500">Pending</p>
-                <p className="text-lg font-bold text-gray-900">{formatCurrency(totalPending)}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Pending</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatCurrency(totalPending)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">This Month</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">This Month</p>
                 <p className="text-lg font-bold text-green-600">{formatCurrency(receivedThisMonth)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">YTD</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">YTD</p>
                 <p className="text-lg font-bold text-green-600">{formatCurrency(receivedYTD)}</p>
               </div>
             </div>
@@ -203,7 +203,7 @@ export default function Money() {
                 onClick={() => setCommFilter(f.key)}
                 className={clsx(
                   'shrink-0 rounded-full px-3 py-1.5 text-xs font-medium',
-                  commFilter === f.key ? 'bg-brand-800 text-white' : 'bg-gray-100 text-gray-600'
+                  commFilter === f.key ? 'bg-brand-800 text-white' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
                 )}
               >
                 {f.label}
@@ -229,19 +229,19 @@ export default function Money() {
               {filteredComms.map((comm) => (
                 <Card
                   key={comm.id}
-                  className="cursor-pointer active:bg-gray-50"
+                  className="cursor-pointer active:bg-gray-50 dark:active:bg-gray-700"
                   onClick={() => navigate(`/commissions/${comm.id}`)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-800">
+                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
                         {comm.case?.case_number || 'No case'}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         {comm.distributor?.name || 'No distributor'}
                       </p>
                       <div className="mt-1 flex items-center gap-3">
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
                           Expected: {formatCurrency(comm.expected_amount)}
                         </span>
                         {comm.received_amount != null && (
@@ -253,7 +253,7 @@ export default function Money() {
                     </div>
                     <div className="flex items-center gap-2">
                       <StatusBadge status={comm.status} type="commission" />
-                      <ChevronRight className="h-4 w-4 text-gray-300" />
+                      <ChevronRight className="h-4 w-4 text-gray-300 dark:text-gray-600" />
                     </div>
                   </div>
                 </Card>

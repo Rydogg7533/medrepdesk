@@ -62,13 +62,13 @@ export default function Cases() {
     <div className="p-4">
       {/* Search */}
       <div className="relative mb-3">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
         <input
           type="text"
           placeholder="Search cases..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="min-h-touch w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-3 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+          className="min-h-touch w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-3 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-500"
         />
       </div>
 
@@ -82,7 +82,7 @@ export default function Cases() {
               'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors',
               activeTab === tab.key
                 ? 'bg-brand-800 text-white'
-                : 'bg-gray-100 text-gray-600'
+                : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
             )}
           >
             {tab.label}
@@ -105,29 +105,29 @@ export default function Cases() {
             <div
               key={c.id}
               onClick={() => navigate(`/cases/${c.id}`)}
-              className="cursor-pointer rounded-xl bg-white p-4 shadow-sm active:bg-gray-50"
+              className="cursor-pointer rounded-xl bg-white p-4 shadow-sm active:bg-gray-50 dark:bg-gray-800 dark:active:bg-gray-700"
             >
               <div className="flex items-start justify-between">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-gray-400">{c.case_number}</p>
-                  <p className="mt-0.5 font-medium text-gray-800">
+                  <p className="text-xs font-medium text-gray-400 dark:text-gray-500">{c.case_number}</p>
+                  <p className="mt-0.5 font-medium text-gray-800 dark:text-gray-200">
                     {c.surgeon?.full_name || 'No surgeon'}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {c.facility?.name || 'No facility'}
                   </p>
                 </div>
                 <StatusBadge status={c.status} type="case" />
               </div>
-              <div className="mt-2 flex items-center gap-3 text-xs text-gray-400">
+              <div className="mt-2 flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
                 <span>{formatDate(c.scheduled_date)}</span>
                 {c.procedure_type && (
-                  <span className="rounded bg-gray-100 px-1.5 py-0.5 text-gray-500">
+                  <span className="rounded bg-gray-100 px-1.5 py-0.5 text-gray-500 dark:bg-gray-700 dark:text-gray-400">
                     {procLabel(c.procedure_type)}
                   </span>
                 )}
                 {c.case_value && (
-                  <span className="ml-auto font-medium text-gray-600">
+                  <span className="ml-auto font-medium text-gray-600 dark:text-gray-300">
                     {formatCurrency(c.case_value)}
                   </span>
                 )}

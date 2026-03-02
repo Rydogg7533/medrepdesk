@@ -35,13 +35,13 @@ export default function Contacts() {
   return (
     <div className="p-4">
       <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
         <input
           type="text"
           placeholder="Search contacts..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="min-h-touch w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-3 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+          className="min-h-touch w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2.5 pl-10 pr-3 text-sm text-gray-900 dark:text-gray-100 outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
         />
       </div>
 
@@ -59,14 +59,14 @@ export default function Contacts() {
             <div
               key={c.id}
               onClick={() => navigate(`/contacts/${c.id}`)}
-              className="flex min-h-touch cursor-pointer items-center gap-3 rounded-lg px-3 py-3 active:bg-gray-100"
+              className="flex min-h-touch cursor-pointer items-center gap-3 rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800"
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-semibold text-brand-800">
                 {c.full_name?.charAt(0)?.toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-medium text-gray-800">{c.full_name}</p>
-                <p className="truncate text-xs text-gray-500">
+                <p className="font-medium text-gray-800 dark:text-gray-200">{c.full_name}</p>
+                <p className="truncate text-xs text-gray-500 dark:text-gray-400">
                   {c.role && `${c.role} · `}
                   {c.facility?.name || c.distributor?.name || ''}
                 </p>
@@ -82,7 +82,7 @@ export default function Contacts() {
                   </a>
                 )}
                 {c.last_contacted_at && (
-                  <span className="text-[10px] text-gray-400">
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500">
                     {formatDate(c.last_contacted_at)}
                   </span>
                 )}

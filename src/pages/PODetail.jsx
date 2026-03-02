@@ -147,7 +147,7 @@ export default function PODetail() {
   }
 
   if (!po) {
-    return <div className="p-4 text-center text-gray-500">PO not found</div>;
+    return <div className="p-4 text-center text-gray-500 dark:text-gray-400">PO not found</div>;
   }
 
   const poChaseEntries = chaseEntries.filter((e) => e.po_id === po.id || !e.po_id);
@@ -157,15 +157,15 @@ export default function PODetail() {
       {/* Header */}
       <div className="mb-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="min-h-touch p-1">
-          <ArrowLeft className="h-5 w-5 text-gray-600" />
+          <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </button>
         <div className="flex-1">
-          <p className="text-xs text-gray-400">Invoice #{po.invoice_number}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">Invoice #{po.invoice_number}</p>
           <StatusBadge status={po.status} type="po" />
         </div>
         <button
           onClick={() => navigate(`/po/${id}/edit`)}
-          className="min-h-touch p-2 text-gray-500"
+          className="min-h-touch p-2 text-gray-500 dark:text-gray-400"
         >
           <Edit2 className="h-5 w-5" />
         </button>
@@ -175,9 +175,9 @@ export default function PODetail() {
       <Card className="mb-4">
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-400">Case</span>
+            <span className="text-gray-400 dark:text-gray-500">Case</span>
             <button
-              className="font-medium text-brand-800"
+              className="font-medium text-brand-800 dark:text-brand-400"
               onClick={() => navigate(`/cases/${po.case_id}`)}
             >
               {po.case?.case_number || '—'}
@@ -198,7 +198,7 @@ export default function PODetail() {
       {/* Quick Actions */}
       {po.status !== 'paid' && (
         <Card className="mb-4">
-          <h3 className="mb-3 text-xs font-semibold uppercase text-gray-400">Quick Actions</h3>
+          <h3 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Quick Actions</h3>
           <div className="flex gap-2">
             <button
               onClick={() => handleQuickAction('call')}
@@ -224,7 +224,7 @@ export default function PODetail() {
 
       {/* Chase Timeline */}
       <Card className="mb-4">
-        <h3 className="mb-3 text-xs font-semibold uppercase text-gray-400">Chase Timeline</h3>
+        <h3 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Chase Timeline</h3>
         <ChaseTimeline entries={poChaseEntries} />
       </Card>
 
@@ -267,11 +267,11 @@ export default function PODetail() {
       <BottomSheet isOpen={showChaseForm} onClose={() => setShowChaseForm(false)} title="Log Follow-Up">
         <form onSubmit={handleSubmitChase} className="flex flex-col gap-3">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Chase Type</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Chase Type</label>
             <select
               value={chaseForm.chase_type}
               onChange={(e) => setChaseForm((p) => ({ ...p, chase_type: e.target.value }))}
-              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             >
               <option value="follow_up_call">Follow-Up Call</option>
               <option value="follow_up_email">Follow-Up Email</option>
@@ -282,7 +282,7 @@ export default function PODetail() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Contact</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Contact</label>
             <select
               value={chaseForm.contact_name}
               onChange={(e) => {
@@ -295,7 +295,7 @@ export default function PODetail() {
                   contact_email: contact?.email || '',
                 }));
               }}
-              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             >
               <option value="">Select or type below</option>
               {contacts.map((c) => (
@@ -306,24 +306,24 @@ export default function PODetail() {
               placeholder="Or type contact name"
               value={chaseForm.contact_name}
               onChange={(e) => setChaseForm((p) => ({ ...p, contact_name: e.target.value }))}
-              className="mt-1 min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+              className="mt-1 min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Outcome</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Outcome</label>
             <textarea
               rows={2}
               value={chaseForm.outcome}
               onChange={(e) => setChaseForm((p) => ({ ...p, outcome: e.target.value }))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               placeholder="What happened?"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Promised Date</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Promised Date</label>
               <input
                 type="date"
                 value={chaseForm.promised_date}
@@ -332,7 +332,7 @@ export default function PODetail() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Next Follow-Up</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Next Follow-Up</label>
               <input
                 type="date"
                 value={chaseForm.next_follow_up}
@@ -343,7 +343,7 @@ export default function PODetail() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Action Taken</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Action Taken</label>
             <div className="flex gap-2">
               {['call', 'email', 'text', 'in_person', 'note'].map((a) => (
                 <button
@@ -353,7 +353,7 @@ export default function PODetail() {
                   className={`rounded-lg px-3 py-2 text-xs font-medium ${
                     chaseForm.action_taken === a
                       ? 'bg-brand-800 text-white'
-                      : 'bg-gray-100 text-gray-600'
+                      : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
                   }`}
                 >
                   {a.replace('_', ' ')}
@@ -372,7 +372,7 @@ export default function PODetail() {
       <BottomSheet isOpen={showReceived} onClose={() => setShowReceived(false)} title="Mark PO Received">
         <div className="flex flex-col gap-3">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Received Date</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Received Date</label>
             <input
               type="date"
               value={receivedDate}
@@ -390,7 +390,7 @@ export default function PODetail() {
       <BottomSheet isOpen={showPaid} onClose={() => setShowPaid(false)} title="Mark PO Paid">
         <div className="flex flex-col gap-3">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Paid Date</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Paid Date</label>
             <input
               type="date"
               value={paidDate}
@@ -399,7 +399,7 @@ export default function PODetail() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Amount Paid</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Amount Paid</label>
             <input
               type="number"
               step="0.01"
@@ -430,8 +430,8 @@ export default function PODetail() {
 function InfoRow({ label, value }) {
   return (
     <div className="flex justify-between text-sm">
-      <span className="text-gray-400">{label}</span>
-      <span className="font-medium text-gray-700">{value || '—'}</span>
+      <span className="text-gray-400 dark:text-gray-500">{label}</span>
+      <span className="font-medium text-gray-700 dark:text-gray-300">{value || '—'}</span>
     </div>
   );
 }

@@ -76,33 +76,33 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-4 p-4">
-      <h1 className="text-xl font-bold text-gray-900">
+      <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
         {getGreeting()}, {firstName}
       </h1>
 
       {/* Today's Cases */}
       <Card
-        className="cursor-pointer active:bg-gray-50"
+        className="cursor-pointer active:bg-gray-50 dark:active:bg-gray-700"
         onClick={() => navigate('/cases')}
       >
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-700">Today&apos;s Cases</h2>
-          <ChevronRight className="h-4 w-4 text-gray-400" />
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Today&apos;s Cases</h2>
+          <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-500" />
         </div>
         {todayCases.length === 0 ? (
-          <p className="text-sm text-gray-400">No cases scheduled today</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">No cases scheduled today</p>
         ) : (
           <div className="space-y-2">
             {todayCases.map((c) => (
               <div
                 key={c.id}
-                className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2"
+                className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 dark:bg-gray-700/50"
               >
                 <div>
-                  <p className="text-sm font-medium text-gray-800">
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
                     {c.surgeon?.full_name || 'No surgeon'}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {formatTime(c.scheduled_time)} · {c.facility?.name || 'No facility'}
                   </p>
                 </div>
@@ -115,27 +115,27 @@ export default function Dashboard() {
 
       {/* Upcoming Cases */}
       <Card
-        className="cursor-pointer active:bg-gray-50"
+        className="cursor-pointer active:bg-gray-50 dark:active:bg-gray-700"
         onClick={() => navigate('/cases')}
       >
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-700">Upcoming (7 days)</h2>
-          <span className="text-xs font-medium text-brand-800">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Upcoming (7 days)</h2>
+          <span className="text-xs font-medium text-brand-800 dark:text-brand-400">
             {upcomingCases.length} cases
           </span>
         </div>
         {upcomingCases.length === 0 ? (
-          <p className="text-sm text-gray-400">No upcoming cases</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">No upcoming cases</p>
         ) : (
           <div className="space-y-1.5">
             {upcomingCases.slice(0, 5).map((c) => (
               <div key={c.id} className="flex items-center justify-between text-sm">
-                <span className="text-gray-700">{c.surgeon?.full_name || c.case_number}</span>
-                <span className="text-xs text-gray-400">{formatDate(c.scheduled_date)}</span>
+                <span className="text-gray-700 dark:text-gray-300">{c.surgeon?.full_name || c.case_number}</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">{formatDate(c.scheduled_date)}</span>
               </div>
             ))}
             {upcomingCases.length > 5 && (
-              <p className="text-xs text-brand-800">+{upcomingCases.length - 5} more</p>
+              <p className="text-xs text-brand-800 dark:text-brand-400">+{upcomingCases.length - 5} more</p>
             )}
           </div>
         )}
@@ -144,7 +144,7 @@ export default function Dashboard() {
       {/* Action Items */}
       <Card>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-700">Action Items</h2>
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Action Items</h2>
           {totalActionItems > 0 && (
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
               {totalActionItems}
@@ -153,56 +153,28 @@ export default function Dashboard() {
         </div>
         <div className="space-y-2">
           {overdueFollowUps.length > 0 && (
-            <ActionItem
-              icon={Clock}
-              color="text-red-500"
-              text={`${overdueFollowUps.length} overdue follow-up${overdueFollowUps.length !== 1 ? 's' : ''}`}
-            />
+            <ActionItem icon={Clock} color="text-red-500" text={`${overdueFollowUps.length} overdue follow-up${overdueFollowUps.length !== 1 ? 's' : ''}`} />
           )}
           {overduePromised.length > 0 && (
-            <ActionItem
-              icon={CalendarCheck}
-              color="text-red-500"
-              text={`${overduePromised.length} overdue promised date${overduePromised.length !== 1 ? 's' : ''}`}
-            />
+            <ActionItem icon={CalendarCheck} color="text-red-500" text={`${overduePromised.length} overdue promised date${overduePromised.length !== 1 ? 's' : ''}`} />
           )}
           {completedNeedBillSheet > 0 && (
-            <ActionItem
-              icon={AlertTriangle}
-              color="text-amber-500"
-              text={`${completedNeedBillSheet} case${completedNeedBillSheet !== 1 ? 's' : ''} need bill sheets`}
-            />
+            <ActionItem icon={AlertTriangle} color="text-amber-500" text={`${completedNeedBillSheet} case${completedNeedBillSheet !== 1 ? 's' : ''} need bill sheets`} />
           )}
           {chasingCount > 0 && (
-            <ActionItem
-              icon={Briefcase}
-              color="text-orange-500"
-              text={`${chasingCount} PO${chasingCount !== 1 ? 's' : ''} being chased`}
-            />
+            <ActionItem icon={Briefcase} color="text-orange-500" text={`${chasingCount} PO${chasingCount !== 1 ? 's' : ''} being chased`} />
           )}
           {overduePOs.length > 0 && (
-            <ActionItem
-              icon={AlertTriangle}
-              color="text-red-500"
-              text={`${overduePOs.length} overdue PO${overduePOs.length !== 1 ? 's' : ''}`}
-            />
+            <ActionItem icon={AlertTriangle} color="text-red-500" text={`${overduePOs.length} overdue PO${overduePOs.length !== 1 ? 's' : ''}`} />
           )}
           {overdueCommissions.length > 0 && (
-            <ActionItem
-              icon={TrendingUp}
-              color="text-red-500"
-              text={`${overdueCommissions.length} overdue commission${overdueCommissions.length !== 1 ? 's' : ''}`}
-            />
+            <ActionItem icon={TrendingUp} color="text-red-500" text={`${overdueCommissions.length} overdue commission${overdueCommissions.length !== 1 ? 's' : ''}`} />
           )}
           {overdueComms.length > 0 && (
-            <ActionItem
-              icon={Clock}
-              color="text-amber-500"
-              text={`${overdueComms.length} overdue communication follow-up${overdueComms.length !== 1 ? 's' : ''}`}
-            />
+            <ActionItem icon={Clock} color="text-amber-500" text={`${overdueComms.length} overdue communication follow-up${overdueComms.length !== 1 ? 's' : ''}`} />
           )}
           {totalActionItems === 0 && (
-            <p className="text-sm text-gray-400">All caught up!</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">All caught up!</p>
           )}
         </div>
       </Card>
@@ -211,19 +183,19 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 gap-3">
         <Card>
           <div className="flex items-center gap-2">
-            <Briefcase className="h-4 w-4 text-brand-800" />
-            <span className="text-xs text-gray-500">This Month</span>
+            <Briefcase className="h-4 w-4 text-brand-800 dark:text-brand-400" />
+            <span className="text-xs text-gray-500 dark:text-gray-400">This Month</span>
           </div>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{monthCases.length}</p>
-          <p className="text-xs text-gray-400">cases</p>
+          <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{monthCases.length}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">cases</p>
         </Card>
         <Card>
           <div className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-green-500" />
-            <span className="text-xs text-gray-500">Case Value</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">Case Value</span>
           </div>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{formatCurrency(monthValue)}</p>
-          <p className="text-xs text-gray-400">this month</p>
+          <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{formatCurrency(monthValue)}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">this month</p>
         </Card>
       </div>
     </div>
@@ -234,7 +206,7 @@ function ActionItem({ icon: Icon, color, text }) {
   return (
     <div className="flex items-center gap-3">
       <Icon className={`h-4 w-4 ${color}`} />
-      <span className="text-sm text-gray-600">{text}</span>
+      <span className="text-sm text-gray-600 dark:text-gray-400">{text}</span>
     </div>
   );
 }

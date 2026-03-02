@@ -20,14 +20,14 @@ function isOverdue(dateStr) {
 export default function ChaseTimeline({ entries = [] }) {
   if (entries.length === 0) {
     return (
-      <p className="py-4 text-center text-sm text-gray-400">No chase entries yet</p>
+      <p className="py-4 text-center text-sm text-gray-400 dark:text-gray-500">No chase entries yet</p>
     );
   }
 
   return (
     <div className="relative">
       {/* Connecting line */}
-      <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-gray-200" />
+      <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-gray-200 dark:bg-gray-700" />
 
       <div className="space-y-4">
         {entries.map((entry) => {
@@ -46,14 +46,14 @@ export default function ChaseTimeline({ entries = [] }) {
               {/* Content */}
               <div className="min-w-0 flex-1 pb-1">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-medium text-gray-800">{config.label}</p>
-                  <span className="shrink-0 text-xs text-gray-400">
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{config.label}</p>
+                  <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">
                     {formatDate(entry.created_at)}
                   </span>
                 </div>
 
                 {entry.contact_name && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     <Users className="mr-1 inline h-3 w-3" />
                     {entry.contact_name}
                     {entry.contact_role && ` (${entry.contact_role})`}
@@ -61,7 +61,7 @@ export default function ChaseTimeline({ entries = [] }) {
                 )}
 
                 {entry.outcome && (
-                  <p className="mt-1 text-sm text-gray-600">{entry.outcome}</p>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{entry.outcome}</p>
                 )}
 
                 <div className="mt-1 flex flex-wrap gap-2">

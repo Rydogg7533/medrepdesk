@@ -5,13 +5,13 @@ const variants = {
   primary:
     'bg-brand-800 text-white hover:bg-brand-700 focus:ring-brand-800/30',
   secondary:
-    'bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-300/30',
+    'bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-300/30 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600',
   outline:
-    'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-brand-800/20',
+    'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-brand-800/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700',
   danger:
     'bg-red-500 text-white hover:bg-red-600 focus:ring-red-500/30',
   google:
-    'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-300/30',
+    'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-300/30 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700',
 };
 
 const sizes = {

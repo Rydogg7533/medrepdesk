@@ -138,9 +138,9 @@ export default function CommissionForm() {
     <div className="p-4">
       <div className="mb-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="min-h-touch p-1">
-          <ArrowLeft className="h-5 w-5 text-gray-600" />
+          <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </button>
-        <h1 className="text-lg font-bold text-gray-900">
+        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">
           {isEdit ? 'Edit Commission' : 'New Commission'}
         </h1>
       </div>
@@ -170,7 +170,7 @@ export default function CommissionForm() {
           />
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Commission Type</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Commission Type</label>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -178,7 +178,7 @@ export default function CommissionForm() {
                 className={`flex-1 rounded-lg py-2.5 text-sm font-medium ${
                   form.commission_type === 'percentage'
                     ? 'bg-brand-800 text-white'
-                    : 'bg-gray-100 text-gray-600'
+                    : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
                 }`}
               >
                 Percentage
@@ -189,7 +189,7 @@ export default function CommissionForm() {
                 className={`flex-1 rounded-lg py-2.5 text-sm font-medium ${
                   form.commission_type === 'flat'
                     ? 'bg-brand-800 text-white'
-                    : 'bg-gray-100 text-gray-600'
+                    : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
                 }`}
               >
                 Flat
@@ -250,13 +250,13 @@ export default function CommissionForm() {
           />
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Notes</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
             <textarea
               name="notes"
               rows={3}
               value={form.notes}
               onChange={onChange}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               placeholder="Any additional notes..."
             />
           </div>

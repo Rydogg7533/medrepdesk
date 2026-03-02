@@ -97,8 +97,8 @@ export default function DistributorForm() {
   return (
     <div className="p-4">
       <div className="mb-4 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="min-h-touch p-1"><ArrowLeft className="h-5 w-5 text-gray-600" /></button>
-        <h1 className="text-lg font-bold text-gray-900">{isEdit ? 'Edit Distributor' : 'New Distributor'}</h1>
+        <button onClick={() => navigate(-1)} className="min-h-touch p-1"><ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" /></button>
+        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">{isEdit ? 'Edit Distributor' : 'New Distributor'}</h1>
       </div>
 
       {serverError && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">{serverError}</div>}
@@ -112,7 +112,7 @@ export default function DistributorForm() {
           <Input label="Billing Contact Phone" name="billing_contact_phone" type="tel" value={form.billing_contact_phone} onChange={onChange} />
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Commission Type</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">Commission Type</label>
             <div className="flex gap-2">
               {['percentage', 'flat'].map((t) => (
                 <button
@@ -120,7 +120,7 @@ export default function DistributorForm() {
                   type="button"
                   onClick={() => setForm((p) => ({ ...p, default_commission_type: t }))}
                   className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-colors ${
-                    form.default_commission_type === t ? 'bg-brand-800 text-white' : 'bg-gray-100 text-gray-600'
+                    form.default_commission_type === t ? 'bg-brand-800 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                   }`}
                 >
                   {t === 'percentage' ? 'Percentage' : 'Flat Rate'}
@@ -136,8 +136,8 @@ export default function DistributorForm() {
           )}
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Notes</label>
-            <textarea name="notes" rows={3} value={form.notes} onChange={onChange} className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20" />
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">Notes</label>
+            <textarea name="notes" rows={3} value={form.notes} onChange={onChange} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20" />
           </div>
 
           <div className="flex gap-3">

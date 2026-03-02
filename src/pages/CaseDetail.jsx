@@ -111,7 +111,7 @@ export default function CaseDetail() {
 
   if (!caseData) {
     return (
-      <div className="p-4 text-center text-gray-500">Case not found</div>
+      <div className="p-4 text-center text-gray-500 dark:text-gray-400">Case not found</div>
     );
   }
 
@@ -131,15 +131,15 @@ export default function CaseDetail() {
       {/* Header */}
       <div className="mb-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="min-h-touch p-1">
-          <ArrowLeft className="h-5 w-5 text-gray-600" />
+          <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </button>
         <div className="flex-1">
-          <p className="text-xs text-gray-400">{caseData.case_number}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">{caseData.case_number}</p>
           <StatusBadge status={caseData.status} type="case" />
         </div>
         <button
           onClick={() => navigate(`/cases/${id}/edit`)}
-          className="min-h-touch p-2 text-gray-500"
+          className="min-h-touch p-2 text-gray-500 dark:text-gray-400"
         >
           <Edit2 className="h-5 w-5" />
         </button>
@@ -147,7 +147,7 @@ export default function CaseDetail() {
 
       {/* Status Timeline */}
       <Card className="mb-4">
-        <h3 className="mb-3 text-xs font-semibold uppercase text-gray-400">Pipeline</h3>
+        <h3 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Pipeline</h3>
         <div className="flex items-center gap-1 overflow-x-auto pb-1">
           {STATUS_ORDER.map((s, i) => {
             const config = CASE_STATUSES[s];
@@ -160,13 +160,13 @@ export default function CaseDetail() {
                     isCurrent
                       ? 'bg-brand-800 text-white'
                       : isActive
-                        ? 'bg-brand-100 text-brand-800'
-                        : 'bg-gray-100 text-gray-400'
+                        ? 'bg-brand-100 text-brand-800 dark:text-brand-400'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
                   }`}
                 >
                   {isActive ? <CheckCircle className="h-3.5 w-3.5" /> : i + 1}
                 </div>
-                <span className="mt-1 max-w-[56px] text-center text-[9px] leading-tight text-gray-500">
+                <span className="mt-1 max-w-[56px] text-center text-[9px] leading-tight text-gray-500 dark:text-gray-400">
                   {config?.label}
                 </span>
               </div>
@@ -191,35 +191,35 @@ export default function CaseDetail() {
       {/* Notes */}
       {caseData.notes && (
         <Card className="mb-4">
-          <h3 className="mb-1 text-xs font-semibold uppercase text-gray-400">Notes</h3>
-          <p className="whitespace-pre-wrap text-sm text-gray-700">{caseData.notes}</p>
+          <h3 className="mb-1 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Notes</h3>
+          <p className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">{caseData.notes}</p>
         </Card>
       )}
 
       {/* PO Section */}
       <Card className="mb-4">
         <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-xs font-semibold uppercase text-gray-400">Purchase Orders</h3>
+          <h3 className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Purchase Orders</h3>
           <button
             onClick={() => navigate(`/po/new?caseId=${id}`)}
-            className="flex items-center gap-1 text-xs font-medium text-brand-800"
+            className="flex items-center gap-1 text-xs font-medium text-brand-800 dark:text-brand-400"
           >
             <Plus className="h-3.5 w-3.5" /> Add PO
           </button>
         </div>
         {casePOs.length === 0 ? (
-          <p className="text-sm text-gray-400">No POs yet</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">No POs yet</p>
         ) : (
           <div className="space-y-2">
             {casePOs.map((po) => (
               <button
                 key={po.id}
                 onClick={() => navigate(`/po/${po.id}`)}
-                className="flex w-full items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-left"
+                className="flex w-full items-center justify-between rounded-lg bg-slate-50 dark:bg-gray-700/50 px-3 py-2 text-left"
               >
                 <div>
-                  <p className="text-sm font-medium text-gray-800">INV: {po.invoice_number}</p>
-                  <p className="text-xs text-gray-500">{formatCurrency(po.amount)}</p>
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">INV: {po.invoice_number}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{formatCurrency(po.amount)}</p>
                 </div>
                 <StatusBadge status={po.status} type="po" />
               </button>
@@ -231,30 +231,30 @@ export default function CaseDetail() {
       {/* Chase Summary */}
       {casePOs.length > 0 && (
         <Card className="mb-4">
-          <h3 className="mb-2 text-xs font-semibold uppercase text-gray-400">Chase Summary</h3>
+          <h3 className="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Chase Summary</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-400">Chase Attempts</span>
-              <span className="font-medium text-gray-700">{chaseEntries.length}</span>
+              <span className="text-gray-400 dark:text-gray-500">Chase Attempts</span>
+              <span className="font-medium text-gray-700 dark:text-gray-300">{chaseEntries.length}</span>
             </div>
             {lastPromised && (
               <div className="flex justify-between">
-                <span className="text-gray-400">Last Promised</span>
-                <span className={`font-medium ${promisedOverdue ? 'text-red-600' : 'text-gray-700'}`}>
+                <span className="text-gray-400 dark:text-gray-500">Last Promised</span>
+                <span className={`font-medium ${promisedOverdue ? 'text-red-600' : 'text-gray-700 dark:text-gray-300'}`}>
                   {formatDate(lastPromised)} {promisedOverdue && '(overdue)'}
                 </span>
               </div>
             )}
             {lastChase && (
               <div className="flex justify-between">
-                <span className="text-gray-400">Last Follow-Up</span>
-                <span className="font-medium text-gray-700">{formatDate(lastChase.created_at)}</span>
+                <span className="text-gray-400 dark:text-gray-500">Last Follow-Up</span>
+                <span className="font-medium text-gray-700 dark:text-gray-300">{formatDate(lastChase.created_at)}</span>
               </div>
             )}
             {nextFollowUp && (
               <div className="flex justify-between">
-                <span className="text-gray-400">Next Follow-Up</span>
-                <span className="font-medium text-brand-800">{formatDate(nextFollowUp)}</span>
+                <span className="text-gray-400 dark:text-gray-500">Next Follow-Up</span>
+                <span className="font-medium text-brand-800 dark:text-brand-400">{formatDate(nextFollowUp)}</span>
               </div>
             )}
           </div>
@@ -264,7 +264,7 @@ export default function CaseDetail() {
       {/* Commission Section */}
       <Card className="mb-4">
         <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-xs font-semibold uppercase text-gray-400">Commission</h3>
+          <h3 className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Commission</h3>
           {!caseCommission && ['completed', 'bill_sheet_submitted', 'po_requested', 'billed', 'po_received', 'paid'].includes(caseData.status) && (
             <button
               onClick={() => {
@@ -274,7 +274,7 @@ export default function CaseDetail() {
                   navigate(`/commissions/new?caseId=${id}`);
                 }
               }}
-              className="flex items-center gap-1 text-xs font-medium text-brand-800"
+              className="flex items-center gap-1 text-xs font-medium text-brand-800 dark:text-brand-400"
             >
               <Plus className="h-3.5 w-3.5" /> Add
             </button>
@@ -283,10 +283,10 @@ export default function CaseDetail() {
         {caseCommission ? (
           <button
             onClick={() => navigate(`/commissions/${caseCommission.id}`)}
-            className="flex w-full items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-left"
+            className="flex w-full items-center justify-between rounded-lg bg-slate-50 dark:bg-gray-700/50 px-3 py-2 text-left"
           >
             <div>
-              <p className="text-sm font-medium text-gray-800">
+              <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
                 {formatCurrency(caseCommission.expected_amount)} expected
               </p>
               {caseCommission.received_amount != null && (
@@ -296,46 +296,46 @@ export default function CaseDetail() {
             <StatusBadge status={caseCommission.status} type="commission" />
           </button>
         ) : (
-          <p className="text-sm text-gray-400">No commission yet</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">No commission yet</p>
         )}
       </Card>
 
       {/* Communications Section */}
       <Card className="mb-4">
         <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-xs font-semibold uppercase text-gray-400">Communications</h3>
+          <h3 className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Communications</h3>
           <button
             onClick={() => navigate(`/communications/new?caseId=${id}`)}
-            className="flex items-center gap-1 text-xs font-medium text-brand-800"
+            className="flex items-center gap-1 text-xs font-medium text-brand-800 dark:text-brand-400"
           >
             <Plus className="h-3.5 w-3.5" /> Log
           </button>
         </div>
         {caseCommunications.length === 0 ? (
-          <p className="text-sm text-gray-400">No communications yet</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">No communications yet</p>
         ) : (
           <div className="space-y-2">
             {caseCommunications.slice(0, 5).map((comm) => {
               const Icon = COMM_TYPE_ICONS[comm.comm_type] || MessageSquare;
               return (
-                <div key={comm.id} className="flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2">
-                  <Icon className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+                <div key={comm.id} className="flex items-start gap-2 rounded-lg bg-slate-50 dark:bg-gray-700/50 px-3 py-2">
+                  <Icon className="mt-0.5 h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-gray-800">
+                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
                         {comm.contact_name || comm.comm_type}
                       </p>
-                      <span className="text-xs text-gray-400">{formatDate(comm.created_at)}</span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500">{formatDate(comm.created_at)}</span>
                     </div>
                     {comm.outcome && (
-                      <p className="truncate text-xs text-gray-500">{comm.outcome}</p>
+                      <p className="truncate text-xs text-gray-500 dark:text-gray-400">{comm.outcome}</p>
                     )}
                   </div>
                 </div>
               );
             })}
             {caseCommunications.length > 5 && (
-              <p className="text-center text-xs text-brand-800">+{caseCommunications.length - 5} more</p>
+              <p className="text-center text-xs text-brand-800 dark:text-brand-400">+{caseCommunications.length - 5} more</p>
             )}
           </div>
         )}
@@ -380,7 +380,7 @@ export default function CaseDetail() {
       {/* Auto-Commission Sheet */}
       <BottomSheet isOpen={showAddCommission} onClose={() => setShowAddCommission(false)} title="Add Commission">
         <div className="flex flex-col gap-3">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Auto-calculate from distributor defaults or enter manually?
           </p>
           <Button fullWidth loading={createCommission.isPending} onClick={handleAutoCommission}>
@@ -414,8 +414,8 @@ export default function CaseDetail() {
 function InfoRow({ label, value }) {
   return (
     <div className="flex justify-between text-sm">
-      <span className="text-gray-400">{label}</span>
-      <span className="font-medium text-gray-700">{value || '—'}</span>
+      <span className="text-gray-400 dark:text-gray-500">{label}</span>
+      <span className="font-medium text-gray-700 dark:text-gray-300">{value || '—'}</span>
     </div>
   );
 }

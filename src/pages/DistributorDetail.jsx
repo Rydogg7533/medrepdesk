@@ -26,14 +26,14 @@ export default function DistributorDetail() {
     return <div className="space-y-4 p-4"><Skeleton className="h-8 w-48" /><Skeleton variant="card" /></div>;
   }
 
-  if (!dist) return <div className="p-4 text-center text-gray-500">Distributor not found</div>;
+  if (!dist) return <div className="p-4 text-center text-gray-500 dark:text-gray-400">Distributor not found</div>;
 
   return (
     <div className="p-4">
       <div className="mb-4 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="min-h-touch p-1"><ArrowLeft className="h-5 w-5 text-gray-600" /></button>
-        <h1 className="flex-1 text-lg font-bold text-gray-900">{dist.name}</h1>
-        <button onClick={() => navigate(`/distributors/${id}/edit`)} className="min-h-touch p-2 text-gray-500"><Edit2 className="h-5 w-5" /></button>
+        <button onClick={() => navigate(-1)} className="min-h-touch p-1"><ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" /></button>
+        <h1 className="flex-1 text-lg font-bold text-gray-900 dark:text-gray-100">{dist.name}</h1>
+        <button onClick={() => navigate(`/distributors/${id}/edit`)} className="min-h-touch p-2 text-gray-500 dark:text-gray-400"><Edit2 className="h-5 w-5" /></button>
       </div>
 
       <Card className="mb-4">
@@ -53,8 +53,8 @@ export default function DistributorDetail() {
 
       {dist.notes && (
         <Card className="mb-4">
-          <h3 className="mb-1 text-xs font-semibold uppercase text-gray-400">Notes</h3>
-          <p className="text-sm text-gray-700 whitespace-pre-wrap">{dist.notes}</p>
+          <h3 className="mb-1 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Notes</h3>
+          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{dist.notes}</p>
         </Card>
       )}
 
@@ -72,8 +72,8 @@ export default function DistributorDetail() {
 function InfoRow({ label, value }) {
   return (
     <div className="flex justify-between text-sm">
-      <span className="text-gray-400">{label}</span>
-      <span className="font-medium text-gray-700">{value || '—'}</span>
+      <span className="text-gray-400 dark:text-gray-500">{label}</span>
+      <span className="font-medium text-gray-700 dark:text-gray-300">{value || '—'}</span>
     </div>
   );
 }

@@ -84,8 +84,8 @@ export default function FacilityForm() {
   return (
     <div className="p-4">
       <div className="mb-4 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="min-h-touch p-1"><ArrowLeft className="h-5 w-5 text-gray-600" /></button>
-        <h1 className="text-lg font-bold text-gray-900">{isEdit ? 'Edit Facility' : 'New Facility'}</h1>
+        <button onClick={() => navigate(-1)} className="min-h-touch p-1"><ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" /></button>
+        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">{isEdit ? 'Edit Facility' : 'New Facility'}</h1>
       </div>
 
       {serverError && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">{serverError}</div>}
@@ -94,8 +94,8 @@ export default function FacilityForm() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Input label="Name" name="name" value={form.name} onChange={onChange} error={errors.name} placeholder="University Hospital" />
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Type</label>
-            <select name="facility_type" value={form.facility_type} onChange={onChange} className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20">
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">Type</label>
+            <select name="facility_type" value={form.facility_type} onChange={onChange} className="min-h-touch w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20">
               <option value="">Select type</option>
               {FACILITY_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
@@ -108,8 +108,8 @@ export default function FacilityForm() {
           <Input label="Phone" name="phone" type="tel" value={form.phone} onChange={onChange} />
           <Input label="Billing Phone" name="billing_phone" type="tel" value={form.billing_phone} onChange={onChange} />
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Notes</label>
-            <textarea name="notes" rows={3} value={form.notes} onChange={onChange} className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20" />
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">Notes</label>
+            <textarea name="notes" rows={3} value={form.notes} onChange={onChange} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20" />
           </div>
           <div className="flex gap-3">
             <Button type="button" variant="secondary" className="flex-1" onClick={() => navigate(-1)}>Cancel</Button>

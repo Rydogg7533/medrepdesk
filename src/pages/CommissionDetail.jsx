@@ -38,7 +38,7 @@ export default function CommissionDetail() {
   }
 
   if (!commission) {
-    return <div className="p-4 text-center text-gray-500">Commission not found</div>;
+    return <div className="p-4 text-center text-gray-500 dark:text-gray-400">Commission not found</div>;
   }
 
   const hasDiscrepancy = commission.received_amount != null &&
@@ -50,15 +50,15 @@ export default function CommissionDetail() {
       {/* Header */}
       <div className="mb-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="min-h-touch p-1">
-          <ArrowLeft className="h-5 w-5 text-gray-600" />
+          <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </button>
         <div className="flex-1">
-          <p className="text-xs text-gray-400">Commission</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">Commission</p>
           <StatusBadge status={commission.status} type="commission" />
         </div>
         <button
           onClick={() => navigate(`/commissions/${id}/edit`)}
-          className="min-h-touch p-2 text-gray-500"
+          className="min-h-touch p-2 text-gray-500 dark:text-gray-400"
         >
           <Edit2 className="h-5 w-5" />
         </button>
@@ -68,9 +68,9 @@ export default function CommissionDetail() {
       <Card className="mb-4">
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-400">Case</span>
+            <span className="text-gray-400 dark:text-gray-500">Case</span>
             <button
-              className="font-medium text-brand-800"
+              className="font-medium text-brand-800 dark:text-brand-400"
               onClick={() => navigate(`/cases/${commission.case_id}`)}
             >
               {commission.case?.case_number || '—'}
@@ -90,15 +90,15 @@ export default function CommissionDetail() {
 
       {/* Amounts */}
       <Card className="mb-4">
-        <h3 className="mb-3 text-xs font-semibold uppercase text-gray-400">Amounts</h3>
+        <h3 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Amounts</h3>
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-400">Expected</span>
-            <span className="text-lg font-bold text-gray-900">{formatCurrency(commission.expected_amount)}</span>
+            <span className="text-gray-400 dark:text-gray-500">Expected</span>
+            <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatCurrency(commission.expected_amount)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-400">Received</span>
-            <span className={`text-lg font-bold ${hasDiscrepancy ? 'text-red-600' : 'text-gray-900'}`}>
+            <span className="text-gray-400 dark:text-gray-500">Received</span>
+            <span className={`text-lg font-bold ${hasDiscrepancy ? 'text-red-600' : 'text-gray-900 dark:text-gray-100'}`}>
               {formatCurrency(commission.received_amount)}
             </span>
           </div>
@@ -121,8 +121,8 @@ export default function CommissionDetail() {
       {/* Notes */}
       {commission.notes && (
         <Card className="mb-4">
-          <h3 className="mb-1 text-xs font-semibold uppercase text-gray-400">Notes</h3>
-          <p className="whitespace-pre-wrap text-sm text-gray-700">{commission.notes}</p>
+          <h3 className="mb-1 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Notes</h3>
+          <p className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">{commission.notes}</p>
         </Card>
       )}
 
@@ -143,23 +143,23 @@ export default function CommissionDetail() {
       <BottomSheet isOpen={showUpdate} onClose={() => setShowUpdate(false)} title="Mark Commission Received">
         <div className="flex flex-col gap-3">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Amount Received</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Amount Received</label>
             <input
               type="number"
               step="0.01"
               placeholder={commission.expected_amount ? String(commission.expected_amount) : '0.00'}
               value={receivedAmount}
               onChange={(e) => setReceivedAmount(e.target.value)}
-              className="min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+              className="min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Received Date</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Received Date</label>
             <input
               type="date"
               value={receivedDate}
               onChange={(e) => setReceivedDate(e.target.value)}
-              className="min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+              className="min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
           </div>
           <Button fullWidth loading={updateCommission.isPending} onClick={() => advanceStatus('received')}>
@@ -174,8 +174,8 @@ export default function CommissionDetail() {
 function InfoRow({ label, value }) {
   return (
     <div className="flex justify-between text-sm">
-      <span className="text-gray-400">{label}</span>
-      <span className="font-medium text-gray-700">{value || '—'}</span>
+      <span className="text-gray-400 dark:text-gray-500">{label}</span>
+      <span className="font-medium text-gray-700 dark:text-gray-300">{value || '—'}</span>
     </div>
   );
 }

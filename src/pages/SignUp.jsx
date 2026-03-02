@@ -90,12 +90,12 @@ export default function SignUp() {
         <h1 className="mb-1 text-center text-2xl font-bold text-brand-800">
           Create Account
         </h1>
-        <p className="mb-6 text-center text-sm text-gray-500">
+        <p className="mb-6 text-center text-sm text-gray-500 dark:text-gray-400">
           Start managing your cases with MedRepDesk
         </p>
 
         {serverError && (
-          <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          <div className="mb-4 rounded-lg bg-red-50 dark:bg-red-900/30 p-3 text-sm text-red-600">
             {serverError}
           </div>
         )}
@@ -110,9 +110,9 @@ export default function SignUp() {
         </Button>
 
         <div className="my-5 flex items-center gap-3">
-          <hr className="flex-1 border-gray-200" />
-          <span className="text-xs text-gray-400">or</span>
-          <hr className="flex-1 border-gray-200" />
+          <hr className="flex-1 border-gray-200 dark:border-gray-700" />
+          <span className="text-xs text-gray-400 dark:text-gray-500">or</span>
+          <hr className="flex-1 border-gray-200 dark:border-gray-700" />
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -165,9 +165,9 @@ export default function SignUp() {
               name="tosAccepted"
               checked={form.tosAccepted}
               onChange={onChange}
-              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-800 focus:ring-brand-800"
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-brand-800 focus:ring-brand-800"
             />
-            <span className="text-xs text-gray-600">
+            <span className="text-xs text-gray-600 dark:text-gray-400">
               I agree to the{' '}
               <a href="/terms" className="text-brand-800 underline">
                 Terms of Service
@@ -187,7 +187,7 @@ export default function SignUp() {
           </Button>
         </form>
 
-        <p className="mt-5 text-center text-sm text-gray-500">
+        <p className="mt-5 text-center text-sm text-gray-500 dark:text-gray-400">
           Already have an account?{' '}
           <Link to="/signin" className="font-medium text-brand-800 hover:underline">
             Sign in

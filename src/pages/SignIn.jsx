@@ -66,12 +66,12 @@ export default function SignIn() {
         <h1 className="mb-1 text-center text-2xl font-bold text-brand-800">
           Welcome Back
         </h1>
-        <p className="mb-6 text-center text-sm text-gray-500">
+        <p className="mb-6 text-center text-sm text-gray-500 dark:text-gray-400">
           Sign in to your MedRepDesk account
         </p>
 
         {serverError && (
-          <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          <div className="mb-4 rounded-lg bg-red-50 dark:bg-red-900/30 p-3 text-sm text-red-600">
             {serverError}
           </div>
         )}
@@ -86,9 +86,9 @@ export default function SignIn() {
         </Button>
 
         <div className="my-5 flex items-center gap-3">
-          <hr className="flex-1 border-gray-200" />
-          <span className="text-xs text-gray-400">or</span>
-          <hr className="flex-1 border-gray-200" />
+          <hr className="flex-1 border-gray-200 dark:border-gray-700" />
+          <span className="text-xs text-gray-400 dark:text-gray-500">or</span>
+          <hr className="flex-1 border-gray-200 dark:border-gray-700" />
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -125,7 +125,7 @@ export default function SignIn() {
           </Button>
         </form>
 
-        <p className="mt-5 text-center text-sm text-gray-500">
+        <p className="mt-5 text-center text-sm text-gray-500 dark:text-gray-400">
           Don&apos;t have an account?{' '}
           <Link to="/signup" className="font-medium text-brand-800 hover:underline">
             Sign up

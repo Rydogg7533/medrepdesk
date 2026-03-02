@@ -94,9 +94,9 @@ export default function ContactForm() {
     <div className="p-4">
       <div className="mb-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="min-h-touch p-1">
-          <ArrowLeft className="h-5 w-5 text-gray-600" />
+          <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </button>
-        <h1 className="text-lg font-bold text-gray-900">
+        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">
           {isEdit ? 'Edit Contact' : 'New Contact'}
         </h1>
       </div>
@@ -114,8 +114,8 @@ export default function ContactForm() {
           <Input label="Phone" name="phone" type="tel" value={form.phone} onChange={onChange} placeholder="801-555-0100" />
           <Input label="Email" name="email" type="email" value={form.email} onChange={onChange} placeholder="jane@example.com" />
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Notes</label>
-            <textarea name="notes" rows={3} value={form.notes} onChange={onChange} className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20" placeholder="Notes..." />
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+            <textarea name="notes" rows={3} value={form.notes} onChange={onChange} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20" placeholder="Notes..." />
           </div>
           <div className="flex gap-3">
             <Button type="button" variant="secondary" className="flex-1" onClick={() => navigate(-1)}>Cancel</Button>
