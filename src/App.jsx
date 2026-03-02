@@ -43,6 +43,7 @@ import Pricing from '@/pages/Pricing';
 import Settings from '@/pages/Settings';
 import Referrals from '@/pages/Referrals';
 import JoinReferral from '@/pages/JoinReferral';
+import Landing from '@/pages/Landing';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -70,10 +71,28 @@ function PublicRoute({ children }) {
   }
 
   if (session) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;
+}
+
+function LandingRoute() {
+  const { session, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (session) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Landing />;
 }
 
 function PlaceholderPage({ title }) {
@@ -99,10 +118,11 @@ function App() {
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/join" element={<JoinReferral />} />
+            <Route path="/" element={<LandingRoute />} />
 
             {/* Protected routes with AppLayout */}
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/cases" element={<Cases />} />
               <Route path="/cases/new" element={<CaseForm />} />
               <Route path="/cases/:id" element={<CaseDetail />} />
