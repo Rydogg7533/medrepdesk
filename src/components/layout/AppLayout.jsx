@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Bell, Plus, Briefcase, MessageSquare, UserPlus } from 'lucide-react';
+import { Bell, Plus, Briefcase, MessageSquare, UserPlus, FileText } from 'lucide-react';
 import BottomNav from './BottomNav';
 import BottomSheet from '@/components/ui/BottomSheet';
 
@@ -51,18 +51,25 @@ export default function AppLayout() {
             <span className="text-sm font-medium text-gray-700">New Case</span>
           </button>
           <button
+            onClick={() => handleAction('/po/new')}
+            className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50"
+          >
+            <FileText className="h-5 w-5 text-brand-800" />
+            <span className="text-sm font-medium text-gray-700">Log PO</span>
+          </button>
+          <button
+            onClick={() => handleAction('/communications/new')}
+            className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50"
+          >
+            <MessageSquare className="h-5 w-5 text-brand-800" />
+            <span className="text-sm font-medium text-gray-700">Log Communication</span>
+          </button>
+          <button
             onClick={() => handleAction('/contacts/new')}
             className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50"
           >
             <UserPlus className="h-5 w-5 text-brand-800" />
             <span className="text-sm font-medium text-gray-700">Add Contact</span>
-          </button>
-          <button
-            onClick={() => handleAction('/cases')}
-            className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50"
-          >
-            <MessageSquare className="h-5 w-5 text-brand-800" />
-            <span className="text-sm font-medium text-gray-700">Log Communication</span>
           </button>
         </div>
       </BottomSheet>

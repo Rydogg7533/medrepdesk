@@ -20,6 +20,11 @@ import Contacts from '@/pages/Contacts';
 import ContactDetail from '@/pages/ContactDetail';
 import ContactForm from '@/pages/ContactForm';
 import Money from '@/pages/Money';
+import PODetail from '@/pages/PODetail';
+import POForm from '@/pages/POForm';
+import CommissionDetail from '@/pages/CommissionDetail';
+import CommissionForm from '@/pages/CommissionForm';
+import CommunicationForm from '@/pages/CommunicationForm';
 import More from '@/pages/More';
 import Distributors from '@/pages/Distributors';
 import DistributorDetail from '@/pages/DistributorDetail';
@@ -89,6 +94,13 @@ function App() {
               <Route path="/contacts/:id" element={<ContactDetail />} />
               <Route path="/contacts/:id/edit" element={<ContactForm />} />
               <Route path="/money" element={<Money />} />
+              <Route path="/po/new" element={<POForm />} />
+              <Route path="/po/:id" element={<PODetail />} />
+              <Route path="/po/:id/edit" element={<POForm />} />
+              <Route path="/commissions/new" element={<CommissionForm />} />
+              <Route path="/commissions/:id" element={<CommissionDetail />} />
+              <Route path="/commissions/:id/edit" element={<CommissionForm />} />
+              <Route path="/communications/new" element={<CommunicationForm />} />
               <Route path="/more" element={<More />} />
               <Route path="/distributors" element={<Distributors />} />
               <Route path="/distributors/new" element={<DistributorForm />} />

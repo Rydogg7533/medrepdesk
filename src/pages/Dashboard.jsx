@@ -1,7 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, AlertTriangle, TrendingUp, ChevronRight } from 'lucide-react';
+import { Briefcase, AlertTriangle, TrendingUp, ChevronRight, Clock, CalendarCheck } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCases } from '@/hooks/useCases';
+import { usePOs } from '@/hooks/usePOs';
+import { useOverdueFollowUps, useOverduePromisedDates } from '@/hooks/useChaseLog';
+import { useCommissions } from '@/hooks/useCommissions';
+import { useOverdueCommunications } from '@/hooks/useCommunications';
 import Card from '@/components/ui/Card';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Skeleton from '@/components/ui/Skeleton';
@@ -26,23 +30,38 @@ export default function Dashboard() {
   const weekOut = weekFromNowISO();
 
   const { data: allCases, isLoading } = useCases();
+  const { data: allPOs = [] } = usePOs();
+  const { data: overdueFollowUps = [] } = useOverdueFollowUps();
+  const { data: overduePromised = [] } = useOverduePromisedDates();
+  const { data: allCommissions = [] } = useCommissions();
+  const { data: overdueComms = [] } = useOverdueCommunications();
 
   const todayCases = allCases?.filter((c) => c.scheduled_date === today) || [];
   const upcomingCases = allCases?.filter(
     (c) => c.scheduled_date > today && c.scheduled_date <= weekOut
   ) || [];
-  const chasingCount = allCases?.filter((c) =>
-    ['po_requested', 'bill_sheet_submitted'].includes(c.status)
-  ).length || 0;
   const completedNeedBillSheet = allCases?.filter(
     (c) => c.status === 'completed'
   ).length || 0;
+  const chasingCount = allCases?.filter((c) =>
+    ['po_requested', 'bill_sheet_submitted'].includes(c.status)
+  ).length || 0;
+
+  const overduePOs = allPOs.filter(
+    (p) => p.expected_payment_date && p.expected_payment_date < today && p.status !== 'paid'
+  );
+  const overdueCommissions = allCommissions.filter(
+    (c) => c.expected_date && c.expected_date < today && c.status === 'pending'
+  );
 
   const thisMonth = new Date().toISOString().slice(0, 7);
   const monthCases = allCases?.filter(
     (c) => c.scheduled_date?.startsWith(thisMonth)
   ) || [];
   const monthValue = monthCases.reduce((sum, c) => sum + (c.case_value || 0), 0);
+
+  const totalActionItems = overdueFollowUps.length + overduePromised.length +
+    completedNeedBillSheet + overduePOs.length + overdueCommissions.length + overdueComms.length;
 
   if (isLoading) {
     return (
@@ -124,20 +143,67 @@ export default function Dashboard() {
 
       {/* Action Items */}
       <Card>
-        <h2 className="mb-3 text-sm font-semibold text-gray-700">Action Items</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-gray-700">Action Items</h2>
+          {totalActionItems > 0 && (
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+              {totalActionItems}
+            </span>
+          )}
+        </div>
         <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="h-4 w-4 text-amber-500" />
-            <span className="text-sm text-gray-600">
-              {completedNeedBillSheet} cases need bill sheets
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Briefcase className="h-4 w-4 text-orange-500" />
-            <span className="text-sm text-gray-600">
-              {chasingCount} POs being chased
-            </span>
-          </div>
+          {overdueFollowUps.length > 0 && (
+            <ActionItem
+              icon={Clock}
+              color="text-red-500"
+              text={`${overdueFollowUps.length} overdue follow-up${overdueFollowUps.length !== 1 ? 's' : ''}`}
+            />
+          )}
+          {overduePromised.length > 0 && (
+            <ActionItem
+              icon={CalendarCheck}
+              color="text-red-500"
+              text={`${overduePromised.length} overdue promised date${overduePromised.length !== 1 ? 's' : ''}`}
+            />
+          )}
+          {completedNeedBillSheet > 0 && (
+            <ActionItem
+              icon={AlertTriangle}
+              color="text-amber-500"
+              text={`${completedNeedBillSheet} case${completedNeedBillSheet !== 1 ? 's' : ''} need bill sheets`}
+            />
+          )}
+          {chasingCount > 0 && (
+            <ActionItem
+              icon={Briefcase}
+              color="text-orange-500"
+              text={`${chasingCount} PO${chasingCount !== 1 ? 's' : ''} being chased`}
+            />
+          )}
+          {overduePOs.length > 0 && (
+            <ActionItem
+              icon={AlertTriangle}
+              color="text-red-500"
+              text={`${overduePOs.length} overdue PO${overduePOs.length !== 1 ? 's' : ''}`}
+            />
+          )}
+          {overdueCommissions.length > 0 && (
+            <ActionItem
+              icon={TrendingUp}
+              color="text-red-500"
+              text={`${overdueCommissions.length} overdue commission${overdueCommissions.length !== 1 ? 's' : ''}`}
+            />
+          )}
+          {overdueComms.length > 0 && (
+            <ActionItem
+              icon={Clock}
+              color="text-amber-500"
+              text={`${overdueComms.length} overdue communication follow-up${overdueComms.length !== 1 ? 's' : ''}`}
+            />
+          )}
+          {totalActionItems === 0 && (
+            <p className="text-sm text-gray-400">All caught up!</p>
+          )}
         </div>
       </Card>
 
@@ -160,6 +226,15 @@ export default function Dashboard() {
           <p className="text-xs text-gray-400">this month</p>
         </Card>
       </div>
+    </div>
+  );
+}
+
+function ActionItem({ icon: Icon, color, text }) {
+  return (
+    <div className="flex items-center gap-3">
+      <Icon className={`h-4 w-4 ${color}`} />
+      <span className="text-sm text-gray-600">{text}</span>
     </div>
   );
 }
