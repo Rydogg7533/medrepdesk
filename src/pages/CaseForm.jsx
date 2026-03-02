@@ -1,0 +1,212 @@
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import DOMPurify from 'dompurify';
+import { caseInsertSchema } from '@/lib/schemas';
+import { useCase, useCreateCase, useUpdateCase } from '@/hooks/useCases';
+import { useSurgeons } from '@/hooks/useSurgeons';
+import { useFacilities } from '@/hooks/useFacilities';
+import { useDistributors } from '@/hooks/useDistributors';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import SearchableSelect from '@/components/ui/SearchableSelect';
+import { PROCEDURE_TYPES } from '@/utils/constants';
+
+export default function CaseForm() {
+  const { id } = useParams();
+  const isEdit = !!id;
+  const navigate = useNavigate();
+
+  const { data: existingCase } = useCase(isEdit ? id : null);
+  const createCase = useCreateCase();
+  const updateCase = useUpdateCase();
+  const { data: surgeons = [] } = useSurgeons();
+  const { data: facilities = [] } = useFacilities();
+  const { data: distributors = [] } = useDistributors();
+
+  const [form, setForm] = useState({
+    surgeon_id: '',
+    facility_id: '',
+    distributor_id: '',
+    procedure_type: '',
+    scheduled_date: '',
+    scheduled_time: '',
+    case_value: '',
+    notes: '',
+  });
+  const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState('');
+
+  useEffect(() => {
+    if (existingCase && isEdit) {
+      setForm({
+        surgeon_id: existingCase.surgeon_id || '',
+        facility_id: existingCase.facility_id || '',
+        distributor_id: existingCase.distributor_id || '',
+        procedure_type: existingCase.procedure_type || '',
+        scheduled_date: existingCase.scheduled_date || '',
+        scheduled_time: existingCase.scheduled_time?.slice(0, 5) || '',
+        case_value: existingCase.case_value ?? '',
+        notes: existingCase.notes || '',
+      });
+    }
+  }, [existingCase, isEdit]);
+
+  function onChange(e) {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: undefined }));
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setServerError('');
+
+    const payload = {
+      surgeon_id: form.surgeon_id || null,
+      facility_id: form.facility_id || null,
+      distributor_id: form.distributor_id || null,
+      procedure_type: form.procedure_type || null,
+      scheduled_date: form.scheduled_date || null,
+      scheduled_time: form.scheduled_time || null,
+      case_value: form.case_value ? Number(form.case_value) : null,
+      notes: form.notes ? DOMPurify.sanitize(form.notes) : null,
+    };
+
+    try {
+      if (isEdit) {
+        await updateCase.mutateAsync({ id, ...payload });
+        navigate(`/cases/${id}`, { replace: true });
+      } else {
+        const created = await createCase.mutateAsync(payload);
+        navigate(`/cases/${created.id}`, { replace: true });
+      }
+    } catch (err) {
+      setServerError(err.message);
+    }
+  }
+
+  const surgeonOpts = surgeons.map((s) => ({ value: s.id, label: s.full_name }));
+  const facilityOpts = facilities.map((f) => ({ value: f.id, label: f.name }));
+  const distributorOpts = distributors.map((d) => ({ value: d.id, label: d.name }));
+
+  const isPending = createCase.isPending || updateCase.isPending;
+
+  return (
+    <div className="p-4">
+      <div className="mb-4 flex items-center gap-3">
+        <button onClick={() => navigate(-1)} className="min-h-touch p-1">
+          <ArrowLeft className="h-5 w-5 text-gray-600" />
+        </button>
+        <h1 className="text-lg font-bold text-gray-900">
+          {isEdit ? 'Edit Case' : 'New Case'}
+        </h1>
+      </div>
+
+      {serverError && (
+        <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">{serverError}</div>
+      )}
+
+      <Card>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <SearchableSelect
+            label="Surgeon"
+            options={surgeonOpts}
+            value={form.surgeon_id}
+            onChange={(v) => { setForm((p) => ({ ...p, surgeon_id: v })); }}
+            placeholder="Select surgeon"
+            onAddNew={() => navigate('/surgeons/new')}
+          />
+          <SearchableSelect
+            label="Facility"
+            options={facilityOpts}
+            value={form.facility_id}
+            onChange={(v) => { setForm((p) => ({ ...p, facility_id: v })); }}
+            placeholder="Select facility"
+            onAddNew={() => navigate('/facilities/new')}
+          />
+          <SearchableSelect
+            label="Distributor"
+            options={distributorOpts}
+            value={form.distributor_id}
+            onChange={(v) => { setForm((p) => ({ ...p, distributor_id: v })); }}
+            placeholder="Select distributor"
+            onAddNew={() => navigate('/distributors/new')}
+          />
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Procedure Type
+            </label>
+            <select
+              name="procedure_type"
+              value={form.procedure_type}
+              onChange={onChange}
+              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+            >
+              <option value="">Select type</option>
+              {PROCEDURE_TYPES.map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Date"
+              name="scheduled_date"
+              type="date"
+              value={form.scheduled_date}
+              onChange={onChange}
+              error={errors.scheduled_date}
+            />
+            <Input
+              label="Time"
+              name="scheduled_time"
+              type="time"
+              value={form.scheduled_time}
+              onChange={onChange}
+            />
+          </div>
+
+          <Input
+            label="Case Value ($)"
+            name="case_value"
+            type="number"
+            step="0.01"
+            placeholder="0.00"
+            value={form.case_value}
+            onChange={onChange}
+          />
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Notes</label>
+            <textarea
+              name="notes"
+              rows={3}
+              value={form.notes}
+              onChange={onChange}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+              placeholder="Any additional notes..."
+            />
+          </div>
+
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              className="flex-1"
+              onClick={() => navigate(-1)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" className="flex-1" loading={isPending}>
+              {isEdit ? 'Save' : 'Create Case'}
+            </Button>
+          </div>
+        </form>
+      </Card>
+    </div>
+  );
+}

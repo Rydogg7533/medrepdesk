@@ -1,0 +1,96 @@
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Users, Search, Phone } from 'lucide-react';
+import { useContacts } from '@/hooks/useContacts';
+import Skeleton from '@/components/ui/Skeleton';
+import EmptyState from '@/components/ui/EmptyState';
+import { formatDate } from '@/utils/formatters';
+
+export default function Contacts() {
+  const navigate = useNavigate();
+  const [search, setSearch] = useState('');
+  const { data: contacts, isLoading } = useContacts();
+
+  const filtered = useMemo(() => {
+    if (!contacts) return [];
+    if (!search) return contacts;
+    const q = search.toLowerCase();
+    return contacts.filter(
+      (c) =>
+        c.full_name?.toLowerCase().includes(q) ||
+        c.role?.toLowerCase().includes(q) ||
+        c.facility?.name?.toLowerCase().includes(q)
+    );
+  }, [contacts, search]);
+
+  if (isLoading) {
+    return (
+      <div className="p-4">
+        <Skeleton className="mb-3 h-10 w-full" />
+        <Skeleton variant="list" count={6} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4">
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Search contacts..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="min-h-touch w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-3 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+        />
+      </div>
+
+      {filtered.length === 0 ? (
+        <EmptyState
+          icon={Users}
+          title="No contacts yet"
+          description="Add your first contact to start building your network"
+          actionLabel="Add Contact"
+          onAction={() => navigate('/contacts/new')}
+        />
+      ) : (
+        <div className="space-y-1">
+          {filtered.map((c) => (
+            <div
+              key={c.id}
+              onClick={() => navigate(`/contacts/${c.id}`)}
+              className="flex min-h-touch cursor-pointer items-center gap-3 rounded-lg px-3 py-3 active:bg-gray-100"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-semibold text-brand-800">
+                {c.full_name?.charAt(0)?.toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-gray-800">{c.full_name}</p>
+                <p className="truncate text-xs text-gray-500">
+                  {c.role && `${c.role} · `}
+                  {c.facility?.name || c.distributor?.name || ''}
+                </p>
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                {c.phone && (
+                  <a
+                    href={`tel:${c.phone}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-brand-800"
+                  >
+                    <Phone className="h-4 w-4" />
+                  </a>
+                )}
+                {c.last_contacted_at && (
+                  <span className="text-[10px] text-gray-400">
+                    {formatDate(c.last_contacted_at)}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
