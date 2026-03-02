@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit2, Trash2, Phone, Mail, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Edit2, Trash2, Phone, Mail, MessageSquare, Wand2, Copy, ExternalLink, Save } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { usePO, useUpdatePO, useDeletePO } from '@/hooks/usePOs';
 import { useChaseLog, useCreateChaseEntry } from '@/hooks/useChaseLog';
 import { useContacts } from '@/hooks/useContacts';
+import { useDraftChaseEmail } from '@/hooks/useAI';
+import { useCreateCommunication } from '@/hooks/useCommunications';
 import { useAuth } from '@/context/AuthContext';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -25,8 +27,15 @@ export default function PODetail() {
   const updatePO = useUpdatePO();
   const deletePO = useDeletePO();
   const createChase = useCreateChaseEntry();
+  const draftEmail = useDraftChaseEmail();
+  const createComm = useCreateCommunication();
   const [showDelete, setShowDelete] = useState(false);
   const [showChaseForm, setShowChaseForm] = useState(false);
+  const [showEmailDraft, setShowEmailDraft] = useState(false);
+  const [emailTone, setEmailTone] = useState('polite');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+  const [copied, setCopied] = useState(false);
   const [showReceived, setShowReceived] = useState(false);
   const [showPaid, setShowPaid] = useState(false);
   const [receivedDate, setReceivedDate] = useState('');
@@ -113,6 +122,41 @@ export default function PODetail() {
       next_follow_up: '',
       action_taken: 'call',
     });
+  }
+
+  async function handleGenerateEmail() {
+    const result = await draftEmail.mutateAsync({
+      caseId: po.case_id,
+      poId: po.id,
+      tone: emailTone,
+    });
+    setEmailSubject(result.subject || '');
+    setEmailBody(result.body || '');
+  }
+
+  async function handleCopyEmail() {
+    await navigator.clipboard.writeText(`Subject: ${emailSubject}\n\n${emailBody}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  function handleSendViaEmail() {
+    const mailto = `mailto:${po?.facility?.billing_email || ''}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+    window.location.href = mailto;
+  }
+
+  async function handleSaveAsNote() {
+    await createComm.mutateAsync({
+      case_id: po.case_id,
+      comm_type: 'email',
+      direction: 'outbound',
+      subject: emailSubject,
+      notes: emailBody,
+      outcome: 'AI-drafted chase email',
+    });
+    setShowEmailDraft(false);
+    setEmailSubject('');
+    setEmailBody('');
   }
 
   async function handleQuickAction(actionType) {
@@ -214,9 +258,15 @@ export default function PODetail() {
             </button>
             <button
               onClick={() => handleQuickAction('text')}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-50 py-3 text-sm font-medium text-purple-700"
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-50 py-3 text-sm font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
             >
               <MessageSquare className="h-4 w-4" /> Text
+            </button>
+            <button
+              onClick={() => setShowEmailDraft(true)}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-amber-50 py-3 text-sm font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+            >
+              <Wand2 className="h-4 w-4" /> Draft Email
             </button>
           </div>
         </Card>
@@ -412,6 +462,68 @@ export default function PODetail() {
           <Button fullWidth loading={updatePO.isPending} onClick={handleMarkPaid}>
             Confirm Paid
           </Button>
+        </div>
+      </BottomSheet>
+
+      {/* Draft Email Sheet */}
+      <BottomSheet isOpen={showEmailDraft} onClose={() => setShowEmailDraft(false)} title="Draft Chase Email">
+        <div className="flex flex-col gap-3">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Tone</label>
+            <div className="flex gap-2">
+              {['polite', 'firm', 'urgent'].map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setEmailTone(t)}
+                  className={`rounded-lg px-3 py-2 text-xs font-medium capitalize ${
+                    emailTone === t
+                      ? 'bg-brand-800 text-white'
+                      : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Button fullWidth loading={draftEmail.isPending} onClick={handleGenerateEmail}>
+            <Wand2 className="h-4 w-4" /> Generate
+          </Button>
+
+          {(emailSubject || emailBody) && (
+            <>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Subject</label>
+                <input
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  className="min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Body</label>
+                <textarea
+                  rows={8}
+                  value={emailBody}
+                  onChange={(e) => setEmailBody(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="secondary" fullWidth onClick={handleCopyEmail}>
+                  <Copy className="h-4 w-4" /> {copied ? 'Copied!' : 'Copy'}
+                </Button>
+                <Button variant="secondary" fullWidth onClick={handleSendViaEmail}>
+                  <ExternalLink className="h-4 w-4" /> Send via Email
+                </Button>
+                <Button fullWidth loading={createComm.isPending} onClick={handleSaveAsNote}>
+                  <Save className="h-4 w-4" /> Save as Note
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </BottomSheet>
 

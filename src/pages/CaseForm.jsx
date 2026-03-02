@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Sparkles, Wand2 } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { caseInsertSchema } from '@/lib/schemas';
 import { useCase, useCreateCase, useUpdateCase } from '@/hooks/useCases';
 import { useSurgeons } from '@/hooks/useSurgeons';
 import { useFacilities } from '@/hooks/useFacilities';
 import { useDistributors } from '@/hooks/useDistributors';
+import { useSmartCaseEntry } from '@/hooks/useAI';
+import { useAuth } from '@/context/AuthContext';
+import { canUseAIExtraction, getRemainingExtractions } from '@/utils/planLimits';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -39,6 +42,48 @@ export default function CaseForm() {
   });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
+  const [entryMode, setEntryMode] = useState('quick');
+  const [quickText, setQuickText] = useState('');
+  const [parseBanner, setParseBanner] = useState('');
+
+  const { account } = useAuth();
+  const smartEntry = useSmartCaseEntry();
+  const aiLimitReached = !canUseAIExtraction(account);
+  const remainingExtractions = getRemainingExtractions(account);
+
+  function convertScheduledTime(time24) {
+    if (!time24) return {};
+    const [h, m] = time24.split(':');
+    const h24 = parseInt(h);
+    const period = h24 >= 12 ? 'PM' : 'AM';
+    const hour = String(h24 % 12 || 12);
+    const minute = m?.slice(0, 2) || '00';
+    return { time_hour: hour, time_minute: minute, time_period: period };
+  }
+
+  async function handleParse() {
+    if (!quickText.trim()) return;
+    setParseBanner('');
+    try {
+      const result = await smartEntry.mutateAsync(quickText);
+      const timeFields = convertScheduledTime(result.scheduled_time);
+      setForm((prev) => ({
+        ...prev,
+        surgeon_id: result.surgeon_id || prev.surgeon_id,
+        facility_id: result.facility_id || prev.facility_id,
+        distributor_id: result.distributor_id || prev.distributor_id,
+        procedure_type: result.procedure_type || prev.procedure_type,
+        scheduled_date: result.scheduled_date || prev.scheduled_date,
+        case_value: result.case_value ?? prev.case_value,
+        notes: result.notes || prev.notes,
+        ...timeFields,
+      }));
+      setEntryMode('manual');
+      setParseBanner('Case parsed successfully - review fields below');
+    } catch (err) {
+      setServerError(err.message);
+    }
+  }
 
   useEffect(() => {
     if (existingCase && isEdit) {
@@ -125,7 +170,80 @@ export default function CaseForm() {
       </div>
 
       {serverError && (
-        <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">{serverError}</div>
+        <div className="mb-4 rounded-lg bg-red-50 dark:bg-red-900/30 p-3 text-sm text-red-600 dark:text-red-400">{serverError}</div>
+      )}
+
+      {parseBanner && (
+        <div className="mb-4 rounded-lg bg-green-50 dark:bg-green-900/30 p-3 text-sm text-green-700 dark:text-green-400">
+          {parseBanner}
+        </div>
+      )}
+
+      {!isEdit && (
+        <div className="mb-4 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setEntryMode('quick')}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              entryMode === 'quick'
+                ? 'bg-brand-800 text-white'
+                : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+            }`}
+          >
+            <Sparkles className="h-4 w-4" /> Quick Entry
+          </button>
+          <button
+            type="button"
+            onClick={() => setEntryMode('manual')}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              entryMode === 'manual'
+                ? 'bg-brand-800 text-white'
+                : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+            }`}
+          >
+            Manual
+          </button>
+        </div>
+      )}
+
+      {!isEdit && entryMode === 'quick' && (
+        <Card className="mb-4">
+          <div className="flex flex-col gap-3">
+            <textarea
+              rows={3}
+              value={quickText}
+              onChange={(e) => setQuickText(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+              placeholder="Describe the case in plain English... e.g. Dr. Chen, hip replacement at IMC next Tuesday 7:30am, Stryker, $18k"
+            />
+            {aiLimitReached ? (
+              <div className="rounded-lg bg-amber-50 dark:bg-amber-900/30 p-3 text-sm text-amber-700 dark:text-amber-400">
+                AI limit reached — upgrade your plan for more extractions.
+              </div>
+            ) : (
+              <>
+                {smartEntry.isPending ? (
+                  <div className="flex items-center justify-center gap-2 py-3">
+                    <div className="h-5 w-5 animate-pulse rounded-full bg-brand-800" />
+                    <span className="text-sm text-gray-600 dark:text-gray-400 animate-pulse">Parsing with AI...</span>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={handleParse}
+                    disabled={!quickText.trim()}
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <Wand2 className="h-4 w-4" /> Parse with AI
+                  </Button>
+                )}
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {remainingExtractions} AI extraction{remainingExtractions !== 1 ? 's' : ''} remaining this month
+                </p>
+              </>
+            )}
+          </div>
+        </Card>
       )}
 
       <Card>

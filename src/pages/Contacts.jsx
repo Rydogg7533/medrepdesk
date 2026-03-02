@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Search, Phone } from 'lucide-react';
+import { Users, Search, Phone, Upload } from 'lucide-react';
 import { useContacts } from '@/hooks/useContacts';
 import Skeleton from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
@@ -34,8 +34,9 @@ export default function Contacts() {
 
   return (
     <div className="p-4">
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+      <div className="mb-3 flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
         <input
           type="text"
           placeholder="Search contacts..."
@@ -43,6 +44,14 @@ export default function Contacts() {
           onChange={(e) => setSearch(e.target.value)}
           className="min-h-touch w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2.5 pl-10 pr-3 text-sm text-gray-900 dark:text-gray-100 outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
         />
+        </div>
+        <button
+          onClick={() => navigate('/contacts/import')}
+          className="flex min-h-touch items-center gap-1.5 rounded-lg bg-brand-50 dark:bg-brand-800/20 px-3 py-2.5 text-sm font-medium text-brand-800 dark:text-brand-400"
+        >
+          <Upload className="h-4 w-4" />
+          CSV
+        </button>
       </div>
 
       {filtered.length === 0 ? (

@@ -34,6 +34,7 @@ import Facilities from '@/pages/Facilities';
 import FacilityForm from '@/pages/FacilityForm';
 import Surgeons from '@/pages/Surgeons';
 import SurgeonForm from '@/pages/SurgeonForm';
+import ContactImport from '@/pages/ContactImport';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -95,6 +96,7 @@ function App() {
               <Route path="/contacts/new" element={<ContactForm />} />
               <Route path="/contacts/:id" element={<ContactDetail />} />
               <Route path="/contacts/:id/edit" element={<ContactForm />} />
+              <Route path="/contacts/import" element={<ContactImport />} />
               <Route path="/money" element={<Money />} />
               <Route path="/po/new" element={<POForm />} />
               <Route path="/po/:id" element={<PODetail />} />
