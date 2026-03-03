@@ -161,8 +161,8 @@ CREATE TABLE cases (
   scheduled_time              time,
   status                      text NOT NULL DEFAULT 'scheduled' CHECK (status IN (
                                 'scheduled', 'confirmed', 'completed',
-                                'bill_sheet_submitted', 'po_requested', 'billed',
-                                'po_received', 'paid', 'cancelled'
+                                'bill_sheet_submitted', 'po_requested',
+                                'po_received', 'billed', 'paid', 'cancelled'
                               )),
   case_value                  numeric(10,2),
   notes                       text,
@@ -581,7 +581,24 @@ CREATE TRIGGER trigger_po_paid
 AFTER UPDATE ON purchase_orders
 FOR EACH ROW EXECUTE FUNCTION advance_case_on_payment();
 
--- Trigger 5: Auto-update contact last_contacted_at
+-- Trigger 5: Advance case to 'billed' when PO emailed to distributor
+CREATE OR REPLACE FUNCTION advance_case_on_po_emailed()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.po_email_sent = true AND (OLD.po_email_sent = false OR OLD.po_email_sent IS NULL) THEN
+    UPDATE cases
+    SET status = 'billed', updated_at = now()
+    WHERE id = NEW.case_id AND status = 'po_received';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_po_emailed
+AFTER UPDATE ON purchase_orders
+FOR EACH ROW EXECUTE FUNCTION advance_case_on_po_emailed();
+
+-- Trigger 7: Auto-update contact last_contacted_at
 CREATE OR REPLACE FUNCTION update_contact_last_contacted()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -598,7 +615,7 @@ CREATE TRIGGER trigger_update_last_contacted
 AFTER INSERT ON communications
 FOR EACH ROW EXECUTE FUNCTION update_contact_last_contacted();
 
--- Trigger 6: Audit log function (applied to sensitive tables)
+-- Trigger 8: Audit log function (applied to sensitive tables)
 CREATE OR REPLACE FUNCTION log_audit()
 RETURNS TRIGGER AS $$
 BEGIN

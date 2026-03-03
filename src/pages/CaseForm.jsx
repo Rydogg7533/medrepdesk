@@ -37,7 +37,6 @@ export default function CaseForm() {
     time_hour: '',
     time_minute: '',
     time_period: 'AM',
-    case_value: '',
     notes: '',
   });
   const [errors, setErrors] = useState({});
@@ -74,7 +73,6 @@ export default function CaseForm() {
         distributor_id: result.distributor_id || prev.distributor_id,
         procedure_type: result.procedure_type || prev.procedure_type,
         scheduled_date: result.scheduled_date || prev.scheduled_date,
-        case_value: result.case_value ?? prev.case_value,
         notes: result.notes || prev.notes,
         ...timeFields,
       }));
@@ -104,7 +102,6 @@ export default function CaseForm() {
         time_hour: hour,
         time_minute: minute,
         time_period: period,
-        case_value: existingCase.case_value ?? '',
         notes: existingCase.notes || '',
       });
     }
@@ -135,7 +132,6 @@ export default function CaseForm() {
       procedure_type: form.procedure_type || null,
       scheduled_date: form.scheduled_date || null,
       scheduled_time,
-      case_value: form.case_value ? Number(form.case_value) : null,
       notes: form.notes ? DOMPurify.sanitize(form.notes) : null,
     };
 
@@ -332,16 +328,6 @@ export default function CaseForm() {
               </select>
             </div>
           </div>
-
-          <Input
-            label="Case Value ($)"
-            name="case_value"
-            type="number"
-            step="0.01"
-            placeholder="0.00"
-            value={form.case_value}
-            onChange={onChange}
-          />
 
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>

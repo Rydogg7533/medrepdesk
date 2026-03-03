@@ -4,6 +4,7 @@ import { Users, Search, Phone, Upload } from 'lucide-react';
 import { useContacts } from '@/hooks/useContacts';
 import Skeleton from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 import { formatDate } from '@/utils/formatters';
 
 export default function Contacts() {
@@ -19,7 +20,9 @@ export default function Contacts() {
       (c) =>
         c.full_name?.toLowerCase().includes(q) ||
         c.role?.toLowerCase().includes(q) ||
-        c.facility?.name?.toLowerCase().includes(q)
+        c.facility?.name?.toLowerCase().includes(q) ||
+        c.distributor?.name?.toLowerCase().includes(q) ||
+        c.manufacturer?.name?.toLowerCase().includes(q)
     );
   }, [contacts, search]);
 
@@ -34,6 +37,10 @@ export default function Contacts() {
 
   return (
     <div className="p-4">
+      <div className="mb-2 flex items-center gap-1">
+        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">Contacts</h1>
+        <InfoTooltip text="Your contact network for facilities, distributors, and manufacturers. Import contacts via CSV or add them manually. Contacts auto-populate in forms throughout the app." />
+      </div>
       <div className="mb-3 flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
@@ -52,6 +59,7 @@ export default function Contacts() {
           <Upload className="h-4 w-4" />
           CSV
         </button>
+        <InfoTooltip text="Import contacts from a CSV file (Google Contacts, Excel, etc). Map your columns to MedRepDesk fields and preview before importing." />
       </div>
 
       {filtered.length === 0 ? (
@@ -77,7 +85,7 @@ export default function Contacts() {
                 <p className="font-medium text-gray-800 dark:text-gray-200">{c.full_name}</p>
                 <p className="truncate text-xs text-gray-500 dark:text-gray-400">
                   {c.role && `${c.role} · `}
-                  {c.facility?.name || c.distributor?.name || ''}
+                  {c.facility?.name || c.distributor?.name || c.manufacturer?.name || ''}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-1">

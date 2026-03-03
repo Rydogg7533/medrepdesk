@@ -132,8 +132,8 @@ export const caseSchema = z.object({
   scheduled_time: z.string().nullable().optional(),
   status: z.enum([
     'scheduled', 'confirmed', 'completed',
-    'bill_sheet_submitted', 'po_requested', 'billed',
-    'po_received', 'paid', 'cancelled',
+    'bill_sheet_submitted', 'po_requested',
+    'po_received', 'billed', 'paid', 'cancelled',
   ]).default('scheduled'),
   case_value: z.coerce.number().nullable().optional(),
   notes: z.string().nullable().optional(),
@@ -246,6 +246,24 @@ export const communicationInsertSchema = communicationSchema.omit({
 });
 
 // ============================================================
+// MANUFACTURERS
+// ============================================================
+export const manufacturerSchema = z.object({
+  id: z.string().uuid(),
+  account_id: z.string().uuid(),
+  name: z.string().min(1),
+  notes: z.string().nullable().optional(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
+export const manufacturerInsertSchema = manufacturerSchema.omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+// ============================================================
 // CONTACTS
 // ============================================================
 export const contactSchema = z.object({
@@ -255,6 +273,7 @@ export const contactSchema = z.object({
   role: z.string().nullable().optional(),
   facility_id: z.string().uuid().nullable().optional(),
   distributor_id: z.string().uuid().nullable().optional(),
+  manufacturer_id: z.string().uuid().nullable().optional(),
   phone: z.string().nullable().optional(),
   email: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),

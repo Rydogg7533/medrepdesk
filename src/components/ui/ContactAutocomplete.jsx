@@ -10,6 +10,7 @@ export default function ContactAutocomplete({
   onTextChange,
   facilityId,
   distributorId,
+  manufacturerId,
   placeholder = 'Search contacts...',
   error,
 }) {
@@ -48,7 +49,7 @@ export default function ContactAutocomplete({
       try {
         let q = supabase
           .from('contacts')
-          .select('*, facility:facilities(name), distributor:distributors(name)')
+          .select('*, facility:facilities(name), distributor:distributors(name), manufacturer:manufacturers(name)')
           .eq('account_id', account.id)
           .ilike('full_name', `%${searchQuery}%`)
           .order('full_name')
@@ -56,6 +57,7 @@ export default function ContactAutocomplete({
 
         if (facilityId) q = q.eq('facility_id', facilityId);
         if (distributorId) q = q.eq('distributor_id', distributorId);
+        if (manufacturerId) q = q.eq('manufacturer_id', manufacturerId);
 
         const { data, error: fetchError } = await q;
         if (!fetchError) setResults(data || []);
@@ -65,7 +67,7 @@ export default function ContactAutocomplete({
         setLoading(false);
       }
     },
-    [account?.id, facilityId, distributorId],
+    [account?.id, facilityId, distributorId, manufacturerId],
   );
 
   function handleInputChange(e) {
@@ -144,9 +146,9 @@ export default function ContactAutocomplete({
                   ({contact.role})
                 </span>
               )}
-              {(contact.facility?.name || contact.distributor?.name) && (
+              {(contact.facility?.name || contact.distributor?.name || contact.manufacturer?.name) && (
                 <span className="ml-1 text-xs text-gray-400 dark:text-gray-500">
-                  — {contact.facility?.name || contact.distributor?.name}
+                  — {contact.facility?.name || contact.distributor?.name || contact.manufacturer?.name}
                 </span>
               )}
             </button>

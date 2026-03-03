@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { useContacts, useCreateContact } from '@/hooks/useContacts';
 import { useFacilities } from '@/hooks/useFacilities';
 import { useDistributors } from '@/hooks/useDistributors';
+import { useManufacturers } from '@/hooks/useManufacturers';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import Card from '@/components/ui/Card';
@@ -16,6 +17,7 @@ import Button from '@/components/ui/Button';
 // ---------------------------------------------------------------------------
 
 const contactRowSchema = z.object({
+  prefix: z.string().optional(),
   full_name: z.string().optional(),
   first_name: z.string().optional(),
   last_name: z.string().optional(),
@@ -23,9 +25,33 @@ const contactRowSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email('Invalid email').optional().or(z.literal('')),
   notes: z.string().optional(),
+  contact_type: z.string().optional(),
+  organization: z.string().optional(),
+  facility: z.string().optional(),
+  distributor: z.string().optional(),
+  manufacturer: z.string().optional(),
 }).refine(
-  (row) => (row.full_name && row.full_name.trim()) || (row.first_name && row.first_name.trim()),
-  { message: 'Full name or first name is required' },
+  (row) => {
+    if (row.last_name && row.last_name.trim()) return true;
+    if (row.full_name && row.full_name.trim()) return true;
+    return false;
+  },
+  { message: 'Last name is required' },
+).refine(
+  (row) => {
+    const phone = row.phone?.trim();
+    const email = row.email?.trim();
+    return !!(phone || email);
+  },
+  { message: 'Please add a phone number or email address' },
+).refine(
+  (row) => {
+    // Must have contact_type + organization, OR an explicit facility/distributor/manufacturer field
+    if (row.facility?.trim() || row.distributor?.trim() || row.manufacturer?.trim()) return true;
+    if (row.contact_type?.trim() && row.organization?.trim()) return true;
+    return false;
+  },
+  { message: 'Contact Type and Organization are required' },
 );
 
 // ---------------------------------------------------------------------------
@@ -34,14 +60,18 @@ const contactRowSchema = z.object({
 
 const CONTACT_FIELDS = [
   { value: 'skip', label: 'Skip' },
+  { value: 'prefix', label: 'Prefix' },
   { value: 'full_name', label: 'Full Name' },
   { value: 'first_name', label: 'First Name' },
   { value: 'last_name', label: 'Last Name' },
   { value: 'role', label: 'Role' },
   { value: 'phone', label: 'Phone' },
   { value: 'email', label: 'Email' },
+  { value: 'contact_type', label: 'Contact Type (Facility/Distributor/Manufacturer)' },
+  { value: 'organization', label: 'Organization (name match)' },
   { value: 'facility', label: 'Facility (name match)' },
   { value: 'distributor', label: 'Distributor (name match)' },
+  { value: 'manufacturer', label: 'Manufacturer (name match)' },
   { value: 'notes', label: 'Notes' },
 ];
 
@@ -49,18 +79,24 @@ const MAPPING_STORAGE_KEY = 'contact-csv-mapping';
 
 function autoMapColumn(header) {
   const h = header.toLowerCase().trim();
+  // Prefix detection (exact matches, before other checks)
+  if (/^(prefix|salutation|name\s*prefix)$/.test(h)) return 'prefix';
+  if (/^title$/.test(h)) return 'prefix';
   // First/last name detection (must come before generic "name" check)
   if (/^(first\s*name|given\s*name|first)$/.test(h)) return 'first_name';
   if (/^(last\s*name|family\s*name|last|surname)$/.test(h)) return 'last_name';
-  if (h.includes('name') && !h.includes('facility') && !h.includes('distributor'))
+  if (h.includes('name') && !h.includes('facility') && !h.includes('distributor') && !h.includes('org'))
     return 'full_name';
-  if (h.includes('role') || h.includes('title') || h.includes('position'))
+  if (/^(contact\s*type|type|category)$/.test(h)) return 'contact_type';
+  if (h.includes('role') || h.includes('job title') || h.includes('position'))
     return 'role';
   if (h.includes('phone') || h.includes('mobile') || h.includes('cell'))
     return 'phone';
   if (h.includes('email') || h.includes('e-mail')) return 'email';
+  if (h.includes('organization') || h.includes('org')) return 'organization';
   if (h.includes('facility') || h.includes('hospital')) return 'facility';
-  if (h.includes('distributor') || h.includes('company')) return 'distributor';
+  if (h.includes('distributor')) return 'distributor';
+  if (h.includes('manufacturer') || h.includes('company')) return 'manufacturer';
   if (h.includes('note')) return 'notes';
   return 'skip';
 }
@@ -69,7 +105,6 @@ function loadSavedMapping(headers) {
   try {
     const saved = JSON.parse(localStorage.getItem(MAPPING_STORAGE_KEY));
     if (!saved || typeof saved !== 'object') return null;
-    // Only use saved mapping if all current headers exist in it
     const mapped = {};
     let usedAny = false;
     headers.forEach((h) => {
@@ -87,6 +122,86 @@ function loadSavedMapping(headers) {
 }
 
 // ---------------------------------------------------------------------------
+// Fuzzy matching helper
+// ---------------------------------------------------------------------------
+
+/** Determine contact type from a contact_type cell value. */
+function resolveContactType(typeValue) {
+  if (!typeValue) return null;
+  const t = typeValue.toLowerCase().trim();
+  if (t === 'facility' || t.includes('facility') || t.includes('hospital') || t.includes('asc') || t.includes('clinic'))
+    return 'facility';
+  if (t === 'distributor' || t.includes('distributor') || t.includes('vendor') || t.includes('supplier'))
+    return 'distributor';
+  if (t === 'manufacturer' || t.includes('manufacturer') || t.includes('mfg'))
+    return 'manufacturer';
+  return null;
+}
+
+/** Case-insensitive fuzzy match against a single name→id map. Returns matched ID or null. */
+function fuzzyMatchInMap(orgName, nameMap) {
+  const key = orgName.toLowerCase().trim();
+  if (!key) return null;
+  if (nameMap[key]) return nameMap[key];
+  for (const [name, id] of Object.entries(nameMap)) {
+    if (name.includes(key) || key.includes(name)) return id;
+  }
+  return null;
+}
+
+/** Fuzzy match org name, optionally scoped by contact type. */
+function fuzzyMatchOrg(orgName, contactType, facilityMap, distributorMap, manufacturerMap) {
+  const key = orgName?.toLowerCase().trim();
+  if (!key) return { facility_id: null, distributor_id: null, manufacturer_id: null };
+
+  // If contact type is known, only search that table
+  if (contactType === 'facility') {
+    const id = fuzzyMatchInMap(key, facilityMap);
+    return { facility_id: id, distributor_id: null, manufacturer_id: null };
+  }
+  if (contactType === 'distributor') {
+    const id = fuzzyMatchInMap(key, distributorMap);
+    return { facility_id: null, distributor_id: id, manufacturer_id: null };
+  }
+  if (contactType === 'manufacturer') {
+    const id = fuzzyMatchInMap(key, manufacturerMap);
+    return { facility_id: null, distributor_id: null, manufacturer_id: id };
+  }
+
+  // No contact type — try facilities, then distributors, then manufacturers
+  const fid = fuzzyMatchInMap(key, facilityMap);
+  if (fid) return { facility_id: fid, distributor_id: null, manufacturer_id: null };
+  const did = fuzzyMatchInMap(key, distributorMap);
+  if (did) return { facility_id: null, distributor_id: did, manufacturer_id: null };
+  const mid = fuzzyMatchInMap(key, manufacturerMap);
+  if (mid) return { facility_id: null, distributor_id: null, manufacturer_id: mid };
+  return { facility_id: null, distributor_id: null, manufacturer_id: null };
+}
+
+// ---------------------------------------------------------------------------
+// Known prefixes for parsing full_name
+// ---------------------------------------------------------------------------
+
+const KNOWN_PREFIXES = ['Dr.', 'Mr.', 'Mrs.', 'Ms.', 'PA', 'NP', 'RN'];
+const KNOWN_PREFIX_SET = new Set(KNOWN_PREFIXES.map((p) => p.toLowerCase()));
+
+function parseFullNameParts(fullName) {
+  const parts = (fullName || '').trim().split(/\s+/);
+  if (parts.length === 0 || (parts.length === 1 && !parts[0])) {
+    return { prefix: '', firstName: '', lastName: '' };
+  }
+  let prefix = '';
+  let rest = parts;
+  if (KNOWN_PREFIX_SET.has(parts[0].toLowerCase())) {
+    prefix = KNOWN_PREFIXES.find((p) => p.toLowerCase() === parts[0].toLowerCase()) || parts[0];
+    rest = parts.slice(1);
+  }
+  if (rest.length === 0) return { prefix, firstName: '', lastName: '' };
+  if (rest.length === 1) return { prefix, firstName: '', lastName: rest[0] };
+  return { prefix, firstName: rest.slice(0, -1).join(' '), lastName: rest[rest.length - 1] };
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -99,6 +214,7 @@ export default function ContactImport() {
   const { data: existingContacts = [] } = useContacts();
   const { data: facilities = [] } = useFacilities();
   const { data: distributors = [] } = useDistributors();
+  const { data: manufacturers = [] } = useManufacturers();
 
   // Step state: 'upload' | 'map' | 'results'
   const [step, setStep] = useState('upload');
@@ -110,7 +226,7 @@ export default function ContactImport() {
 
   // Import state
   const [importing, setImporting] = useState(false);
-  const [results, setResults] = useState(null); // { imported, skipped, errors }
+  const [results, setResults] = useState(null); // { imported, skipped, errors, warnings }
   const [guideOpen, setGuideOpen] = useState(
     () => localStorage.getItem('contact-csv-guide-collapsed') !== 'true',
   );
@@ -184,6 +300,7 @@ export default function ContactImport() {
     let importedCount = 0;
     let skippedCount = 0;
     const errorList = [];
+    const warningList = [];
 
     // Map facility / distributor names to IDs (case-insensitive)
     const facilityMap = {};
@@ -193,6 +310,10 @@ export default function ContactImport() {
     const distributorMap = {};
     distributors.forEach((d) => {
       distributorMap[d.name.toLowerCase()] = d.id;
+    });
+    const manufacturerMap = {};
+    manufacturers.forEach((m) => {
+      manufacturerMap[m.name.toLowerCase()] = m.id;
     });
 
     // Build set of existing contacts for duplicate detection
@@ -208,17 +329,29 @@ export default function ContactImport() {
 
     csvRows.forEach((row, idx) => {
       const mapped = applyMapping(row);
+      const rowNum = idx + 2;
 
-      // Combine first_name + last_name into full_name when both are mapped
-      if (!mapped.full_name && mapped.first_name) {
-        mapped.full_name = [mapped.first_name, mapped.last_name].filter(Boolean).join(' ');
+      // If full_name is provided without separate first/last, parse it
+      if (mapped.full_name && !mapped.last_name) {
+        const parsed = parseFullNameParts(mapped.full_name);
+        if (!mapped.prefix && parsed.prefix) mapped.prefix = parsed.prefix;
+        if (!mapped.first_name && parsed.firstName) mapped.first_name = parsed.firstName;
+        mapped.last_name = parsed.lastName;
+      }
+
+      // Combine first_name + last_name into full_name for storage
+      if (!mapped.full_name || (mapped.first_name || mapped.last_name)) {
+        mapped.full_name = [mapped.prefix, mapped.first_name, mapped.last_name]
+          .filter(Boolean).join(' ');
+      } else if (mapped.prefix && mapped.full_name && !mapped.full_name.toLowerCase().startsWith(mapped.prefix.toLowerCase())) {
+        mapped.full_name = [mapped.prefix, mapped.full_name].filter(Boolean).join(' ');
       }
 
       // Zod validation
       const result = contactRowSchema.safeParse(mapped);
       if (!result.success) {
         const issues = result.error.issues.map((i) => i.message).join('; ');
-        errorList.push(`Row ${idx + 2}: ${issues}`);
+        errorList.push(`Row ${rowNum}: ${issues}`);
         return;
       }
 
@@ -243,18 +376,46 @@ export default function ContactImport() {
         notes: mapped.notes || null,
         facility_id: null,
         distributor_id: null,
+        manufacturer_id: null,
       };
 
-      // Match facility name
+      // Resolve contact type from mapped field
+      const contactType = resolveContactType(mapped.contact_type);
+
+      // Match facility name (explicit field)
       if (mapped.facility) {
-        const fid = facilityMap[mapped.facility.toLowerCase()];
+        const fid = fuzzyMatchInMap(mapped.facility, facilityMap);
         if (fid) payload.facility_id = fid;
       }
 
-      // Match distributor name
+      // Match distributor name (explicit field)
       if (mapped.distributor) {
-        const did = distributorMap[mapped.distributor.toLowerCase()];
+        const did = fuzzyMatchInMap(mapped.distributor, distributorMap);
         if (did) payload.distributor_id = did;
+      }
+
+      // Match manufacturer name (explicit field)
+      if (mapped.manufacturer) {
+        const mid = fuzzyMatchInMap(mapped.manufacturer, manufacturerMap);
+        if (mid) payload.manufacturer_id = mid;
+      }
+
+      // Organization fuzzy match, scoped by contact type
+      if (mapped.organization && !payload.facility_id && !payload.distributor_id && !payload.manufacturer_id) {
+        const orgMatch = fuzzyMatchOrg(mapped.organization, contactType, facilityMap, distributorMap, manufacturerMap);
+        if (orgMatch.facility_id) payload.facility_id = orgMatch.facility_id;
+        else if (orgMatch.distributor_id) payload.distributor_id = orgMatch.distributor_id;
+        else if (orgMatch.manufacturer_id) payload.manufacturer_id = orgMatch.manufacturer_id;
+      }
+
+      // Warn if no facility, distributor, or manufacturer linked
+      if (!payload.facility_id && !payload.distributor_id && !payload.manufacturer_id) {
+        const orgValue = mapped.organization || mapped.facility || mapped.distributor || mapped.manufacturer;
+        if (orgValue) {
+          warningList.push(`Row ${rowNum}: "${orgValue}" — Organization not found — you may need to create it first`);
+        } else {
+          warningList.push(`Row ${rowNum}: No facility or distributor linked`);
+        }
       }
 
       // Also add to existingSet so we don't import duplicates within the same file
@@ -281,10 +442,18 @@ export default function ContactImport() {
       imported: importedCount,
       skipped: skippedCount,
       errors: errorList,
+      warnings: warningList,
     });
     setImporting(false);
     setStep('results');
   }
+
+  // -----------------------------------------------------------------------
+  // Import button enable check
+  // -----------------------------------------------------------------------
+
+  const hasNameField = activeMappedFields.includes('full_name') || activeMappedFields.includes('last_name');
+  const hasContactField = activeMappedFields.includes('phone') || activeMappedFields.includes('email');
 
   // -----------------------------------------------------------------------
   // Render
@@ -330,14 +499,24 @@ export default function ContactImport() {
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="bg-red-100 dark:bg-red-900/40">
-                    {['First Name', 'Last Name', 'Title/Role', 'Phone', 'Email', 'Organization', 'Notes'].map((h) => (
-                      <th key={h} className="whitespace-nowrap px-3 py-2 font-semibold text-red-700 dark:text-red-300">{h}</th>
+                    {[
+                      { label: 'Prefix', required: false },
+                      { label: 'First Name', required: false },
+                      { label: 'Last Name', required: true },
+                      { label: 'Phone', required: true },
+                      { label: 'Email', required: true },
+                      { label: 'Contact Type', required: true },
+                      { label: 'Organization', required: true },
+                      { label: 'Title/Role', required: false },
+                      { label: 'Notes', required: false },
+                    ].map((h) => (
+                      <th key={h.label} className="whitespace-nowrap px-3 py-2 font-semibold text-red-700 dark:text-red-300">{h.label}{h.required && <span className="text-red-500"> *</span>}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="bg-white dark:bg-gray-800">
-                    {['John', 'Smith', 'Billing Manager', '(555) 123-4567', 'john.smith@hospital.com', "St. Mary's Hospital", 'Primary billing contact'].map((v, i) => (
+                    {['Dr.', 'John', 'Smith', '(555) 123-4567', 'john.smith@hospital.com', 'Facility', "St. Mary's Hospital", 'Billing Manager', 'Primary billing contact'].map((v, i) => (
                       <td key={i} className="whitespace-nowrap px-3 py-2 text-gray-700 dark:text-gray-300">{v}</td>
                     ))}
                   </tr>
@@ -345,7 +524,7 @@ export default function ContactImport() {
               </table>
             </div>
             <p className="mt-3 text-xs text-red-600 dark:text-red-400">
-              Your CSV doesn&apos;t have to match this exactly — you can map any columns during import. But organizing your file like this will make mapping automatic.
+              <span className="text-red-500">*</span> Required fields. Last Name, at least one of Phone or Email, and Contact Type + Organization are required for each contact. Contact Type must be &quot;Facility&quot;, &quot;Distributor&quot;, or &quot;Manufacturer&quot;.
             </p>
           </div>
         )}
@@ -389,6 +568,7 @@ export default function ContactImport() {
             </div>
             <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
               Map each CSV column to a contact field, or skip columns you don&apos;t need.
+              Each row needs a last name, at least a phone or email, and a contact type + organization.
             </p>
             <div className="flex flex-col gap-3">
               {csvHeaders.map((header) => (
@@ -473,11 +653,18 @@ export default function ContactImport() {
               className="flex-1"
               loading={importing}
               onClick={handleImport}
-              disabled={!activeMappedFields.includes('full_name') && !activeMappedFields.includes('first_name')}
+              disabled={!hasNameField || !hasContactField}
             >
               Import {csvRows.length} Contacts
             </Button>
           </div>
+
+          {!hasNameField && (
+            <p className="mt-2 text-center text-xs text-red-500">Map a Last Name or Full Name column to enable import</p>
+          )}
+          {hasNameField && !hasContactField && (
+            <p className="mt-2 text-center text-xs text-red-500">Map a Phone or Email column to enable import</p>
+          )}
         </>
       )}
 
@@ -485,7 +672,7 @@ export default function ContactImport() {
       {step === 'results' && results && (
         <Card>
           <div className="flex flex-col items-center gap-4 py-6">
-            {results.errors.length === 0 ? (
+            {results.errors.length === 0 && results.warnings.length === 0 ? (
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
                 <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
               </div>
@@ -520,13 +707,33 @@ export default function ContactImport() {
                   errors
                 </p>
               )}
+              {results.warnings.length > 0 && (
+                <p>
+                  <span className="font-medium text-amber-600 dark:text-amber-400">
+                    {results.warnings.length}
+                  </span>{' '}
+                  warnings
+                </p>
+              )}
             </div>
 
             {results.errors.length > 0 && (
               <div className="w-full rounded-lg bg-red-50 p-3 text-xs text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                <p className="mb-1 font-semibold">Errors (not imported):</p>
                 <ul className="list-inside list-disc space-y-1">
                   {results.errors.map((err, i) => (
                     <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {results.warnings.length > 0 && (
+              <div className="w-full rounded-lg bg-amber-50 p-3 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                <p className="mb-1 font-semibold">Warnings (imported without organization link):</p>
+                <ul className="list-inside list-disc space-y-1">
+                  {results.warnings.map((warn, i) => (
+                    <li key={i}>{warn}</li>
                   ))}
                 </ul>
               </div>

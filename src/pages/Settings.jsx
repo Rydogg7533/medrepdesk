@@ -15,6 +15,7 @@ import Button from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
 import { useSubscription, useCreatePortalSession } from '@/hooks/useSubscription';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 import { PLAN_LIMITS } from '@/utils/constants';
 
 const SUB_STATUS_DISPLAY = {
@@ -110,14 +111,14 @@ export default function Settings() {
         {/* Usage stats */}
         <div className="mt-3 grid grid-cols-2 gap-3">
           <div className="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-700/50">
-            <p className="text-[11px] text-gray-500 dark:text-gray-400">AI Extractions</p>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">AI Extractions<InfoTooltip text="Number of AI PO extractions used this month — take a photo and AI reads the document." /></p>
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
               {account?.ai_extractions_this_month || 0}
               <span className="text-xs font-normal text-gray-400"> / {planInfo?.aiExtractions || 0}</span>
             </p>
           </div>
           <div className="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-700/50">
-            <p className="text-[11px] text-gray-500 dark:text-gray-400">AI Digests</p>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">AI Digests<InfoTooltip text="Weekly AI digest summarizes upcoming cases, overdue POs, pending follow-ups, and commission status in plain English." /></p>
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
               {account?.ai_digest_this_month || 0}
               <span className="text-xs font-normal text-gray-400">
@@ -171,7 +172,7 @@ export default function Settings() {
             <div className="flex items-center gap-3">
               <Bell className="h-5 w-5 text-gray-500 dark:text-gray-400" />
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Push Notifications</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Push Notifications<InfoTooltip text="Choose which notifications you receive and how (push, email, or both)." /></p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {isSubscribed ? 'Enabled' : 'Disabled'}
                 </p>
@@ -185,6 +186,14 @@ export default function Settings() {
             >
               {isSubscribed ? 'Disable' : 'Enable'}
             </Button>
+          </div>
+          <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-3 dark:border-gray-700">
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Escalation Threshold<InfoTooltip text="Number of chase attempts before MedRepDesk recommends escalating. Default is 3." /></p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {account?.escalation_threshold || 3} attempts
+              </p>
+            </div>
           </div>
         </section>
       )}

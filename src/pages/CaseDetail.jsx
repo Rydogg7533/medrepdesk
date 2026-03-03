@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit2, Trash2, CheckCircle, Plus, Phone, Mail, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Edit2, Trash2, CheckCircle, Plus, Phone, Mail, MessageSquare, HelpCircle } from 'lucide-react';
 import { useCase, useUpdateCase, useDeleteCase } from '@/hooks/useCases';
 import { useCasePOs } from '@/hooks/usePOs';
 import { useCaseCommission, useCreateCommission } from '@/hooks/useCommissions';
@@ -14,13 +14,16 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import BottomSheet from '@/components/ui/BottomSheet';
 import Skeleton from '@/components/ui/Skeleton';
+import InfoTooltip from '@/components/ui/InfoTooltip';
+import Input from '@/components/ui/Input';
+import PipelineGuide from '@/components/features/PipelineGuide';
 import { formatDate, formatTime, formatCurrency } from '@/utils/formatters';
 import { CASE_STATUSES, PROCEDURE_TYPES } from '@/utils/constants';
 
 const STATUS_ORDER = [
   'scheduled', 'confirmed', 'completed',
-  'bill_sheet_submitted', 'po_requested', 'billed',
-  'po_received', 'paid',
+  'bill_sheet_submitted', 'po_requested',
+  'po_received', 'billed', 'paid',
 ];
 
 const COMM_TYPE_ICONS = {
@@ -48,6 +51,9 @@ export default function CaseDetail() {
   const createChase = useCreateChaseEntry();
   const [showDelete, setShowDelete] = useState(false);
   const [showAddCommission, setShowAddCommission] = useState(false);
+  const [showBillSheet, setShowBillSheet] = useState(false);
+  const [billSheetCaseValue, setBillSheetCaseValue] = useState('');
+  const [showPipeline, setShowPipeline] = useState(false);
 
   const procLabel = (type) =>
     PROCEDURE_TYPES.find((p) => p.value === type)?.label || type;
@@ -62,12 +68,15 @@ export default function CaseDetail() {
   }
 
   async function handleLogBillSheet() {
+    if (!billSheetCaseValue || Number(billSheetCaseValue) <= 0) return;
+    const caseValue = Number(billSheetCaseValue);
     await createChase.mutateAsync({
       case_id: id,
       chase_type: 'bill_sheet_submitted',
       facility_id: caseData.facility_id,
     });
-    await updateCase.mutateAsync({ id, status: 'bill_sheet_submitted' });
+    await updateCase.mutateAsync({ id, status: 'bill_sheet_submitted', case_value: caseValue });
+    setShowBillSheet(false);
     navigate(`/po/new?caseId=${id}`);
   }
 
@@ -147,7 +156,16 @@ export default function CaseDetail() {
 
       {/* Status Timeline */}
       <Card className="mb-4">
-        <h3 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Pipeline</h3>
+        <div className="mb-3 flex items-center gap-1">
+          <h3 className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Pipeline</h3>
+          <button
+            onClick={() => setShowPipeline(true)}
+            className="inline-flex items-center justify-center rounded-full p-0.5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+            aria-label="Pipeline guide"
+          >
+            <HelpCircle className="h-3.5 w-3.5" />
+          </button>
+        </div>
         <div className="flex items-center gap-1 overflow-x-auto pb-1">
           {STATUS_ORDER.map((s, i) => {
             const config = CASE_STATUSES[s];
@@ -184,7 +202,7 @@ export default function CaseDetail() {
           <InfoRow label="Procedure" value={caseData.procedure_type ? procLabel(caseData.procedure_type) : null} />
           <InfoRow label="Date" value={formatDate(caseData.scheduled_date)} />
           <InfoRow label="Time" value={formatTime(caseData.scheduled_time)} />
-          <InfoRow label="Case Value" value={formatCurrency(caseData.case_value)} />
+          <InfoRow label="Case Value" value={caseData.case_value ? formatCurrency(caseData.case_value) : 'Pending'} />
         </div>
       </Card>
 
@@ -354,7 +372,7 @@ export default function CaseDetail() {
           </Button>
         )}
         {caseData.status === 'completed' && (
-          <Button fullWidth loading={createChase.isPending || updateCase.isPending} onClick={handleLogBillSheet}>
+          <Button fullWidth onClick={() => setShowBillSheet(true)}>
             Log Bill Sheet
           </Button>
         )}
@@ -376,6 +394,33 @@ export default function CaseDetail() {
           </Button>
         )}
       </div>
+
+      {/* Bill Sheet Submission */}
+      <BottomSheet isOpen={showBillSheet} onClose={() => setShowBillSheet(false)} title="Log Bill Sheet">
+        <div className="flex flex-col gap-3">
+          <div>
+            <div className="mb-1 flex items-center">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Case Value ($) *</label>
+              <InfoTooltip text="Total value of products/implants used in this case. This determines your commission calculation." />
+            </div>
+            <Input
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              value={billSheetCaseValue}
+              onChange={(e) => setBillSheetCaseValue(e.target.value)}
+            />
+          </div>
+          <Button
+            fullWidth
+            loading={createChase.isPending || updateCase.isPending}
+            onClick={handleLogBillSheet}
+            disabled={!billSheetCaseValue || Number(billSheetCaseValue) <= 0}
+          >
+            Submit Bill Sheet
+          </Button>
+        </div>
+      </BottomSheet>
 
       {/* Auto-Commission Sheet */}
       <BottomSheet isOpen={showAddCommission} onClose={() => setShowAddCommission(false)} title="Add Commission">
@@ -407,6 +452,8 @@ export default function CaseDetail() {
         message={`Permanently delete ${caseData.case_number}? This cannot be undone.`}
         confirmLabel="Delete"
       />
+
+      <PipelineGuide isOpen={showPipeline} onClose={() => setShowPipeline(false)} currentStatus={caseData.status} />
     </div>
   );
 }

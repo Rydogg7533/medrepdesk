@@ -1,12 +1,14 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, Search } from 'lucide-react';
+import { Briefcase, Search, HelpCircle } from 'lucide-react';
 import { useCases } from '@/hooks/useCases';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Skeleton from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 import { PROCEDURE_TYPES } from '@/utils/constants';
+import InfoTooltip from '@/components/ui/InfoTooltip';
+import PipelineGuide from '@/components/features/PipelineGuide';
 import clsx from 'clsx';
 
 const FILTER_TABS = [
@@ -14,13 +16,14 @@ const FILTER_TABS = [
   { key: 'scheduled', label: 'Scheduled', statuses: ['scheduled'] },
   { key: 'in_progress', label: 'In Progress', statuses: ['confirmed', 'completed', 'bill_sheet_submitted'] },
   { key: 'chasing', label: 'Chasing', statuses: ['po_requested'] },
-  { key: 'money', label: 'Money', statuses: ['billed', 'po_received', 'paid'] },
+  { key: 'money', label: 'Money', statuses: ['po_received', 'billed', 'paid'] },
 ];
 
 export default function Cases() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all');
   const [search, setSearch] = useState('');
+  const [showPipeline, setShowPipeline] = useState(false);
 
   const { data: cases, isLoading } = useCases();
 
@@ -60,6 +63,12 @@ export default function Cases() {
 
   return (
     <div className="p-4">
+      {/* Header */}
+      <div className="mb-3 flex items-center gap-1">
+        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">Cases</h1>
+        <InfoTooltip text="Cases track every surgical procedure from scheduling through payment. Each case gets a unique MRD number and moves through the status pipeline automatically." />
+      </div>
+
       {/* Search */}
       <div className="relative mb-3">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
@@ -73,6 +82,16 @@ export default function Cases() {
       </div>
 
       {/* Filter Tabs */}
+      <div className="mb-1 flex items-center gap-1">
+        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</span>
+        <button
+          onClick={() => setShowPipeline(true)}
+          className="ml-0.5 inline-flex items-center justify-center rounded-full p-0.5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+          aria-label="Pipeline guide"
+        >
+          <HelpCircle className="h-3.5 w-3.5" />
+        </button>
+      </div>
       <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
         {FILTER_TABS.map((tab) => (
           <button
@@ -109,7 +128,7 @@ export default function Cases() {
             >
               <div className="flex items-start justify-between">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-gray-400 dark:text-gray-500">{c.case_number}</p>
+                  <p className="text-xs font-medium text-gray-400 dark:text-gray-500">{c.case_number}<InfoTooltip text="Your unique case number (MRD-XXXX-YYYY-0001) is auto-generated from your account prefix, year, and sequence." /></p>
                   <p className="mt-0.5 font-medium text-gray-800 dark:text-gray-200">
                     {c.surgeon?.full_name || 'No surgeon'}
                   </p>
@@ -126,16 +145,16 @@ export default function Cases() {
                     {procLabel(c.procedure_type)}
                   </span>
                 )}
-                {c.case_value && (
-                  <span className="ml-auto font-medium text-gray-600 dark:text-gray-300">
-                    {formatCurrency(c.case_value)}
-                  </span>
-                )}
+                <span className="ml-auto font-medium text-gray-600 dark:text-gray-300">
+                  {c.case_value ? formatCurrency(c.case_value) : '—'}
+                </span>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      <PipelineGuide isOpen={showPipeline} onClose={() => setShowPipeline(false)} />
     </div>
   );
 }

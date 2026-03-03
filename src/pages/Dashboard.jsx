@@ -9,6 +9,7 @@ import { useOverdueCommunications } from '@/hooks/useCommunications';
 import Card from '@/components/ui/Card';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Skeleton from '@/components/ui/Skeleton';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 import { formatDate, formatTime, formatCurrency, getGreeting } from '@/utils/formatters';
 
 function todayISO() {
@@ -144,7 +145,7 @@ export default function Dashboard() {
       {/* Action Items */}
       <Card>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Action Items</h2>
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Action Items<InfoTooltip text="Tasks requiring immediate attention — overdue follow-ups, promised dates, and bill sheets." /></h2>
           {totalActionItems > 0 && (
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
               {totalActionItems}
@@ -184,7 +185,7 @@ export default function Dashboard() {
         <Card>
           <div className="flex items-center gap-2">
             <Briefcase className="h-4 w-4 text-brand-800 dark:text-brand-400" />
-            <span className="text-xs text-gray-500 dark:text-gray-400">This Month</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">This Month<InfoTooltip text="Surgical cases scheduled for the current month." /></span>
           </div>
           <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{monthCases.length}</p>
           <p className="text-xs text-gray-400 dark:text-gray-500">cases</p>
@@ -192,7 +193,7 @@ export default function Dashboard() {
         <Card>
           <div className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-green-500" />
-            <span className="text-xs text-gray-500 dark:text-gray-400">Case Value</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">Case Value<InfoTooltip text="Total value of cases scheduled this month." /></span>
           </div>
           <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{formatCurrency(monthValue)}</p>
           <p className="text-xs text-gray-400 dark:text-gray-500">this month</p>

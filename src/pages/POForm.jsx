@@ -12,6 +12,7 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import SearchableSelect from '@/components/ui/SearchableSelect';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 
 export default function POForm() {
   const { id } = useParams();
@@ -69,6 +70,13 @@ export default function POForm() {
   }
 
   const selectedCase = cases.find((c) => c.id === form.case_id) || selectedCaseData;
+
+  // Auto-populate amount from case value when creating a new PO
+  useEffect(() => {
+    if (!isEdit && selectedCase?.case_value && !form.amount && !Object.keys(extractedFields).length) {
+      setForm((prev) => ({ ...prev, amount: String(selectedCase.case_value) }));
+    }
+  }, [selectedCase?.case_value, isEdit]);
 
   async function handleScanPO(e) {
     const file = e.target.files?.[0];
@@ -202,6 +210,7 @@ export default function POForm() {
               <Camera className="h-5 w-5" />
               Scan PO Document
             </button>
+            <InfoTooltip text="Take a photo of the PO document. AI reads it and extracts PO number, amount, date, and payment terms. You confirm before saving." />
             <span className="text-xs text-gray-500 dark:text-gray-400">
               {remaining} extraction{remaining !== 1 ? 's' : ''} remaining
             </span>

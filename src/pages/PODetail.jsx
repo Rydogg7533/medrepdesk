@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit2, Trash2, Phone, Mail, MessageSquare, Wand2, Copy, ExternalLink, Save } from 'lucide-react';
+import { ArrowLeft, Edit2, Trash2, Phone, Mail, MessageSquare, Wand2, Copy, ExternalLink, Save, Send } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { usePO, useUpdatePO, useDeletePO } from '@/hooks/usePOs';
 import { useChaseLog, useCreateChaseEntry } from '@/hooks/useChaseLog';
 import ContactAutocomplete from '@/components/ui/ContactAutocomplete';
 import { useDraftChaseEmail } from '@/hooks/useAI';
+import { useSendPOEmail } from '@/hooks/usePOEmail';
 import { useCreateCommunication } from '@/hooks/useCommunications';
 import { useAuth } from '@/context/AuthContext';
 import Card from '@/components/ui/Card';
@@ -15,6 +16,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import BottomSheet from '@/components/ui/BottomSheet';
 import Skeleton from '@/components/ui/Skeleton';
 import ChaseTimeline from '@/components/features/ChaseTimeline';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 
 export default function PODetail() {
@@ -27,8 +29,10 @@ export default function PODetail() {
   const deletePO = useDeletePO();
   const createChase = useCreateChaseEntry();
   const draftEmail = useDraftChaseEmail();
+  const sendPOEmail = useSendPOEmail();
   const createComm = useCreateCommunication();
   const [showDelete, setShowDelete] = useState(false);
+  const [showSendToDistributor, setShowSendToDistributor] = useState(false);
   const [showChaseForm, setShowChaseForm] = useState(false);
   const [showEmailDraft, setShowEmailDraft] = useState(false);
   const [emailTone, setEmailTone] = useState('polite');
@@ -81,6 +85,16 @@ export default function PODetail() {
       facility_id: po.facility_id,
     });
     setShowReceived(false);
+    // Prompt to send PO to distributor
+    const distributor = po.distributor || po.case?.distributor;
+    if (distributor?.billing_email) {
+      setShowSendToDistributor(true);
+    }
+  }
+
+  async function handleSendToDistributor() {
+    await sendPOEmail.mutateAsync({ po, caseData: po.case });
+    setShowSendToDistributor(false);
   }
 
   async function handleMarkPaid() {
@@ -203,8 +217,8 @@ export default function PODetail() {
           <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </button>
         <div className="flex-1">
-          <p className="text-xs text-gray-400 dark:text-gray-500">Invoice #{po.invoice_number}</p>
-          <StatusBadge status={po.status} type="po" />
+          <p className="text-xs text-gray-400 dark:text-gray-500">Invoice #{po.invoice_number}<InfoTooltip text="Invoice number is what you submitted. PO number is what the facility issues back. Both are tracked separately." /></p>
+          <span className="inline-flex items-center gap-1"><StatusBadge status={po.status} type="po" /><InfoTooltip text="PO Status: Not Requested → Requested → Pending → Received → Billed → Paid. Upload a PO photo to auto-extract details with AI." /></span>
         </div>
         <button
           onClick={() => navigate(`/po/${id}/edit`)}
@@ -234,6 +248,7 @@ export default function PODetail() {
           <InfoRow label="Issue Date" value={formatDate(po.issue_date)} />
           <InfoRow label="Expected Payment" value={formatDate(po.expected_payment_date)} />
           <InfoRow label="Received" value={formatDate(po.received_date)} />
+          <InfoRow label="Sent to Distributor" value={po.po_email_sent ? 'Yes' : '—'} />
           <InfoRow label="Paid" value={formatDate(po.paid_date)} />
         </div>
       </Card>
@@ -273,7 +288,7 @@ export default function PODetail() {
 
       {/* Chase Timeline */}
       <Card className="mb-4">
-        <h3 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Chase Timeline</h3>
+        <h3 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Chase Timeline<InfoTooltip text="The chase log tracks every follow-up attempt for a purchase order. Log calls, emails, and texts to build a complete timeline." /></h3>
         <ChaseTimeline entries={poChaseEntries} />
       </Card>
 
@@ -292,6 +307,11 @@ export default function PODetail() {
         {po.status !== 'paid' && po.status !== 'received' && (
           <Button fullWidth variant="secondary" onClick={() => setShowReceived(true)}>
             Mark Received
+          </Button>
+        )}
+        {po.status === 'received' && !po.po_email_sent && (
+          <Button fullWidth variant="secondary" onClick={() => setShowSendToDistributor(true)}>
+            <Send className="h-4 w-4" /> Send to Distributor
           </Button>
         )}
         {po.status === 'received' && (
@@ -362,7 +382,7 @@ export default function PODetail() {
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Promised Date</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Promised Date<InfoTooltip text="Record when the facility promises the PO will be ready. If this date passes without a PO, you'll get an automatic notification." /></label>
               <input
                 type="date"
                 value={chaseForm.promised_date}
@@ -513,6 +533,56 @@ export default function PODetail() {
               </div>
             </>
           )}
+        </div>
+      </BottomSheet>
+
+      {/* Send to Distributor Sheet */}
+      <BottomSheet isOpen={showSendToDistributor} onClose={() => setShowSendToDistributor(false)} title="Send PO to Distributor">
+        <div className="flex flex-col gap-3">
+          {(() => {
+            const distributor = po.distributor || po.case?.distributor;
+            const billingEmail = distributor?.billing_email;
+            const ccEmails = distributor?.billing_email_cc?.filter(Boolean) || [];
+            return billingEmail ? (
+              <>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Send PO details to <span className="font-medium text-gray-900 dark:text-gray-100">{distributor?.name}</span>?
+                </p>
+                <div className="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-700/50">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">To</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{billingEmail}</p>
+                  {ccEmails.length > 0 && (
+                    <>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">CC</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">{ccEmails.join(', ')}</p>
+                    </>
+                  )}
+                </div>
+                {sendPOEmail.isError && (
+                  <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-2 text-sm text-red-600 dark:text-red-400">
+                    {sendPOEmail.error?.message || 'Failed to send email'}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Button variant="secondary" fullWidth onClick={() => setShowSendToDistributor(false)}>
+                    Skip
+                  </Button>
+                  <Button fullWidth loading={sendPOEmail.isPending} onClick={handleSendToDistributor}>
+                    <Send className="h-4 w-4" /> Send
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  No billing email configured for this distributor. Add one in the distributor's settings to send PO details.
+                </p>
+                <Button fullWidth onClick={() => setShowSendToDistributor(false)}>
+                  Close
+                </Button>
+              </>
+            );
+          })()}
         </div>
       </BottomSheet>
 

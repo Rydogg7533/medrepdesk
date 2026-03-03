@@ -5,11 +5,38 @@ import DOMPurify from 'dompurify';
 import { useContact, useCreateContact, useUpdateContact } from '@/hooks/useContacts';
 import { useFacilities } from '@/hooks/useFacilities';
 import { useDistributors } from '@/hooks/useDistributors';
+import { useManufacturers } from '@/hooks/useManufacturers';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import SearchableSelect from '@/components/ui/SearchableSelect';
 import { contactInsertSchema } from '@/lib/schemas';
+
+const PREFIXES = ['', 'Dr.', 'Mr.', 'Mrs.', 'Ms.', 'PA', 'NP', 'RN'];
+
+const PREFIX_SET = new Set(PREFIXES.filter(Boolean).map((p) => p.toLowerCase()));
+
+function parseFullName(fullName) {
+  const parts = (fullName || '').trim().split(/\s+/);
+  if (parts.length === 0 || (parts.length === 1 && !parts[0])) {
+    return { prefix: '', firstName: '', lastName: '' };
+  }
+  if (PREFIX_SET.has(parts[0].toLowerCase())) {
+    return {
+      prefix: PREFIXES.find((p) => p.toLowerCase() === parts[0].toLowerCase()) || parts[0],
+      firstName: parts.length > 2 ? parts.slice(1, -1).join(' ') : '',
+      lastName: parts.length > 1 ? parts[parts.length - 1] : '',
+    };
+  }
+  if (parts.length === 1) {
+    return { prefix: '', firstName: '', lastName: parts[0] };
+  }
+  return {
+    prefix: '',
+    firstName: parts.slice(0, -1).join(' '),
+    lastName: parts[parts.length - 1],
+  };
+}
 
 export default function ContactForm() {
   const { id } = useParams();
@@ -21,13 +48,17 @@ export default function ContactForm() {
   const updateContact = useUpdateContact();
   const { data: facilities = [] } = useFacilities();
   const { data: distributors = [] } = useDistributors();
+  const { data: manufacturers = [] } = useManufacturers();
 
+  const [contactType, setContactType] = useState(''); // 'facility' | 'distributor' | 'manufacturer'
   const [form, setForm] = useState({
+    prefix: '',
     first_name: '',
     last_name: '',
     role: '',
     facility_id: '',
     distributor_id: '',
+    manufacturer_id: '',
     phone: '',
     email: '',
     notes: '',
@@ -37,15 +68,16 @@ export default function ContactForm() {
 
   useEffect(() => {
     if (existing && isEdit) {
-      const nameParts = (existing.full_name || '').split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
+      const { prefix, firstName, lastName } = parseFullName(existing.full_name);
+      setContactType(existing.facility_id ? 'facility' : existing.distributor_id ? 'distributor' : existing.manufacturer_id ? 'manufacturer' : '');
       setForm({
+        prefix,
         first_name: firstName,
         last_name: lastName,
         role: existing.role || '',
         facility_id: existing.facility_id || '',
         distributor_id: existing.distributor_id || '',
+        manufacturer_id: existing.manufacturer_id || '',
         phone: existing.phone || '',
         email: existing.email || '',
         notes: existing.notes || '',
@@ -63,23 +95,34 @@ export default function ContactForm() {
     e.preventDefault();
     setServerError('');
 
+    const prefix = form.prefix.trim();
     const first = form.first_name.trim();
     const last = form.last_name.trim();
+    const phone = form.phone.trim();
+    const email = form.email.trim();
 
-    if (!first) {
-      setErrors({ first_name: 'First name is required' });
+    const newErrors = {};
+    if (!last) newErrors.last_name = 'Last name is required';
+    if (!phone && !email) newErrors.phone = 'Please add a phone number or email address';
+    if (!contactType) newErrors.contact_type = 'Please select a contact type';
+    else if (contactType === 'facility' && !form.facility_id) newErrors.facility_id = 'Please select a facility';
+    else if (contactType === 'distributor' && !form.distributor_id) newErrors.distributor_id = 'Please select a distributor';
+    else if (contactType === 'manufacturer' && !form.manufacturer_id) newErrors.manufacturer_id = 'Please select a manufacturer';
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
-    const fullName = [first, last].filter(Boolean).join(' ');
+    const fullName = [prefix, first, last].filter(Boolean).join(' ');
 
     const payload = {
       full_name: DOMPurify.sanitize(fullName),
       role: form.role ? DOMPurify.sanitize(form.role.trim()) : null,
-      facility_id: form.facility_id || null,
-      distributor_id: form.distributor_id || null,
-      phone: form.phone || null,
-      email: form.email || null,
+      facility_id: contactType === 'facility' ? form.facility_id || null : null,
+      distributor_id: contactType === 'distributor' ? form.distributor_id || null : null,
+      manufacturer_id: contactType === 'manufacturer' ? form.manufacturer_id || null : null,
+      phone: phone || null,
+      email: email || null,
       notes: form.notes ? DOMPurify.sanitize(form.notes) : null,
     };
 
@@ -98,6 +141,7 @@ export default function ContactForm() {
 
   const facilityOpts = facilities.map((f) => ({ value: f.id, label: f.name }));
   const distributorOpts = distributors.map((d) => ({ value: d.id, label: d.name }));
+  const manufacturerOpts = manufacturers.map((m) => ({ value: m.id, label: m.name }));
   const isPending = createContact.isPending || updateContact.isPending;
 
   return (
@@ -117,15 +161,71 @@ export default function ContactForm() {
 
       <Card>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="First Name" name="first_name" value={form.first_name} onChange={onChange} error={errors.first_name} placeholder="Jane" />
-            <Input label="Last Name" name="last_name" value={form.last_name} onChange={onChange} placeholder="Smith" />
+          <div className="grid grid-cols-[5.5rem_1fr_1fr] gap-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Prefix</label>
+              <select
+                name="prefix"
+                value={form.prefix}
+                onChange={onChange}
+                className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-2 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              >
+                {PREFIXES.map((p) => (
+                  <option key={p} value={p}>{p || '—'}</option>
+                ))}
+              </select>
+            </div>
+            <Input label="First Name" name="first_name" value={form.first_name} onChange={onChange} placeholder="Jane" />
+            <Input label={<>Last Name <span className="text-red-500">*</span></>} name="last_name" value={form.last_name} onChange={onChange} error={errors.last_name} placeholder="Smith" />
           </div>
           <Input label="Role" name="role" value={form.role} onChange={onChange} placeholder="OR Scheduler, Billing Manager, etc." />
-          <SearchableSelect label="Facility" options={facilityOpts} value={form.facility_id} onChange={(v) => setForm((p) => ({ ...p, facility_id: v }))} placeholder="Select facility" />
-          <SearchableSelect label="Distributor" options={distributorOpts} value={form.distributor_id} onChange={(v) => setForm((p) => ({ ...p, distributor_id: v }))} placeholder="Select distributor" />
-          <Input label="Phone" name="phone" type="tel" value={form.phone} onChange={onChange} placeholder="801-555-0100" />
-          <Input label="Email" name="email" type="email" value={form.email} onChange={onChange} placeholder="jane@example.com" />
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Contact Type <span className="text-red-500">*</span>
+            </label>
+            <div className="flex gap-2">
+              {[{ value: 'facility', label: 'Facility' }, { value: 'distributor', label: 'Distributor' }, { value: 'manufacturer', label: 'Manufacturer' }].map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => {
+                    setContactType(t.value);
+                    setErrors((p) => ({ ...p, contact_type: undefined, facility_id: undefined, distributor_id: undefined, manufacturer_id: undefined }));
+                    setForm((p) => ({
+                      ...p,
+                      facility_id: t.value === 'facility' ? p.facility_id : '',
+                      distributor_id: t.value === 'distributor' ? p.distributor_id : '',
+                      manufacturer_id: t.value === 'manufacturer' ? p.manufacturer_id : '',
+                    }));
+                  }}
+                  className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-colors ${
+                    contactType === t.value
+                      ? 'bg-brand-800 text-white'
+                      : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            {errors.contact_type && <p className="mt-1 text-xs text-red-500">{errors.contact_type}</p>}
+          </div>
+          {contactType === 'facility' && (
+            <SearchableSelect label={<>Facility <span className="text-red-500">*</span></>} options={facilityOpts} value={form.facility_id} onChange={(v) => { setForm((p) => ({ ...p, facility_id: v })); setErrors((p) => ({ ...p, facility_id: undefined })); }} placeholder="Select facility" error={errors.facility_id} />
+          )}
+          {contactType === 'distributor' && (
+            <SearchableSelect label={<>Distributor <span className="text-red-500">*</span></>} options={distributorOpts} value={form.distributor_id} onChange={(v) => { setForm((p) => ({ ...p, distributor_id: v })); setErrors((p) => ({ ...p, distributor_id: undefined })); }} placeholder="Select distributor" error={errors.distributor_id} />
+          )}
+          {contactType === 'manufacturer' && (
+            <SearchableSelect label={<>Manufacturer <span className="text-red-500">*</span></>} options={manufacturerOpts} value={form.manufacturer_id} onChange={(v) => { setForm((p) => ({ ...p, manufacturer_id: v })); setErrors((p) => ({ ...p, manufacturer_id: undefined })); }} placeholder="Select manufacturer" error={errors.manufacturer_id} />
+          )}
+          <div>
+            <Input label={<>Phone <span className="text-red-500">*</span></>} name="phone" type="tel" value={form.phone} onChange={onChange} error={errors.phone} placeholder="801-555-0100" />
+            <div className="mt-3">
+              <Input label={<>Email <span className="text-red-500">*</span></>} name="email" type="email" value={form.email} onChange={onChange} placeholder="jane@example.com" />
+            </div>
+            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500"><span className="text-red-500">*</span> at least one required</p>
+          </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
             <textarea name="notes" rows={3} value={form.notes} onChange={onChange} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20" placeholder="Notes..." />

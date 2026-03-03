@@ -14,8 +14,8 @@ CREATE TABLE cases (
   scheduled_time              time,
   status                      text NOT NULL DEFAULT 'scheduled' CHECK (status IN (
                                 'scheduled', 'confirmed', 'completed',
-                                'bill_sheet_submitted', 'po_requested', 'billed',
-                                'po_received', 'paid', 'cancelled'
+                                'bill_sheet_submitted', 'po_requested',
+                                'po_received', 'billed', 'paid', 'cancelled'
                               )),
   case_value                  numeric(10,2),
   notes                       text,

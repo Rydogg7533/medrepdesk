@@ -17,6 +17,7 @@ import Button from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
 import { useReferrals, useReferralPayouts, useReferralStats } from '@/hooks/useReferrals';
 import { useCreateConnectAccount } from '@/hooks/useSubscription';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 
 const REFERRAL_STATUS = {
@@ -69,7 +70,7 @@ export default function Referrals() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-4">
-      <h1 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">Referrals</h1>
+      <h1 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">Referrals<InfoTooltip text="Earn 25% of every referred rep's subscription for 12 months. Share your link and get paid when they subscribe." /></h1>
 
       {connectComplete && (
         <div className="mb-4 flex items-center gap-2 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
@@ -89,7 +90,7 @@ export default function Referrals() {
       <section className="rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
         <div className="flex items-center gap-2 mb-3">
           <Gift className="h-5 w-5 text-brand-800 dark:text-brand-400" />
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Your Referral Code</h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Your Referral Code<InfoTooltip text="Your unique referral code. When a rep signs up using your link, they're linked to your account for commission tracking." /></h2>
         </div>
 
         <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-4 py-3 dark:bg-gray-700/50">
@@ -124,7 +125,7 @@ export default function Referrals() {
           <div className="flex items-start gap-3">
             <Banknote className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Set up payouts</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Set up payouts<InfoTooltip text="Connect your bank account via Stripe to receive referral payouts. Processed on the 1st of each month." /></p>
               <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-400">
                 Connect your bank account via Stripe to receive referral commissions.
               </p>
@@ -147,7 +148,7 @@ export default function Referrals() {
         <div className="rounded-xl bg-white p-3 shadow-sm dark:bg-gray-800">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-gray-400" />
-            <span className="text-[11px] text-gray-500 dark:text-gray-400">Referred</span>
+            <span className="text-[11px] text-gray-500 dark:text-gray-400">Referred<InfoTooltip text="Number of reps you've successfully referred to MedRepDesk." /></span>
           </div>
           <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100">{stats.totalReferred}</p>
           <p className="text-[11px] text-gray-400">{stats.activeReferrals} active</p>
@@ -155,7 +156,7 @@ export default function Referrals() {
         <div className="rounded-xl bg-white p-3 shadow-sm dark:bg-gray-800">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-gray-400" />
-            <span className="text-[11px] text-gray-500 dark:text-gray-400">Total Earned</span>
+            <span className="text-[11px] text-gray-500 dark:text-gray-400">Total Earned<InfoTooltip text="Total commission earned from all referrals. Earn 25% of every referred rep's subscription for 12 months." /></span>
           </div>
           <p className="mt-1 text-xl font-bold text-green-600 dark:text-green-400">{formatCurrency(stats.totalEarned)}</p>
           {stats.pendingPayouts > 0 && (

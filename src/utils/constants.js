@@ -4,8 +4,8 @@ export const CASE_STATUSES = {
   completed: { label: 'Completed', color: '#10B981', bg: 'bg-emerald-100', text: 'text-emerald-700' },
   bill_sheet_submitted: { label: 'Bill Sheet', color: '#F59E0B', bg: 'bg-amber-100', text: 'text-amber-700' },
   po_requested: { label: 'PO Requested', color: '#F97316', bg: 'bg-orange-100', text: 'text-orange-700' },
-  billed: { label: 'Billed', color: '#3B82F6', bg: 'bg-blue-100', text: 'text-blue-700' },
   po_received: { label: 'PO Received', color: '#06B6D4', bg: 'bg-cyan-100', text: 'text-cyan-700' },
+  billed: { label: 'Billed', color: '#3B82F6', bg: 'bg-blue-100', text: 'text-blue-700' },
   paid: { label: 'Paid', color: '#22C55E', bg: 'bg-green-100', text: 'text-green-700' },
   cancelled: { label: 'Cancelled', color: '#EF4444', bg: 'bg-red-100', text: 'text-red-700' },
 };

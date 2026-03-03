@@ -8,6 +8,7 @@ import Card from '@/components/ui/Card';
 import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
 import Skeleton from '@/components/ui/Skeleton';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 
 const tabs = [
@@ -66,7 +67,7 @@ export default function Money() {
 
   return (
     <div className="p-4">
-      <h1 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">Money</h1>
+      <h1 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">Money<InfoTooltip text="Purchase orders track the billing lifecycle after a case is completed. Chase POs until received, then track payment." /></h1>
 
       <div className="mb-4 flex gap-2">
         {tabs.map((tab) => (
@@ -181,15 +182,15 @@ export default function Money() {
           <Card className="mb-4">
             <div className="grid grid-cols-3 gap-3 text-center">
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Pending</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Pending<InfoTooltip text="Commissions awaiting PO payment from distributors." /></p>
                 <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatCurrency(totalPending)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">This Month</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">This Month<InfoTooltip text="Commission payments received this calendar month." /></p>
                 <p className="text-lg font-bold text-green-600">{formatCurrency(receivedThisMonth)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">YTD</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">YTD<InfoTooltip text="Total commissions received year-to-date." /></p>
                 <p className="text-lg font-bold text-green-600">{formatCurrency(receivedYTD)}</p>
               </div>
             </div>

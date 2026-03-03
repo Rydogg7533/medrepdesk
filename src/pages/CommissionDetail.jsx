@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button';
 import StatusBadge from '@/components/ui/StatusBadge';
 import BottomSheet from '@/components/ui/BottomSheet';
 import Skeleton from '@/components/ui/Skeleton';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 
 export default function CommissionDetail() {
@@ -90,14 +91,14 @@ export default function CommissionDetail() {
 
       {/* Amounts */}
       <Card className="mb-4">
-        <h3 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Amounts</h3>
+        <h3 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Amounts<InfoTooltip text="Commissions are auto-calculated when a case is completed and has a case value. The rate comes from your distributor's default settings." /></h3>
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-400 dark:text-gray-500">Expected</span>
+            <span className="text-gray-400 dark:text-gray-500">Expected<InfoTooltip text="Expected amount is calculated from case value and commission rate. Log actual received amount to track discrepancies." /></span>
             <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatCurrency(commission.expected_amount)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-400 dark:text-gray-500">Received</span>
+            <span className="text-gray-400 dark:text-gray-500">Received<InfoTooltip text="Log the actual received amount to track discrepancies." /></span>
             <span className={`text-lg font-bold ${hasDiscrepancy ? 'text-red-600' : 'text-gray-900 dark:text-gray-100'}`}>
               {formatCurrency(commission.received_amount)}
             </span>

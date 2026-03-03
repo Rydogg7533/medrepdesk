@@ -2,18 +2,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 
-export function useContacts() {
+export function useManufacturers() {
   const { account } = useAuth();
   const accountId = account?.id;
 
   return useQuery({
-    queryKey: ['contacts', accountId],
+    queryKey: ['manufacturers', accountId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('contacts')
-        .select('*, facility:facilities(name), distributor:distributors(name), manufacturer:manufacturers(name)')
+        .from('manufacturers')
+        .select('*')
         .eq('account_id', accountId)
-        .order('full_name');
+        .order('name');
       if (error) throw error;
       return data;
     },
@@ -21,16 +21,16 @@ export function useContacts() {
   });
 }
 
-export function useContact(id) {
+export function useManufacturer(id) {
   const { account } = useAuth();
   const accountId = account?.id;
 
   return useQuery({
-    queryKey: ['contacts', id],
+    queryKey: ['manufacturers', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('contacts')
-        .select('*, facility:facilities(name), distributor:distributors(name), manufacturer:manufacturers(name)')
+        .from('manufacturers')
+        .select('*')
         .eq('id', id)
         .eq('account_id', accountId)
         .single();
@@ -41,7 +41,7 @@ export function useContact(id) {
   });
 }
 
-export function useCreateContact() {
+export function useCreateManufacturer() {
   const queryClient = useQueryClient();
   const { account } = useAuth();
   const accountId = account?.id;
@@ -49,7 +49,7 @@ export function useCreateContact() {
   return useMutation({
     mutationFn: async (values) => {
       const { data, error } = await supabase
-        .from('contacts')
+        .from('manufacturers')
         .insert({ ...values, account_id: accountId })
         .select()
         .single();
@@ -57,18 +57,18 @@ export function useCreateContact() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['manufacturers'] });
     },
   });
 }
 
-export function useUpdateContact() {
+export function useUpdateManufacturer() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ id, ...values }) => {
       const { data, error } = await supabase
-        .from('contacts')
+        .from('manufacturers')
         .update({ ...values, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
@@ -77,22 +77,22 @@ export function useUpdateContact() {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['contacts'] });
-      queryClient.invalidateQueries({ queryKey: ['contacts', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['manufacturers'] });
+      queryClient.invalidateQueries({ queryKey: ['manufacturers', data.id] });
     },
   });
 }
 
-export function useDeleteContact() {
+export function useDeleteManufacturer() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (id) => {
-      const { error } = await supabase.from('contacts').delete().eq('id', id);
+      const { error } = await supabase.from('manufacturers').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['manufacturers'] });
     },
   });
 }
