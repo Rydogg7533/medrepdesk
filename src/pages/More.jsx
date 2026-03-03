@@ -1,8 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import {
-  Building2,
-  Building,
-  Stethoscope,
   Gift,
   Settings,
   LogOut,
@@ -15,12 +12,6 @@ import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import RoleGate from '@/components/layout/RoleGate';
 import clsx from 'clsx';
-
-const items = [
-  { icon: Building2, label: 'Distributors', path: '/distributors' },
-  { icon: Building, label: 'Facilities', path: '/facilities' },
-  { icon: Stethoscope, label: 'Surgeons', path: '/surgeons' },
-];
 
 const ownerItems = [
   { icon: Gift, label: 'Referrals', path: '/referrals' },
@@ -58,16 +49,13 @@ export default function More() {
     <div className="p-4">
       <h1 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">More</h1>
 
-      <div className="rounded-xl bg-white shadow-sm dark:bg-gray-800">
-        {items.map((item) => (
-          <MenuItem key={item.path} {...item} />
-        ))}
-        <RoleGate allowedRoles={['owner']}>
+      <RoleGate allowedRoles={['owner']}>
+        <div className="rounded-xl bg-white shadow-sm dark:bg-gray-800">
           {ownerItems.map((item) => (
             <MenuItem key={item.path} {...item} />
           ))}
-        </RoleGate>
-      </div>
+        </div>
+      </RoleGate>
 
       {/* Theme Toggle */}
       <div className="mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">

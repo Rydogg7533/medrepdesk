@@ -99,6 +99,7 @@ CREATE TABLE distributors (
                                 CHECK (default_commission_type IN ('percentage', 'flat')),
   default_commission_rate     numeric(5,2),      -- e.g. 25.00 for 25%
   default_flat_amount         numeric(10,2),     -- if flat rate
+  is_active                   boolean NOT NULL DEFAULT true,
   notes                       text,
   created_at                  timestamptz NOT NULL DEFAULT now(),
   updated_at                  timestamptz NOT NULL DEFAULT now()
@@ -119,6 +120,7 @@ CREATE TABLE facilities (
   state                       text,
   phone                       text,
   billing_phone               text,
+  is_active                   boolean NOT NULL DEFAULT true,
   notes                       text,
   created_at                  timestamptz NOT NULL DEFAULT now(),
   updated_at                  timestamptz NOT NULL DEFAULT now()
@@ -137,6 +139,21 @@ CREATE TABLE surgeons (
   primary_facility_id         uuid REFERENCES facilities(id),
   phone                       text,
   email                       text,
+  is_active                   boolean NOT NULL DEFAULT true,
+  notes                       text,
+  created_at                  timestamptz NOT NULL DEFAULT now(),
+  updated_at                  timestamptz NOT NULL DEFAULT now()
+);
+
+-- ============================================================
+-- MANUFACTURERS
+-- Product manufacturers that reps work with.
+-- ============================================================
+CREATE TABLE manufacturers (
+  id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  account_id                  uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  name                        text NOT NULL,
+  is_active                   boolean NOT NULL DEFAULT true,
   notes                       text,
   created_at                  timestamptz NOT NULL DEFAULT now(),
   updated_at                  timestamptz NOT NULL DEFAULT now()
@@ -268,10 +285,14 @@ CREATE TABLE contacts (
   account_id                  uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   full_name                   text NOT NULL,
   role                        text,
+  contact_type                text CHECK (contact_type IN ('facility', 'distributor', 'manufacturer', 'surgeon_office')),
   facility_id                 uuid REFERENCES facilities(id),
   distributor_id              uuid REFERENCES distributors(id),
+  manufacturer_id             uuid REFERENCES manufacturers(id),
+  surgeon_id                  uuid REFERENCES surgeons(id),
   phone                       text,
   email                       text,
+  is_active                   boolean NOT NULL DEFAULT true,
   notes                       text,
   last_contacted_at           timestamptz,    -- auto-updated by trigger
   created_at                  timestamptz NOT NULL DEFAULT now(),

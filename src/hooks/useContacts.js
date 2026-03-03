@@ -2,18 +2,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 
-export function useContacts() {
+export function useContacts({ activeOnly = false } = {}) {
   const { account } = useAuth();
   const accountId = account?.id;
 
   return useQuery({
-    queryKey: ['contacts', accountId],
+    queryKey: ['contacts', accountId, { activeOnly }],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('contacts')
-        .select('*, facility:facilities(name), distributor:distributors(name), manufacturer:manufacturers(name)')
-        .eq('account_id', accountId)
-        .order('full_name');
+        .select('*, facility:facilities(name), distributor:distributors(name), manufacturer:manufacturers(name), surgeon:surgeons(full_name)')
+        .eq('account_id', accountId);
+      if (activeOnly) query = query.eq('is_active', true);
+      const { data, error } = await query.order('full_name');
       if (error) throw error;
       return data;
     },
@@ -30,7 +31,7 @@ export function useContact(id) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('contacts')
-        .select('*, facility:facilities(name), distributor:distributors(name), manufacturer:manufacturers(name)')
+        .select('*, facility:facilities(name), distributor:distributors(name), manufacturer:manufacturers(name), surgeon:surgeons(full_name)')
         .eq('id', id)
         .eq('account_id', accountId)
         .single();

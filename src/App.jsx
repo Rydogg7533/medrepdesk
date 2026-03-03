@@ -38,6 +38,7 @@ import FacilityForm from '@/pages/FacilityForm';
 import Surgeons from '@/pages/Surgeons';
 import SurgeonForm from '@/pages/SurgeonForm';
 import ContactImport from '@/pages/ContactImport';
+import ManufacturerForm from '@/pages/ManufacturerForm';
 import Notifications from '@/pages/Notifications';
 import Pricing from '@/pages/Pricing';
 import Settings from '@/pages/Settings';
@@ -151,6 +152,8 @@ function App() {
               <Route path="/surgeons" element={<Surgeons />} />
               <Route path="/surgeons/new" element={<SurgeonForm />} />
               <Route path="/surgeons/:id/edit" element={<SurgeonForm />} />
+              <Route path="/manufacturers/new" element={<ManufacturerForm />} />
+              <Route path="/manufacturers/:id" element={<ManufacturerForm />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/referrals" element={<Referrals />} />

@@ -2,18 +2,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 
-export function useManufacturers() {
+export function useManufacturers({ activeOnly = false } = {}) {
   const { account } = useAuth();
   const accountId = account?.id;
 
   return useQuery({
-    queryKey: ['manufacturers', accountId],
+    queryKey: ['manufacturers', accountId, { activeOnly }],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('manufacturers')
         .select('*')
-        .eq('account_id', accountId)
-        .order('name');
+        .eq('account_id', accountId);
+      if (activeOnly) query = query.eq('is_active', true);
+      const { data, error } = await query.order('name');
       if (error) throw error;
       return data;
     },

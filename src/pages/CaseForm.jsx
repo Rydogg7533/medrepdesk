@@ -24,9 +24,9 @@ export default function CaseForm() {
   const { data: existingCase } = useCase(isEdit ? id : null);
   const createCase = useCreateCase();
   const updateCase = useUpdateCase();
-  const { data: surgeons = [] } = useSurgeons();
-  const { data: facilities = [] } = useFacilities();
-  const { data: distributors = [] } = useDistributors();
+  const { data: surgeons = [] } = useSurgeons({ activeOnly: true });
+  const { data: facilities = [] } = useFacilities({ activeOnly: true });
+  const { data: distributors = [] } = useDistributors({ activeOnly: true });
 
   const [form, setForm] = useState({
     surgeon_id: '',
@@ -251,6 +251,8 @@ export default function CaseForm() {
             onChange={(v) => { setForm((p) => ({ ...p, surgeon_id: v })); }}
             placeholder="Select surgeon"
             onAddNew={() => navigate('/surgeons/new')}
+            allRecords={surgeons}
+            allRecordsNameField="full_name"
           />
           <SearchableSelect
             label="Facility"
@@ -259,6 +261,8 @@ export default function CaseForm() {
             onChange={(v) => { setForm((p) => ({ ...p, facility_id: v })); }}
             placeholder="Select facility"
             onAddNew={() => navigate('/facilities/new')}
+            allRecords={facilities}
+            allRecordsNameField="name"
           />
           <SearchableSelect
             label="Distributor"
@@ -267,6 +271,8 @@ export default function CaseForm() {
             onChange={(v) => { setForm((p) => ({ ...p, distributor_id: v })); }}
             placeholder="Select distributor"
             onAddNew={() => navigate('/distributors/new')}
+            allRecords={distributors}
+            allRecordsNameField="name"
           />
 
           <div>

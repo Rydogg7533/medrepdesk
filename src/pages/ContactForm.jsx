@@ -6,10 +6,12 @@ import { useContact, useCreateContact, useUpdateContact } from '@/hooks/useConta
 import { useFacilities } from '@/hooks/useFacilities';
 import { useDistributors } from '@/hooks/useDistributors';
 import { useManufacturers } from '@/hooks/useManufacturers';
+import { useSurgeons } from '@/hooks/useSurgeons';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import SearchableSelect from '@/components/ui/SearchableSelect';
+import ActiveToggle from '@/components/ui/ActiveToggle';
 import { contactInsertSchema } from '@/lib/schemas';
 
 const PREFIXES = ['', 'Dr.', 'Mr.', 'Mrs.', 'Ms.', 'PA', 'NP', 'RN'];
@@ -46,11 +48,12 @@ export default function ContactForm() {
   const { data: existing } = useContact(isEdit ? id : null);
   const createContact = useCreateContact();
   const updateContact = useUpdateContact();
-  const { data: facilities = [] } = useFacilities();
-  const { data: distributors = [] } = useDistributors();
-  const { data: manufacturers = [] } = useManufacturers();
+  const { data: facilities = [] } = useFacilities({ activeOnly: true });
+  const { data: distributors = [] } = useDistributors({ activeOnly: true });
+  const { data: manufacturers = [] } = useManufacturers({ activeOnly: true });
+  const { data: surgeons = [] } = useSurgeons({ activeOnly: true });
 
-  const [contactType, setContactType] = useState(''); // 'facility' | 'distributor' | 'manufacturer'
+  const [contactType, setContactType] = useState(''); // 'facility' | 'distributor' | 'manufacturer' | 'surgeon_office'
   const [form, setForm] = useState({
     prefix: '',
     first_name: '',
@@ -59,9 +62,11 @@ export default function ContactForm() {
     facility_id: '',
     distributor_id: '',
     manufacturer_id: '',
+    surgeon_id: '',
     phone: '',
     email: '',
     notes: '',
+    is_active: true,
   });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
@@ -69,7 +74,9 @@ export default function ContactForm() {
   useEffect(() => {
     if (existing && isEdit) {
       const { prefix, firstName, lastName } = parseFullName(existing.full_name);
-      setContactType(existing.facility_id ? 'facility' : existing.distributor_id ? 'distributor' : existing.manufacturer_id ? 'manufacturer' : '');
+      setContactType(
+        existing.contact_type || (existing.surgeon_id ? 'surgeon_office' : existing.facility_id ? 'facility' : existing.distributor_id ? 'distributor' : existing.manufacturer_id ? 'manufacturer' : '')
+      );
       setForm({
         prefix,
         first_name: firstName,
@@ -78,9 +85,11 @@ export default function ContactForm() {
         facility_id: existing.facility_id || '',
         distributor_id: existing.distributor_id || '',
         manufacturer_id: existing.manufacturer_id || '',
+        surgeon_id: existing.surgeon_id || '',
         phone: existing.phone || '',
         email: existing.email || '',
         notes: existing.notes || '',
+        is_active: existing.is_active !== false,
       });
     }
   }, [existing, isEdit]);
@@ -108,6 +117,7 @@ export default function ContactForm() {
     else if (contactType === 'facility' && !form.facility_id) newErrors.facility_id = 'Please select a facility';
     else if (contactType === 'distributor' && !form.distributor_id) newErrors.distributor_id = 'Please select a distributor';
     else if (contactType === 'manufacturer' && !form.manufacturer_id) newErrors.manufacturer_id = 'Please select a manufacturer';
+    else if (contactType === 'surgeon_office' && !form.surgeon_id) newErrors.surgeon_id = 'Please select a surgeon';
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -118,11 +128,14 @@ export default function ContactForm() {
     const payload = {
       full_name: DOMPurify.sanitize(fullName),
       role: form.role ? DOMPurify.sanitize(form.role.trim()) : null,
+      contact_type: contactType || null,
       facility_id: contactType === 'facility' ? form.facility_id || null : null,
       distributor_id: contactType === 'distributor' ? form.distributor_id || null : null,
       manufacturer_id: contactType === 'manufacturer' ? form.manufacturer_id || null : null,
+      surgeon_id: contactType === 'surgeon_office' ? form.surgeon_id || null : null,
       phone: phone || null,
       email: email || null,
+      is_active: form.is_active,
       notes: form.notes ? DOMPurify.sanitize(form.notes) : null,
     };
 
@@ -142,6 +155,7 @@ export default function ContactForm() {
   const facilityOpts = facilities.map((f) => ({ value: f.id, label: f.name }));
   const distributorOpts = distributors.map((d) => ({ value: d.id, label: d.name }));
   const manufacturerOpts = manufacturers.map((m) => ({ value: m.id, label: m.name }));
+  const surgeonOpts = surgeons.map((s) => ({ value: s.id, label: s.full_name }));
   const isPending = createContact.isPending || updateContact.isPending;
 
   return (
@@ -184,18 +198,19 @@ export default function ContactForm() {
               Contact Type <span className="text-red-500">*</span>
             </label>
             <div className="flex gap-2">
-              {[{ value: 'facility', label: 'Facility' }, { value: 'distributor', label: 'Distributor' }, { value: 'manufacturer', label: 'Manufacturer' }].map((t) => (
+              {[{ value: 'facility', label: 'Facility' }, { value: 'distributor', label: 'Distributor' }, { value: 'manufacturer', label: 'Mfg' }, { value: 'surgeon_office', label: "Surgeon" }].map((t) => (
                 <button
                   key={t.value}
                   type="button"
                   onClick={() => {
                     setContactType(t.value);
-                    setErrors((p) => ({ ...p, contact_type: undefined, facility_id: undefined, distributor_id: undefined, manufacturer_id: undefined }));
+                    setErrors((p) => ({ ...p, contact_type: undefined, facility_id: undefined, distributor_id: undefined, manufacturer_id: undefined, surgeon_id: undefined }));
                     setForm((p) => ({
                       ...p,
                       facility_id: t.value === 'facility' ? p.facility_id : '',
                       distributor_id: t.value === 'distributor' ? p.distributor_id : '',
                       manufacturer_id: t.value === 'manufacturer' ? p.manufacturer_id : '',
+                      surgeon_id: t.value === 'surgeon_office' ? p.surgeon_id : '',
                     }));
                   }}
                   className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-colors ${
@@ -211,13 +226,16 @@ export default function ContactForm() {
             {errors.contact_type && <p className="mt-1 text-xs text-red-500">{errors.contact_type}</p>}
           </div>
           {contactType === 'facility' && (
-            <SearchableSelect label={<>Facility <span className="text-red-500">*</span></>} options={facilityOpts} value={form.facility_id} onChange={(v) => { setForm((p) => ({ ...p, facility_id: v })); setErrors((p) => ({ ...p, facility_id: undefined })); }} placeholder="Select facility" error={errors.facility_id} />
+            <SearchableSelect label={<>Facility <span className="text-red-500">*</span></>} options={facilityOpts} value={form.facility_id} onChange={(v) => { setForm((p) => ({ ...p, facility_id: v })); setErrors((p) => ({ ...p, facility_id: undefined })); }} placeholder="Select facility" error={errors.facility_id} onAddNew={() => navigate('/facilities/new')} allRecords={facilities} allRecordsNameField="name" />
           )}
           {contactType === 'distributor' && (
-            <SearchableSelect label={<>Distributor <span className="text-red-500">*</span></>} options={distributorOpts} value={form.distributor_id} onChange={(v) => { setForm((p) => ({ ...p, distributor_id: v })); setErrors((p) => ({ ...p, distributor_id: undefined })); }} placeholder="Select distributor" error={errors.distributor_id} />
+            <SearchableSelect label={<>Distributor <span className="text-red-500">*</span></>} options={distributorOpts} value={form.distributor_id} onChange={(v) => { setForm((p) => ({ ...p, distributor_id: v })); setErrors((p) => ({ ...p, distributor_id: undefined })); }} placeholder="Select distributor" error={errors.distributor_id} onAddNew={() => navigate('/distributors/new')} allRecords={distributors} allRecordsNameField="name" />
           )}
           {contactType === 'manufacturer' && (
-            <SearchableSelect label={<>Manufacturer <span className="text-red-500">*</span></>} options={manufacturerOpts} value={form.manufacturer_id} onChange={(v) => { setForm((p) => ({ ...p, manufacturer_id: v })); setErrors((p) => ({ ...p, manufacturer_id: undefined })); }} placeholder="Select manufacturer" error={errors.manufacturer_id} />
+            <SearchableSelect label={<>Manufacturer <span className="text-red-500">*</span></>} options={manufacturerOpts} value={form.manufacturer_id} onChange={(v) => { setForm((p) => ({ ...p, manufacturer_id: v })); setErrors((p) => ({ ...p, manufacturer_id: undefined })); }} placeholder="Select manufacturer" error={errors.manufacturer_id} onAddNew={() => navigate('/manufacturers/new')} allRecords={manufacturers} allRecordsNameField="name" />
+          )}
+          {contactType === 'surgeon_office' && (
+            <SearchableSelect label={<>Surgeon <span className="text-red-500">*</span></>} options={surgeonOpts} value={form.surgeon_id} onChange={(v) => { setForm((p) => ({ ...p, surgeon_id: v })); setErrors((p) => ({ ...p, surgeon_id: undefined })); }} placeholder="Select surgeon" error={errors.surgeon_id} onAddNew={() => navigate('/surgeons/new')} allRecords={surgeons} allRecordsNameField="full_name" />
           )}
           <div>
             <Input label={<>Phone <span className="text-red-500">*</span></>} name="phone" type="tel" value={form.phone} onChange={onChange} error={errors.phone} placeholder="801-555-0100" />
@@ -225,6 +243,10 @@ export default function ContactForm() {
               <Input label={<>Email <span className="text-red-500">*</span></>} name="email" type="email" value={form.email} onChange={onChange} placeholder="jane@example.com" />
             </div>
             <p className="mt-1 text-xs text-gray-400 dark:text-gray-500"><span className="text-red-500">*</span> at least one required</p>
+          </div>
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Active</label>
+            <ActiveToggle isActive={form.is_active} onToggle={(val) => setForm((p) => ({ ...p, is_active: val }))} size="md" />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>

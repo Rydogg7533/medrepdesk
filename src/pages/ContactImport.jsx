@@ -212,9 +212,9 @@ export default function ContactImport() {
 
   // Data hooks
   const { data: existingContacts = [] } = useContacts();
-  const { data: facilities = [] } = useFacilities();
-  const { data: distributors = [] } = useDistributors();
-  const { data: manufacturers = [] } = useManufacturers();
+  const { data: facilities = [] } = useFacilities({ activeOnly: true });
+  const { data: distributors = [] } = useDistributors({ activeOnly: true });
+  const { data: manufacturers = [] } = useManufacturers({ activeOnly: true });
 
   // Step state: 'upload' | 'map' | 'results'
   const [step, setStep] = useState('upload');

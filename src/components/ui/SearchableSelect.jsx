@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import clsx from 'clsx';
+import { findFuzzyDuplicate } from '@/utils/fuzzyMatch';
 
 export default function SearchableSelect({
   options = [],
@@ -11,6 +12,8 @@ export default function SearchableSelect({
   onAddNew,
   displayKey = 'label',
   valueKey = 'value',
+  allRecords,
+  allRecordsNameField,
 }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
@@ -22,6 +25,19 @@ export default function SearchableSelect({
         o[displayKey].toLowerCase().includes(query.toLowerCase())
       )
     : options;
+
+  // Fuzzy suggestion: check if user's typed query matches a record not in the filtered list
+  const fuzzySuggestion = useMemo(() => {
+    if (!allRecords || !query || query.length < 2) return null;
+    const match = findFuzzyDuplicate(query, allRecords, allRecordsNameField || 'name');
+    if (!match) return null;
+    // Check if this record is already in the visible filtered results
+    const alreadyVisible = filtered.some(
+      (o) => o[valueKey] === match.record.id
+    );
+    if (alreadyVisible) return null;
+    return match.record;
+  }, [query, allRecords, allRecordsNameField, filtered, valueKey]);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -35,6 +51,12 @@ export default function SearchableSelect({
 
   function handleSelect(opt) {
     onChange(opt[valueKey]);
+    setQuery('');
+    setOpen(false);
+  }
+
+  function handleSelectFuzzy(record) {
+    onChange(record.id);
     setQuery('');
     setOpen(false);
   }
@@ -66,7 +88,20 @@ export default function SearchableSelect({
 
       {open && (
         <div className="absolute z-30 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-700">
-          {filtered.length === 0 && (
+          {fuzzySuggestion && (
+            <button
+              type="button"
+              className="min-h-touch w-full border-b border-amber-100 bg-amber-50 px-3 py-2.5 text-left text-sm dark:border-amber-800 dark:bg-amber-900/20"
+              onClick={() => handleSelectFuzzy(fuzzySuggestion)}
+            >
+              <span className="text-amber-700 dark:text-amber-400">Did you mean </span>
+              <span className="font-medium text-amber-800 dark:text-amber-300">
+                {fuzzySuggestion[allRecordsNameField || 'name'] || fuzzySuggestion.full_name}
+              </span>
+              <span className="text-amber-700 dark:text-amber-400">?</span>
+            </button>
+          )}
+          {filtered.length === 0 && !fuzzySuggestion && (
             <div className="px-3 py-2.5 text-sm text-gray-400 dark:text-gray-500">No results</div>
           )}
           {filtered.map((opt) => (

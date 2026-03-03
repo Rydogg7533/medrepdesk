@@ -2,18 +2,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 
-export function useFacilities() {
+export function useFacilities({ activeOnly = false } = {}) {
   const { account } = useAuth();
   const accountId = account?.id;
 
   return useQuery({
-    queryKey: ['facilities', accountId],
+    queryKey: ['facilities', accountId, { activeOnly }],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('facilities')
         .select('*')
-        .or(`is_global.eq.true,account_id.eq.${accountId}`)
-        .order('name');
+        .or(`is_global.eq.true,account_id.eq.${accountId}`);
+      if (activeOnly) query = query.eq('is_active', true);
+      const { data, error } = await query.order('name');
       if (error) throw error;
       return data;
     },
