@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, Check, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Upload, Check, AlertCircle, Save, ChevronDown, ChevronUp } from 'lucide-react';
+import Papa from 'papaparse';
+import { z } from 'zod';
 import { useContacts, useCreateContact } from '@/hooks/useContacts';
 import { useFacilities } from '@/hooks/useFacilities';
 import { useDistributors } from '@/hooks/useDistributors';
@@ -10,42 +12,21 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 
 // ---------------------------------------------------------------------------
-// CSV parsing helpers
+// Zod row schema
 // ---------------------------------------------------------------------------
 
-function parseCSVLine(line) {
-  const result = [];
-  let current = '';
-  let inQuotes = false;
-  for (const char of line) {
-    if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      result.push(current);
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-  result.push(current);
-  return result;
-}
-
-function parseCSV(text) {
-  const lines = text.split('\n').filter((l) => l.trim());
-  const headers = parseCSVLine(lines[0]);
-  return {
-    headers: headers.map((h) => h.trim()),
-    rows: lines.slice(1).map((line) => {
-      const values = parseCSVLine(line);
-      const row = {};
-      headers.forEach((h, i) => {
-        row[h.trim()] = values[i]?.trim() || '';
-      });
-      return row;
-    }),
-  };
-}
+const contactRowSchema = z.object({
+  full_name: z.string().optional(),
+  first_name: z.string().optional(),
+  last_name: z.string().optional(),
+  role: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email('Invalid email').optional().or(z.literal('')),
+  notes: z.string().optional(),
+}).refine(
+  (row) => (row.full_name && row.full_name.trim()) || (row.first_name && row.first_name.trim()),
+  { message: 'Full name or first name is required' },
+);
 
 // ---------------------------------------------------------------------------
 // Field definitions & auto-mapping
@@ -54,6 +35,8 @@ function parseCSV(text) {
 const CONTACT_FIELDS = [
   { value: 'skip', label: 'Skip' },
   { value: 'full_name', label: 'Full Name' },
+  { value: 'first_name', label: 'First Name' },
+  { value: 'last_name', label: 'Last Name' },
   { value: 'role', label: 'Role' },
   { value: 'phone', label: 'Phone' },
   { value: 'email', label: 'Email' },
@@ -62,8 +45,13 @@ const CONTACT_FIELDS = [
   { value: 'notes', label: 'Notes' },
 ];
 
+const MAPPING_STORAGE_KEY = 'contact-csv-mapping';
+
 function autoMapColumn(header) {
   const h = header.toLowerCase().trim();
+  // First/last name detection (must come before generic "name" check)
+  if (/^(first\s*name|given\s*name|first)$/.test(h)) return 'first_name';
+  if (/^(last\s*name|family\s*name|last|surname)$/.test(h)) return 'last_name';
   if (h.includes('name') && !h.includes('facility') && !h.includes('distributor'))
     return 'full_name';
   if (h.includes('role') || h.includes('title') || h.includes('position'))
@@ -75,6 +63,27 @@ function autoMapColumn(header) {
   if (h.includes('distributor') || h.includes('company')) return 'distributor';
   if (h.includes('note')) return 'notes';
   return 'skip';
+}
+
+function loadSavedMapping(headers) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(MAPPING_STORAGE_KEY));
+    if (!saved || typeof saved !== 'object') return null;
+    // Only use saved mapping if all current headers exist in it
+    const mapped = {};
+    let usedAny = false;
+    headers.forEach((h) => {
+      if (saved[h]) {
+        mapped[h] = saved[h];
+        usedAny = true;
+      } else {
+        mapped[h] = autoMapColumn(h);
+      }
+    });
+    return usedAny ? mapped : null;
+  } catch {
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -102,9 +111,12 @@ export default function ContactImport() {
   // Import state
   const [importing, setImporting] = useState(false);
   const [results, setResults] = useState(null); // { imported, skipped, errors }
+  const [guideOpen, setGuideOpen] = useState(
+    () => localStorage.getItem('contact-csv-guide-collapsed') !== 'true',
+  );
 
   // -----------------------------------------------------------------------
-  // Step 1 – File upload
+  // Step 1 - File upload
   // -----------------------------------------------------------------------
 
   function handleFileChange(e) {
@@ -114,16 +126,24 @@ export default function ContactImport() {
     const reader = new FileReader();
     reader.onload = (evt) => {
       const text = evt.target.result;
-      const { headers, rows } = parseCSV(text);
+      const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+      const headers = parsed.meta.fields || [];
+      const rows = parsed.data;
+
       setCsvHeaders(headers);
       setCsvRows(rows);
 
-      // Build initial mapping via auto-detect
-      const initialMapping = {};
-      headers.forEach((h) => {
-        initialMapping[h] = autoMapColumn(h);
-      });
-      setMapping(initialMapping);
+      // Try saved mapping first, fall back to auto-detect
+      const savedMapping = loadSavedMapping(headers);
+      if (savedMapping) {
+        setMapping(savedMapping);
+      } else {
+        const initialMapping = {};
+        headers.forEach((h) => {
+          initialMapping[h] = autoMapColumn(h);
+        });
+        setMapping(initialMapping);
+      }
       setStep('map');
     };
     reader.readAsText(file);
@@ -137,12 +157,16 @@ export default function ContactImport() {
     setMapping((prev) => ({ ...prev, [header]: value }));
   }
 
+  function handleSaveMapping() {
+    localStorage.setItem(MAPPING_STORAGE_KEY, JSON.stringify(mapping));
+  }
+
   /** Build a mapped row object from raw CSV row using current mapping. */
   function applyMapping(row) {
     const mapped = {};
     Object.entries(mapping).forEach(([csvCol, field]) => {
       if (field !== 'skip') {
-        mapped[field] = row[csvCol] || '';
+        mapped[field] = row[csvCol]?.trim() || '';
       }
     });
     return mapped;
@@ -152,7 +176,7 @@ export default function ContactImport() {
   const activeMappedFields = Object.values(mapping).filter((v) => v !== 'skip');
 
   // -----------------------------------------------------------------------
-  // Step 3 – Import
+  // Step 3 - Import
   // -----------------------------------------------------------------------
 
   async function handleImport() {
@@ -185,9 +209,16 @@ export default function ContactImport() {
     csvRows.forEach((row, idx) => {
       const mapped = applyMapping(row);
 
-      // Validate – must have full_name
-      if (!mapped.full_name) {
-        errorList.push(`Row ${idx + 2}: missing full_name`);
+      // Combine first_name + last_name into full_name when both are mapped
+      if (!mapped.full_name && mapped.first_name) {
+        mapped.full_name = [mapped.first_name, mapped.last_name].filter(Boolean).join(' ');
+      }
+
+      // Zod validation
+      const result = contactRowSchema.safeParse(mapped);
+      if (!result.success) {
+        const issues = result.error.issues.map((i) => i.message).join('; ');
+        errorList.push(`Row ${idx + 2}: ${issues}`);
         return;
       }
 
@@ -271,7 +302,56 @@ export default function ContactImport() {
         </h1>
       </div>
 
-      {/* Step 1 – Upload */}
+      {/* CSV Format Guide */}
+      <div className="mb-4 rounded-lg border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20">
+        <button
+          type="button"
+          onClick={() => {
+            setGuideOpen((prev) => {
+              const next = !prev;
+              localStorage.setItem('contact-csv-guide-collapsed', next ? 'false' : 'true');
+              return next;
+            });
+          }}
+          className="flex w-full items-center justify-between px-4 py-3"
+        >
+          <span className="text-sm font-semibold text-red-700 dark:text-red-300">
+            CSV Format Guide — Organize your CSV like this for easiest import
+          </span>
+          {guideOpen ? (
+            <ChevronUp className="h-4 w-4 text-red-500 dark:text-red-400" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-red-500 dark:text-red-400" />
+          )}
+        </button>
+        {guideOpen && (
+          <div className="border-t border-red-200 px-4 pb-4 pt-3 dark:border-red-800">
+            <div className="overflow-x-auto rounded-lg border border-red-200 dark:border-red-800">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="bg-red-100 dark:bg-red-900/40">
+                    {['First Name', 'Last Name', 'Title/Role', 'Phone', 'Email', 'Organization', 'Notes'].map((h) => (
+                      <th key={h} className="whitespace-nowrap px-3 py-2 font-semibold text-red-700 dark:text-red-300">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="bg-white dark:bg-gray-800">
+                    {['John', 'Smith', 'Billing Manager', '(555) 123-4567', 'john.smith@hospital.com', "St. Mary's Hospital", 'Primary billing contact'].map((v, i) => (
+                      <td key={i} className="whitespace-nowrap px-3 py-2 text-gray-700 dark:text-gray-300">{v}</td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-3 text-xs text-red-600 dark:text-red-400">
+              Your CSV doesn&apos;t have to match this exactly — you can map any columns during import. But organizing your file like this will make mapping automatic.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Step 1 - Upload */}
       {step === 'upload' && (
         <Card>
           <div className="flex flex-col items-center gap-4 py-8">
@@ -291,13 +371,22 @@ export default function ContactImport() {
         </Card>
       )}
 
-      {/* Step 2 – Map columns + preview */}
+      {/* Step 2 - Map columns + preview */}
       {step === 'map' && (
         <>
           <Card className="mb-4">
-            <h2 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
-              Column Mapping
-            </h2>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                Column Mapping
+              </h2>
+              <button
+                type="button"
+                onClick={handleSaveMapping}
+                className="flex items-center gap-1 text-xs font-medium text-brand-800 dark:text-brand-400"
+              >
+                <Save className="h-3.5 w-3.5" /> Save mapping
+              </button>
+            </div>
             <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
               Map each CSV column to a contact field, or skip columns you don&apos;t need.
             </p>
@@ -384,7 +473,7 @@ export default function ContactImport() {
               className="flex-1"
               loading={importing}
               onClick={handleImport}
-              disabled={!activeMappedFields.includes('full_name')}
+              disabled={!activeMappedFields.includes('full_name') && !activeMappedFields.includes('first_name')}
             >
               Import {csvRows.length} Contacts
             </Button>
@@ -392,7 +481,7 @@ export default function ContactImport() {
         </>
       )}
 
-      {/* Step 3 – Results */}
+      {/* Step 3 - Results */}
       {step === 'results' && results && (
         <Card>
           <div className="flex flex-col items-center gap-4 py-6">

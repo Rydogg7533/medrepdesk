@@ -4,11 +4,11 @@ import { ArrowLeft } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { useCreateCommunication } from '@/hooks/useCommunications';
 import { useCases } from '@/hooks/useCases';
-import { useContacts } from '@/hooks/useContacts';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import SearchableSelect from '@/components/ui/SearchableSelect';
+import ContactAutocomplete from '@/components/ui/ContactAutocomplete';
 
 const COMM_TYPES = [
   { value: 'call', label: 'Call' },
@@ -25,7 +25,6 @@ export default function CommunicationForm() {
   const navigate = useNavigate();
 
   const { data: cases = [] } = useCases();
-  const { data: contacts = [] } = useContacts();
   const createComm = useCreateCommunication();
 
   const [form, setForm] = useState({
@@ -47,14 +46,17 @@ export default function CommunicationForm() {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
-  function onContactChange(contactId) {
-    const contact = contacts.find((c) => c.id === contactId);
+  function onContactSelect(contact) {
     setForm((p) => ({
       ...p,
-      contact_id: contactId,
-      contact_name: contact?.full_name || '',
-      contact_role: contact?.role || '',
+      contact_id: contact.id,
+      contact_name: contact.full_name || '',
+      contact_role: contact.role || '',
     }));
+  }
+
+  function onContactTextChange(text) {
+    setForm((p) => ({ ...p, contact_name: text, contact_id: '' }));
   }
 
   async function handleSubmit(e) {
@@ -85,10 +87,6 @@ export default function CommunicationForm() {
   const caseOpts = cases.map((c) => ({
     value: c.id,
     label: `${c.case_number} – ${c.surgeon?.full_name || 'No surgeon'}`,
-  }));
-  const contactOpts = contacts.map((c) => ({
-    value: c.id,
-    label: `${c.full_name}${c.role ? ` (${c.role})` : ''}`,
   }));
 
   return (
@@ -156,20 +154,12 @@ export default function CommunicationForm() {
             placeholder="Select case (optional)"
           />
 
-          <SearchableSelect
+          <ContactAutocomplete
             label="Contact"
-            options={contactOpts}
-            value={form.contact_id}
-            onChange={onContactChange}
-            placeholder="Select contact"
-          />
-
-          <Input
-            label="Contact Name"
-            name="contact_name"
             value={form.contact_name}
-            onChange={onChange}
-            placeholder="Or type name"
+            placeholder="Search or type contact name"
+            onSelect={onContactSelect}
+            onTextChange={onContactTextChange}
           />
 
           <Input

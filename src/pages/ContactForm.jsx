@@ -23,7 +23,8 @@ export default function ContactForm() {
   const { data: distributors = [] } = useDistributors();
 
   const [form, setForm] = useState({
-    full_name: '',
+    first_name: '',
+    last_name: '',
     role: '',
     facility_id: '',
     distributor_id: '',
@@ -36,8 +37,12 @@ export default function ContactForm() {
 
   useEffect(() => {
     if (existing && isEdit) {
+      const nameParts = (existing.full_name || '').split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
       setForm({
-        full_name: existing.full_name || '',
+        first_name: firstName,
+        last_name: lastName,
         role: existing.role || '',
         facility_id: existing.facility_id || '',
         distributor_id: existing.distributor_id || '',
@@ -58,8 +63,18 @@ export default function ContactForm() {
     e.preventDefault();
     setServerError('');
 
+    const first = form.first_name.trim();
+    const last = form.last_name.trim();
+
+    if (!first) {
+      setErrors({ first_name: 'First name is required' });
+      return;
+    }
+
+    const fullName = [first, last].filter(Boolean).join(' ');
+
     const payload = {
-      full_name: DOMPurify.sanitize(form.full_name.trim()),
+      full_name: DOMPurify.sanitize(fullName),
       role: form.role ? DOMPurify.sanitize(form.role.trim()) : null,
       facility_id: form.facility_id || null,
       distributor_id: form.distributor_id || null,
@@ -67,11 +82,6 @@ export default function ContactForm() {
       email: form.email || null,
       notes: form.notes ? DOMPurify.sanitize(form.notes) : null,
     };
-
-    if (!payload.full_name) {
-      setErrors({ full_name: 'Name is required' });
-      return;
-    }
 
     try {
       if (isEdit) {
@@ -107,7 +117,10 @@ export default function ContactForm() {
 
       <Card>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <Input label="Full Name" name="full_name" value={form.full_name} onChange={onChange} error={errors.full_name} placeholder="Jane Smith" />
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="First Name" name="first_name" value={form.first_name} onChange={onChange} error={errors.first_name} placeholder="Jane" />
+            <Input label="Last Name" name="last_name" value={form.last_name} onChange={onChange} placeholder="Smith" />
+          </div>
           <Input label="Role" name="role" value={form.role} onChange={onChange} placeholder="OR Scheduler, Billing Manager, etc." />
           <SearchableSelect label="Facility" options={facilityOpts} value={form.facility_id} onChange={(v) => setForm((p) => ({ ...p, facility_id: v }))} placeholder="Select facility" />
           <SearchableSelect label="Distributor" options={distributorOpts} value={form.distributor_id} onChange={(v) => setForm((p) => ({ ...p, distributor_id: v }))} placeholder="Select distributor" />

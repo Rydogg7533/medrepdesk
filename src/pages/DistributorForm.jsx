@@ -6,6 +6,7 @@ import { useDistributor, useCreateDistributor, useUpdateDistributor } from '@/ho
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import ContactAutocomplete from '@/components/ui/ContactAutocomplete';
 
 export default function DistributorForm() {
   const { id } = useParams();
@@ -108,7 +109,22 @@ export default function DistributorForm() {
           <Input label="Name" name="name" value={form.name} onChange={onChange} error={errors.name} placeholder="e.g. Stryker" />
           <Input label="Billing Email" name="billing_email" type="email" value={form.billing_email} onChange={onChange} placeholder="billing@example.com" />
           <Input label="Billing CC (comma-separated)" name="billing_email_cc" value={form.billing_email_cc} onChange={onChange} placeholder="a@example.com, b@example.com" />
-          <Input label="Billing Contact Name" name="billing_contact_name" value={form.billing_contact_name} onChange={onChange} />
+          <ContactAutocomplete
+            label="Billing Contact Name"
+            value={form.billing_contact_name}
+            distributorId={isEdit ? id : undefined}
+            placeholder="Search or type contact name"
+            onSelect={(contact) =>
+              setForm((p) => ({
+                ...p,
+                billing_contact_name: contact.full_name,
+                billing_contact_phone: contact.phone || p.billing_contact_phone,
+              }))
+            }
+            onTextChange={(text) =>
+              setForm((p) => ({ ...p, billing_contact_name: text }))
+            }
+          />
           <Input label="Billing Contact Phone" name="billing_contact_phone" type="tel" value={form.billing_contact_phone} onChange={onChange} />
 
           <div>

@@ -4,7 +4,7 @@ import { ArrowLeft, Edit2, Trash2, Phone, Mail, MessageSquare, Wand2, Copy, Exte
 import DOMPurify from 'dompurify';
 import { usePO, useUpdatePO, useDeletePO } from '@/hooks/usePOs';
 import { useChaseLog, useCreateChaseEntry } from '@/hooks/useChaseLog';
-import { useContacts } from '@/hooks/useContacts';
+import ContactAutocomplete from '@/components/ui/ContactAutocomplete';
 import { useDraftChaseEmail } from '@/hooks/useAI';
 import { useCreateCommunication } from '@/hooks/useCommunications';
 import { useAuth } from '@/context/AuthContext';
@@ -23,7 +23,6 @@ export default function PODetail() {
   const { user } = useAuth();
   const { data: po, isLoading } = usePO(id);
   const { data: chaseEntries = [] } = useChaseLog(po?.case_id);
-  const { data: contacts = [] } = useContacts();
   const updatePO = useUpdatePO();
   const deletePO = useDeletePO();
   const createChase = useCreateChaseEntry();
@@ -331,34 +330,24 @@ export default function PODetail() {
             </select>
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Contact</label>
-            <select
-              value={chaseForm.contact_name}
-              onChange={(e) => {
-                const contact = contacts.find((c) => c.full_name === e.target.value);
-                setChaseForm((p) => ({
-                  ...p,
-                  contact_name: e.target.value,
-                  contact_role: contact?.role || '',
-                  contact_phone: contact?.phone || '',
-                  contact_email: contact?.email || '',
-                }));
-              }}
-              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            >
-              <option value="">Select or type below</option>
-              {contacts.map((c) => (
-                <option key={c.id} value={c.full_name}>{c.full_name} {c.role ? `(${c.role})` : ''}</option>
-              ))}
-            </select>
-            <input
-              placeholder="Or type contact name"
-              value={chaseForm.contact_name}
-              onChange={(e) => setChaseForm((p) => ({ ...p, contact_name: e.target.value }))}
-              className="mt-1 min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            />
-          </div>
+          <ContactAutocomplete
+            label="Contact"
+            value={chaseForm.contact_name}
+            facilityId={po.facility_id}
+            placeholder="Search or type contact name"
+            onSelect={(contact) =>
+              setChaseForm((p) => ({
+                ...p,
+                contact_name: contact.full_name,
+                contact_role: contact.role || '',
+                contact_phone: contact.phone || '',
+                contact_email: contact.email || '',
+              }))
+            }
+            onTextChange={(text) =>
+              setChaseForm((p) => ({ ...p, contact_name: text }))
+            }
+          />
 
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Outcome</label>
