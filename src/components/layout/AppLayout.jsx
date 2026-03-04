@@ -6,8 +6,10 @@ import BottomSheet from '@/components/ui/BottomSheet';
 import NotificationBell from '@/components/ui/NotificationBell';
 import OfflineBanner from '@/components/ui/OfflineBanner';
 import PageTransition from '@/components/ui/PageTransition';
+import { useAutoClosePayPeriods } from '@/hooks/useAutoClosePayPeriods';
 
 export default function AppLayout() {
+  useAutoClosePayPeriods();
   const [fabOpen, setFabOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();

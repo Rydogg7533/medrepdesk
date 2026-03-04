@@ -79,9 +79,24 @@ export function useCreateCommission() {
 
   return useMutation({
     mutationFn: async (values) => {
+      // Auto-link to current open pay period if not already specified
+      let payPeriodId = values.pay_period_id || null;
+      if (!payPeriodId && accountId) {
+        const today = new Date().toISOString().split('T')[0];
+        const { data: openPeriod } = await supabase
+          .from('pay_periods')
+          .select('id')
+          .eq('account_id', accountId)
+          .eq('status', 'open')
+          .lte('period_start', today)
+          .gte('period_end', today)
+          .maybeSingle();
+        if (openPeriod) payPeriodId = openPeriod.id;
+      }
+
       const { data, error } = await supabase
         .from('commissions')
-        .insert({ ...values, account_id: accountId })
+        .insert({ ...values, account_id: accountId, pay_period_id: payPeriodId })
         .select()
         .single();
       if (error) throw error;
@@ -90,6 +105,7 @@ export function useCreateCommission() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['commissions'] });
       queryClient.invalidateQueries({ queryKey: ['cases'] });
+      queryClient.invalidateQueries({ queryKey: ['pay_periods'] });
     },
   });
 }

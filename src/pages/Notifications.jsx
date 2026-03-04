@@ -18,6 +18,7 @@ const TYPE_LABELS = {
   payout_sent: 'Payout',
   weekly_digest: 'Digest',
   payment_failed: 'Payment Failed',
+  pay_period_closed: 'Pay Period Closed',
 };
 
 function getNotificationLink(notification) {
@@ -27,6 +28,7 @@ function getNotificationLink(notification) {
     case 'case': return `/cases/${related_id}`;
     case 'purchase_order': return `/po/${related_id}`;
     case 'commission': return `/commissions/${related_id}`;
+    case 'pay_period': return `/pay-periods/${related_id}`;
     default: return null;
   }
 }

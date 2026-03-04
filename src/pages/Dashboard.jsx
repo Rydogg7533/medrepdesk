@@ -9,6 +9,8 @@ import { useCases } from '@/hooks/useCases';
 import { usePOs } from '@/hooks/usePOs';
 import { useOverdueFollowUps, useOverduePromisedDates } from '@/hooks/useChaseLog';
 import { useCommissions } from '@/hooks/useCommissions';
+import { usePayPeriods } from '@/hooks/usePayPeriods';
+import { useDistributor } from '@/hooks/useDistributors';
 import { useOverdueCommunications } from '@/hooks/useCommunications';
 import { useCaseIdsWithBillSheet } from '@/hooks/useBillSheetCounts';
 import { useDashboardPreferences } from '@/hooks/useDashboardPreferences';
@@ -19,6 +21,7 @@ import InfoTooltip from '@/components/ui/InfoTooltip';
 import POPipelineStrip from '@/components/dashboard/POPipelineStrip';
 import DashboardSettings from '@/components/dashboard/DashboardSettings';
 import RecentActivity from '@/components/dashboard/RecentActivity';
+import { DollarSign } from 'lucide-react';
 import { formatDate, formatTime, formatCurrency, getGreeting } from '@/utils/formatters';
 import { buildActionItems } from '@/utils/actionItems';
 
@@ -47,6 +50,9 @@ export default function Dashboard() {
   const { data: overdueFollowUps = [] } = useOverdueFollowUps();
   const { data: overduePromised = [] } = useOverduePromisedDates();
   const { data: allCommissions = [] } = useCommissions();
+  const distributorId = account?.primary_distributor_id;
+  const { data: distributor } = useDistributor(distributorId);
+  const { data: allPayPeriods = [] } = usePayPeriods(distributorId);
   const { data: overdueComms = [] } = useOverdueCommunications();
   const { data: billSheetCaseIds = new Set() } = useCaseIdsWithBillSheet();
 
@@ -91,6 +97,16 @@ export default function Dashboard() {
     (c) => c.scheduled_date?.startsWith(thisMonth)
   ) || [];
   const monthValue = monthCases.reduce((sum, c) => sum + (c.case_value || 0), 0);
+
+  // Pay period metrics
+  const awaitingCommission = allCommissions.filter(
+    (c) => c.pay_period_id && allPayPeriods.some((p) => p.id === c.pay_period_id && ['open', 'closed'].includes(p.status))
+  );
+  const awaitingTotal = awaitingCommission.reduce((sum, c) => sum + (c.expected_amount || 0), 0);
+  const paidThisMonthPeriods = allPayPeriods.filter(
+    (p) => p.status === 'paid' && p.paid_at?.startsWith(thisMonth)
+  );
+  const paidThisMonth = paidThisMonthPeriods.reduce((sum, p) => sum + (p.actual_amount || 0), 0);
 
   // Action items
   const actionItems = buildActionItems({
@@ -258,6 +274,32 @@ export default function Dashboard() {
             <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{formatCurrency(monthValue)}</p>
             <p className="text-xs text-gray-400 dark:text-gray-500">this month</p>
           </Card>
+          {distributor?.pay_schedule?.frequency && (
+            <>
+              <Card
+                className="cursor-pointer active:bg-gray-50 dark:active:bg-gray-700"
+                onClick={() => navigate('/money')}
+              >
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-amber-500" />
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Awaiting<InfoTooltip text="Commissions in open or closed pay periods not yet paid." /></span>
+                </div>
+                <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{formatCurrency(awaitingTotal)}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{awaitingCommission.length} commission{awaitingCommission.length !== 1 ? 's' : ''}</p>
+              </Card>
+              <Card
+                className="cursor-pointer active:bg-gray-50 dark:active:bg-gray-700"
+                onClick={() => navigate('/money')}
+              >
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-green-500" />
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Paid This Month<InfoTooltip text="Total from pay periods marked as paid this month." /></span>
+                </div>
+                <p className="mt-1 text-2xl font-bold text-green-600">{formatCurrency(paidThisMonth)}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{paidThisMonthPeriods.length} period{paidThisMonthPeriods.length !== 1 ? 's' : ''}</p>
+              </Card>
+            </>
+          )}
         </div>
       )}
 

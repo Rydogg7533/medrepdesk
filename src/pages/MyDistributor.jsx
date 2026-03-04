@@ -6,6 +6,7 @@ import { useDistributor, useCreateDistributor, useUpdateDistributor } from '@/ho
 import { useAllDistributorProducts, useUpsertDistributorProducts } from '@/hooks/useDistributorProducts';
 import { useCreateContact } from '@/hooks/useContacts';
 import { useUpdateAccount } from '@/hooks/useAccount';
+import { useEnsurePayPeriods } from '@/hooks/usePayPeriods';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -26,6 +27,7 @@ export default function MyDistributor() {
   const updateAccount = useUpdateAccount();
   const createContact = useCreateContact();
   const upsertProducts = useUpsertDistributorProducts();
+  const ensurePayPeriods = useEnsurePayPeriods(distributorId, distributor?.pay_schedule);
 
   const [form, setForm] = useState({
     name: '',
@@ -34,6 +36,10 @@ export default function MyDistributor() {
     billing_contact_phone: '',
     address: '',
     phone: '',
+    pay_frequency: '',
+    pay_day: '',
+    first_pay_date: '',
+    commission_lag: '',
   });
   // Which category keys the rep has added
   const [addedGroups, setAddedGroups] = useState([]);
@@ -50,6 +56,7 @@ export default function MyDistributor() {
   // Load existing distributor data
   useEffect(() => {
     if (distributor) {
+      const ps = distributor.pay_schedule || {};
       setForm({
         name: distributor.name || '',
         billing_email: distributor.billing_email || '',
@@ -57,6 +64,10 @@ export default function MyDistributor() {
         billing_contact_phone: distributor.billing_contact_phone || '',
         address: distributor.address || '',
         phone: distributor.phone || '',
+        pay_frequency: ps.frequency || '',
+        pay_day: ps.pay_day != null ? String(ps.pay_day) : '',
+        first_pay_date: ps.first_pay_date || '',
+        commission_lag: ps.commission_lag || '',
       });
     }
   }, [distributor]);
@@ -227,6 +238,15 @@ export default function MyDistributor() {
     if (!validate()) return;
     setSaving(true);
     try {
+      const paySchedule = form.pay_frequency
+        ? {
+            frequency: form.pay_frequency,
+            pay_day: form.pay_day || null,
+            first_pay_date: form.first_pay_date || null,
+            commission_lag: form.commission_lag || null,
+          }
+        : null;
+
       await updateDistributor.mutateAsync({
         id: distributorId,
         name: form.name,
@@ -235,9 +255,16 @@ export default function MyDistributor() {
         billing_contact_phone: form.billing_contact_phone || null,
         address: form.address || null,
         phone: form.phone || null,
+        pay_schedule: paySchedule,
       });
 
       await upsertProducts.mutateAsync({ distributorId, products: buildProductsArray() });
+
+      // Auto-generate pay periods if schedule is configured
+      if (paySchedule?.frequency && paySchedule?.first_pay_date) {
+        await ensurePayPeriods.mutateAsync(paySchedule);
+      }
+
       setSaving(false);
     } catch (err) {
       setServerError(err.message);
@@ -543,6 +570,100 @@ export default function MyDistributor() {
             )}
           </div>
         </div>
+
+        {/* Pay Schedule */}
+        <Card>
+          <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Pay Schedule</h2>
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Pay Frequency</label>
+              <select
+                name="pay_frequency"
+                value={form.pay_frequency}
+                onChange={onChange}
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+              >
+                <option value="">Not set</option>
+                <option value="weekly">Weekly</option>
+                <option value="bi-weekly">Bi-Weekly</option>
+                <option value="semi-monthly">Semi-Monthly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+
+            {(form.pay_frequency === 'weekly' || form.pay_frequency === 'bi-weekly') && (
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Pay Day</label>
+                <select
+                  name="pay_day"
+                  value={form.pay_day}
+                  onChange={onChange}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+                >
+                  <option value="">Select day</option>
+                  <option value="1">Monday</option>
+                  <option value="2">Tuesday</option>
+                  <option value="3">Wednesday</option>
+                  <option value="4">Thursday</option>
+                  <option value="5">Friday</option>
+                </select>
+              </div>
+            )}
+
+            {form.pay_frequency === 'semi-monthly' && (
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Pay Day</label>
+                <p className="text-sm text-gray-500 dark:text-gray-400">1st & 15th of each month</p>
+              </div>
+            )}
+
+            {form.pay_frequency === 'monthly' && (
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Pay Day (Day of Month)</label>
+                <select
+                  name="pay_day"
+                  value={form.pay_day}
+                  onChange={onChange}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+                >
+                  <option value="">Select day</option>
+                  {Array.from({ length: 28 }, (_, i) => (
+                    <option key={i + 1} value={i + 1}>{i + 1}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {form.pay_frequency && (
+              <>
+                <Input
+                  label="First Pay Date"
+                  name="first_pay_date"
+                  type="date"
+                  value={form.first_pay_date}
+                  onChange={onChange}
+                />
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Commission Lag</label>
+                  <select
+                    name="commission_lag"
+                    value={form.commission_lag}
+                    onChange={onChange}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+                  >
+                    <option value="">Not set</option>
+                    <option value="current">Current Period</option>
+                    <option value="1_period">1 Period Behind</option>
+                    <option value="2_periods">2 Periods Behind</option>
+                    <option value="30_days">30 Days</option>
+                    <option value="60_days">60 Days</option>
+                    <option value="90_days">90 Days</option>
+                  </select>
+                </div>
+              </>
+            )}
+          </div>
+        </Card>
 
         <Button type="submit" fullWidth loading={saving}>Save Changes</Button>
       </form>

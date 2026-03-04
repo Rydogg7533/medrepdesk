@@ -1,9 +1,10 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import Spinner from '@/components/ui/Spinner';
 
 export default function ProtectedRoute({ children }) {
   const { session, user, loading, error } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -28,6 +29,11 @@ export default function ProtectedRoute({ children }) {
         </div>
       </div>
     );
+  }
+
+  // Redirect to onboarding if not completed (unless already on /onboarding)
+  if (user && !user.onboarding_completed && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
   }
 
   return children;

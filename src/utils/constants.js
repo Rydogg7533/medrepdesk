@@ -28,6 +28,13 @@ export const COMMISSION_STATUSES = {
   written_off: { label: 'Written Off', bg: 'bg-gray-100', text: 'text-gray-700' },
 };
 
+export const PAY_PERIOD_STATUSES = {
+  open: { label: 'Open', bg: 'bg-blue-100', text: 'text-blue-700' },
+  closed: { label: 'Closed', bg: 'bg-amber-100', text: 'text-amber-700' },
+  paid: { label: 'Paid', bg: 'bg-green-100', text: 'text-green-700' },
+  discrepancy: { label: 'Discrepancy', bg: 'bg-red-100', text: 'text-red-700' },
+};
+
 export const PLAN_LIMITS = {
   solo: {
     label: 'Solo Rep',

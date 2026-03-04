@@ -48,6 +48,8 @@ import Landing from '@/pages/Landing';
 import MyDistributor from '@/pages/MyDistributor';
 import BillSheetForm from '@/pages/BillSheetForm';
 import ActionItems from '@/pages/ActionItems';
+import PayPeriodSummary from '@/pages/PayPeriodSummary';
+import Onboarding from '@/pages/Onboarding';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -124,6 +126,9 @@ function App() {
             <Route path="/join" element={<JoinReferral />} />
             <Route path="/" element={<LandingRoute />} />
 
+            {/* Onboarding (protected, no AppLayout) */}
+            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+
             {/* Protected routes with AppLayout */}
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
@@ -143,6 +148,7 @@ function App() {
               <Route path="/commissions/new" element={<CommissionForm />} />
               <Route path="/commissions/:id" element={<CommissionDetail />} />
               <Route path="/commissions/:id/edit" element={<CommissionForm />} />
+              <Route path="/pay-periods/:id" element={<PayPeriodSummary />} />
               <Route path="/communications/new" element={<CommunicationForm />} />
               <Route path="/more" element={<More />} />
               <Route path="/distributors" element={<Distributors />} />

@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DollarSign, FileText, ChevronRight } from 'lucide-react';
+import { DollarSign, FileText, Calendar, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
 import { usePOs } from '@/hooks/usePOs';
 import { useCommissions } from '@/hooks/useCommissions';
+import { usePayPeriods, useEnsurePayPeriods } from '@/hooks/usePayPeriods';
+import { useAuth } from '@/context/AuthContext';
+import { useDistributor } from '@/hooks/useDistributors';
 import Card from '@/components/ui/Card';
 import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
@@ -14,6 +17,7 @@ import { formatCurrency, formatDate } from '@/utils/formatters';
 const tabs = [
   { key: 'pos', label: 'Purchase Orders' },
   { key: 'commissions', label: 'Commissions' },
+  { key: 'pay_periods', label: 'Pay Periods' },
 ];
 
 const PO_FILTERS = [
@@ -43,8 +47,22 @@ export default function Money() {
   const [commFilter, setCommFilter] = useState('all');
   const navigate = useNavigate();
 
+  const { account } = useAuth();
+  const distributorId = account?.primary_distributor_id;
+  const { data: distributor } = useDistributor(distributorId);
+  const paySchedule = distributor?.pay_schedule;
+
   const { data: allPOs = [], isLoading: posLoading } = usePOs();
   const { data: allCommissions = [], isLoading: commsLoading } = useCommissions();
+  const { data: allPayPeriods = [], isLoading: periodsLoading } = usePayPeriods(distributorId);
+  const ensurePayPeriods = useEnsurePayPeriods(distributorId, paySchedule);
+
+  // Auto-generate missing pay periods on mount when schedule is configured
+  useEffect(() => {
+    if (paySchedule?.frequency && paySchedule?.first_pay_date && distributorId) {
+      ensurePayPeriods.mutate();
+    }
+  }, [paySchedule?.frequency, paySchedule?.first_pay_date, distributorId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredPOs = poFilter === 'all' ? allPOs : allPOs.filter((p) => p.status === poFilter);
   const filteredComms = commFilter === 'all' ? allCommissions : allCommissions.filter((c) => c.status === commFilter);
@@ -260,6 +278,142 @@ export default function Money() {
                 </Card>
               ))}
             </div>
+          )}
+        </>
+      )}
+
+      {activeTab === 'pay_periods' && (
+        <>
+          {!paySchedule?.frequency ? (
+            <EmptyState
+              icon={Calendar}
+              title="No Pay Schedule"
+              description="Set up your pay schedule in My Distributor to track pay periods"
+              actionLabel="Go to My Distributor"
+              onAction={() => navigate('/my-distributor')}
+            />
+          ) : periodsLoading ? (
+            <div className="space-y-3">
+              <Skeleton variant="card" />
+              <Skeleton variant="card" />
+            </div>
+          ) : (
+            <>
+              {/* Current open period card */}
+              {(() => {
+                const today = new Date().toISOString().split('T')[0];
+                const current = allPayPeriods.find((p) => p.period_start <= today && p.period_end >= today && p.status === 'open');
+                if (!current) return null;
+                const daysLeft = Math.ceil((new Date(current.period_end) - new Date()) / 86400000);
+                // Calculate running total from linked commissions
+                const linkedCommsTotal = allCommissions
+                  .filter((c) => c.pay_period_id === current.id)
+                  .reduce((sum, c) => sum + (c.expected_amount || 0), 0);
+                return (
+                  <Card
+                    className="mb-4 border-l-4 border-l-brand-800 cursor-pointer active:bg-gray-50 dark:active:bg-gray-700"
+                    onClick={() => navigate(`/pay-periods/${current.id}`)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-brand-800 dark:text-brand-400">Current Period</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                          {formatDate(current.period_start)} – {formatDate(current.period_end)}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {daysLeft > 0 ? `Closes in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}` : 'Closing today'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                          {formatCurrency(linkedCommsTotal)}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Running Total</p>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })()}
+
+              {/* Closed periods needing verification */}
+              {(() => {
+                const closedPeriods = allPayPeriods.filter((p) => p.status === 'closed');
+                if (closedPeriods.length === 0) return null;
+                return (
+                  <div className="mb-4">
+                    <h2 className="mb-2 text-xs font-semibold uppercase text-amber-600 dark:text-amber-400">Needs Verification</h2>
+                    <div className="space-y-2">
+                      {closedPeriods.map((period) => (
+                        <Card
+                          key={period.id}
+                          className="cursor-pointer border-l-4 border-l-amber-400 active:bg-gray-50 dark:active:bg-gray-700"
+                          onClick={() => navigate(`/pay-periods/${period.id}`)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                                {formatDate(period.period_start)} – {formatDate(period.period_end)}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                Expected: {formatCurrency(period.expected_amount)}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <StatusBadge status={period.status} type="pay_period" />
+                              <ChevronRight className="h-4 w-4 text-gray-300 dark:text-gray-600" />
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* All periods list */}
+              {allPayPeriods.length === 0 ? (
+                <EmptyState
+                  icon={Calendar}
+                  title="No Pay Periods"
+                  description="Pay periods will be generated based on your schedule"
+                />
+              ) : (
+                <div>
+                  <h2 className="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">All Periods</h2>
+                  <div className="space-y-2">
+                    {allPayPeriods.map((period) => (
+                      <Card
+                        key={period.id}
+                        className="cursor-pointer active:bg-gray-50 dark:active:bg-gray-700"
+                        onClick={() => navigate(`/pay-periods/${period.id}`)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                              {formatDate(period.period_start)} – {formatDate(period.period_end)}
+                            </p>
+                            {period.expected_amount != null && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                Expected: {formatCurrency(period.expected_amount)}
+                              </p>
+                            )}
+                            {period.actual_amount != null && (
+                              <p className="text-xs font-medium text-green-600">
+                                Received: {formatCurrency(period.actual_amount)}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <StatusBadge status={period.status} type="pay_period" />
+                            <ChevronRight className="h-4 w-4 text-gray-300 dark:text-gray-600" />
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </>
       )}

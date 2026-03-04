@@ -1,10 +1,11 @@
 import clsx from 'clsx';
-import { CASE_STATUSES, PO_STATUSES, COMMISSION_STATUSES } from '@/utils/constants';
+import { CASE_STATUSES, PO_STATUSES, COMMISSION_STATUSES, PAY_PERIOD_STATUSES } from '@/utils/constants';
 
 const statusMaps = {
   case: CASE_STATUSES,
   po: PO_STATUSES,
   commission: COMMISSION_STATUSES,
+  pay_period: PAY_PERIOD_STATUSES,
 };
 
 export default function StatusBadge({ status, type = 'case' }) {
