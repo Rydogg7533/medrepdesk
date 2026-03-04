@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import clsx from 'clsx';
 
-export default function BottomSheet({ isOpen, onClose, title, children }) {
+export default function BottomSheet({ isOpen, onClose, title, fullHeight, children }) {
   const sheetRef = useRef(null);
   const startY = useRef(0);
 
@@ -57,7 +57,7 @@ export default function BottomSheet({ isOpen, onClose, title, children }) {
           </h2>
         )}
 
-        <div className="max-h-[70vh] overflow-y-auto px-5 pb-6">
+        <div className={clsx('overflow-y-auto px-5 pb-6', fullHeight ? 'max-h-[85vh]' : 'max-h-[70vh]')}>
           {children}
         </div>
       </div>

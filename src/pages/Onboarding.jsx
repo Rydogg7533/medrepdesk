@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Plus, X, Check, Search, ChevronDown, ChevronRight, CheckCircle,
@@ -85,6 +85,300 @@ function StepWrapper({ step, onBack, children }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// STEP 4: YOUR FACILITIES (top-level component to preserve search state)
+// ═══════════════════════════════════════════════════════════════════════════════
+function Step4Facilities({ userState, addedFacilities, setAddedFacilities, importGlobalFacility, createFacility, goToStep, goBack }) {
+  const filterStates = useMemo(() => userState ? [userState] : [], [userState]);
+  const { search: searchFacilities, results: facilityResults, isSearching: facilitySearching } = useSearchFacilities({ filterStates });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showManual, setShowManual] = useState(false);
+  const [manualForm, setManualForm] = useState({ name: '', facility_type: 'hospital', address: '', city: '', state: userState, phone: '' });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (searchTerm.length >= 3) searchFacilities(searchTerm);
+  }, [searchTerm, searchFacilities]);
+
+  async function handleAddGlobal(result) {
+    setSaving(true);
+    try {
+      const facility = await importGlobalFacility.mutateAsync(result.value);
+      setAddedFacilities((p) => [...p, { id: facility.id, name: facility.name }]);
+      setSearchTerm('');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleAddManual() {
+    if (!manualForm.name.trim()) { setError('Facility name is required'); return; }
+    setSaving(true);
+    setError('');
+    try {
+      const facility = await createFacility.mutateAsync(manualForm);
+      setAddedFacilities((p) => [...p, { id: facility.id, name: facility.name }]);
+      setManualForm({ name: '', facility_type: 'hospital', address: '', city: '', state: userState, phone: '' });
+      setShowManual(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleContinue() {
+    if (addedFacilities.length === 0) { setError('Add at least 1 facility to continue'); return; }
+    await goToStep(5);
+  }
+
+  const addedIds = new Set(addedFacilities.map((f) => f.id));
+  const filteredResults = facilityResults.filter((r) => !addedIds.has(r.value));
+
+  return (
+    <StepWrapper step={4} onBack={goBack}>
+      <h1 className="mb-1 mt-4 text-xl font-bold text-gray-900 dark:text-gray-100">Your Facilities <span className="text-red-500">*</span></h1>
+      <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">Where do you cover cases? Add at least 1.</p>
+
+      {/* Search */}
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search hospitals & facilities..."
+          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 pl-10 pr-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+        />
+      </div>
+
+      {/* Search Results */}
+      {searchTerm.length >= 3 && (
+        <div className="mb-4 max-h-48 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          {facilitySearching ? (
+            <p className="p-3 text-sm text-gray-400">Searching...</p>
+          ) : filteredResults.length === 0 ? (
+            <p className="p-3 text-sm text-gray-400">No results found</p>
+          ) : (
+            filteredResults.map((r) => (
+              <button key={r.value} onClick={() => handleAddGlobal(r)} className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                <div>
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{r.label}</p>
+                  {r.subtitle && <p className="text-xs text-gray-400">{r.subtitle}</p>}
+                </div>
+                <Plus className="h-4 w-4 text-brand-800 dark:text-brand-400" />
+              </button>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Added Facilities */}
+      {addedFacilities.length > 0 && (
+        <div className="mb-4">
+          <p className="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">{addedFacilities.length} facilit{addedFacilities.length === 1 ? 'y' : 'ies'} added</p>
+          <div className="space-y-1.5">
+            {addedFacilities.map((f) => (
+              <div key={f.id} className="flex items-center gap-2 rounded-lg bg-green-50 dark:bg-green-900/20 px-3 py-2">
+                <Check className="h-4 w-4 text-green-600" />
+                <span className="flex-1 text-sm text-gray-800 dark:text-gray-200">{f.name}</span>
+                <button onClick={() => setAddedFacilities((p) => p.filter((x) => x.id !== f.id))} className="text-gray-400 hover:text-red-500"><X className="h-3.5 w-3.5" /></button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Add Manually */}
+      <button type="button" onClick={() => setShowManual(!showManual)} className="mb-4 text-sm font-medium text-brand-800 dark:text-brand-400">
+        + Add Manually
+      </button>
+      {showManual && (
+        <div className="mb-4 space-y-3 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+          <Input label={<>Name <span className="text-red-500">*</span></>} name="name" value={manualForm.name} onChange={(e) => setManualForm((p) => ({ ...p, name: e.target.value }))} />
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Type</label>
+            <select value={manualForm.facility_type} onChange={(e) => setManualForm((p) => ({ ...p, facility_type: e.target.value }))} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800">
+              <option value="hospital">Hospital</option>
+              <option value="asc">ASC</option>
+              <option value="clinic">Clinic</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <Input label="Address" name="address" value={manualForm.address} onChange={(e) => setManualForm((p) => ({ ...p, address: e.target.value }))} />
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="City" value={manualForm.city} onChange={(e) => setManualForm((p) => ({ ...p, city: e.target.value }))} />
+            <Input label="Phone" type="tel" value={manualForm.phone} onChange={(e) => setManualForm((p) => ({ ...p, phone: e.target.value }))} />
+          </div>
+          <Button size="sm" onClick={handleAddManual} loading={saving}>Add Facility</Button>
+        </div>
+      )}
+
+      {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+      <div className="mt-6 pb-6">
+        <Button fullWidth loading={saving} onClick={handleContinue}>Continue</Button>
+      </div>
+    </StepWrapper>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STEP 5: YOUR SURGEONS (top-level component to preserve search state)
+// ═══════════════════════════════════════════════════════════════════════════════
+function Step5Surgeons({ userState, addedSurgeons, setAddedSurgeons, addedFacilities, importGlobalSurgeon, createSurgeon, goToStep, goBack }) {
+  const filterStates = useMemo(() => userState ? [userState] : [], [userState]);
+  const { search: searchSurgeons, results: surgeonResults, isSearching: surgeonSearching } = useSearchSurgeons({ filterStates });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showManual, setShowManual] = useState(false);
+  const [manualForm, setManualForm] = useState({
+    prefix: '', first_name: '', last_name: '', specialty: '',
+    primary_facility_id: '', phone: '', email: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (searchTerm.length >= 3) searchSurgeons(searchTerm);
+  }, [searchTerm, searchSurgeons]);
+
+  async function handleAddGlobal(result) {
+    setSaving(true);
+    try {
+      const surgeon = await importGlobalSurgeon.mutateAsync(result.value);
+      setAddedSurgeons((p) => [...p, { id: surgeon.id, full_name: surgeon.full_name }]);
+      setSearchTerm('');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleAddManual() {
+    if (!manualForm.last_name.trim()) { setError('Last name is required'); return; }
+    setSaving(true);
+    setError('');
+    try {
+      const fullName = [manualForm.prefix, manualForm.first_name, manualForm.last_name].filter(Boolean).join(' ');
+      const surgeon = await createSurgeon.mutateAsync({
+        full_name: fullName,
+        specialty: manualForm.specialty || null,
+        primary_facility_id: manualForm.primary_facility_id || null,
+        phone: manualForm.phone || null,
+        email: manualForm.email || null,
+      });
+      setAddedSurgeons((p) => [...p, { id: surgeon.id, full_name: surgeon.full_name }]);
+      setManualForm({ prefix: '', first_name: '', last_name: '', specialty: '', primary_facility_id: '', phone: '', email: '' });
+      setShowManual(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleContinue() {
+    if (addedSurgeons.length === 0) { setError('Add at least 1 surgeon to continue'); return; }
+    await goToStep(6);
+  }
+
+  const addedIds = new Set(addedSurgeons.map((s) => s.id));
+  const filteredResults = surgeonResults.filter((r) => !addedIds.has(r.value));
+
+  return (
+    <StepWrapper step={5} onBack={goBack}>
+      <h1 className="mb-1 mt-4 text-xl font-bold text-gray-900 dark:text-gray-100">Your Surgeons <span className="text-red-500">*</span></h1>
+      <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">Who do you cover? Add at least 1.</p>
+
+      {/* Search */}
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search surgeons..." className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 pl-10 pr-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20" />
+      </div>
+
+      {searchTerm.length >= 3 && (
+        <div className="mb-4 max-h-48 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          {surgeonSearching ? (
+            <p className="p-3 text-sm text-gray-400">Searching...</p>
+          ) : filteredResults.length === 0 ? (
+            <p className="p-3 text-sm text-gray-400">No results found</p>
+          ) : (
+            filteredResults.map((r) => (
+              <button key={r.value} onClick={() => handleAddGlobal(r)} className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                <div>
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{r.label}</p>
+                  {r.subtitle && <p className="text-xs text-gray-400">{r.subtitle}</p>}
+                </div>
+                <Plus className="h-4 w-4 text-brand-800 dark:text-brand-400" />
+              </button>
+            ))
+          )}
+        </div>
+      )}
+
+      {addedSurgeons.length > 0 && (
+        <div className="mb-4">
+          <p className="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">{addedSurgeons.length} surgeon{addedSurgeons.length !== 1 ? 's' : ''} added</p>
+          <div className="space-y-1.5">
+            {addedSurgeons.map((s) => (
+              <div key={s.id} className="flex items-center gap-2 rounded-lg bg-green-50 dark:bg-green-900/20 px-3 py-2">
+                <Check className="h-4 w-4 text-green-600" />
+                <span className="flex-1 text-sm text-gray-800 dark:text-gray-200">{s.full_name}</span>
+                <button onClick={() => setAddedSurgeons((p) => p.filter((x) => x.id !== s.id))} className="text-gray-400 hover:text-red-500"><X className="h-3.5 w-3.5" /></button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <button type="button" onClick={() => setShowManual(!showManual)} className="mb-4 text-sm font-medium text-brand-800 dark:text-brand-400">+ Add Manually</button>
+      {showManual && (
+        <div className="mb-4 space-y-3 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Prefix</label>
+              <select value={manualForm.prefix} onChange={(e) => setManualForm((p) => ({ ...p, prefix: e.target.value }))} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800">
+                {SURGEON_PREFIXES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+              </select>
+            </div>
+            <Input label="First Name" value={manualForm.first_name} onChange={(e) => setManualForm((p) => ({ ...p, first_name: e.target.value }))} />
+            <Input label={<>Last Name <span className="text-red-500">*</span></>} value={manualForm.last_name} onChange={(e) => setManualForm((p) => ({ ...p, last_name: e.target.value }))} />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Specialty</label>
+            <select value={manualForm.specialty} onChange={(e) => setManualForm((p) => ({ ...p, specialty: e.target.value }))} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800">
+              <option value="">Select specialty</option>
+              {SURGEON_SPECIALTIES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          </div>
+          {addedFacilities.length > 0 && (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Primary Facility</label>
+              <select value={manualForm.primary_facility_id} onChange={(e) => setManualForm((p) => ({ ...p, primary_facility_id: e.target.value }))} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800">
+                <option value="">Select facility</option>
+                {addedFacilities.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+              </select>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="Phone" type="tel" value={manualForm.phone} onChange={(e) => setManualForm((p) => ({ ...p, phone: e.target.value }))} />
+            <Input label="Email" type="email" value={manualForm.email} onChange={(e) => setManualForm((p) => ({ ...p, email: e.target.value }))} />
+          </div>
+          <Button size="sm" onClick={handleAddManual} loading={saving}>Add Surgeon</Button>
+        </div>
+      )}
+
+      {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+      <div className="mt-6 pb-6">
+        <Button fullWidth loading={saving} onClick={handleContinue}>Continue</Button>
+      </div>
+    </StepWrapper>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function Onboarding() {
@@ -116,10 +410,6 @@ export default function Onboarding() {
   const [createdCase, setCreatedCase] = useState(null);
   const [distributorId, setDistributorId] = useState(null);
   const [productGroupCount, setProductGroupCount] = useState(0);
-
-  // For facility/surgeon search
-  const { search: searchFacilities, results: facilityResults, isSearching: facilitySearching } = useSearchFacilities({ filterStates: userState ? [userState] : [] });
-  const { search: searchSurgeons, results: surgeonResults, isSearching: surgeonSearching } = useSearchSurgeons({ filterStates: userState ? [userState] : [] });
 
   // Pay periods
   const ensurePayPeriods = useEnsurePayPeriods(distributorId, null);
@@ -176,7 +466,7 @@ export default function Onboarding() {
                 className="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-800 focus:ring-brand-800"
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">
-                I agree to the <span className="font-medium text-brand-800 dark:text-brand-400">Terms of Service</span>
+                I agree to the <span className="font-medium text-brand-800 dark:text-brand-400">Terms of Service</span> <span className="text-red-500">*</span>
               </span>
             </label>
             <label className="flex items-start gap-3 rounded-lg border border-gray-200 dark:border-gray-700 p-4 cursor-pointer">
@@ -187,7 +477,7 @@ export default function Onboarding() {
                 className="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-800 focus:ring-brand-800"
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">
-                I agree to the <span className="font-medium text-brand-800 dark:text-brand-400">Privacy Policy</span>
+                I agree to the <span className="font-medium text-brand-800 dark:text-brand-400">Privacy Policy</span> <span className="text-red-500">*</span>
               </span>
             </label>
           </div>
@@ -260,13 +550,13 @@ export default function Onboarding() {
         <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">Tell us about yourself</p>
 
         <div className="space-y-4">
-          <Input label="Full Name *" name="full_name" value={form.full_name} onChange={onChange} required />
+          <Input label={<>Full Name <span className="text-red-500">*</span></>} name="full_name" value={form.full_name} onChange={onChange} required />
           <Input label="Phone" name="phone" type="tel" value={form.phone} onChange={onChange} />
           <Input label="Address" name="address" value={form.address} onChange={onChange} />
           <div className="grid grid-cols-2 gap-3">
             <Input label="City" name="city" value={form.city} onChange={onChange} />
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">State *</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">State <span className="text-red-500">*</span></label>
               <select
                 name="state"
                 value={form.state}
@@ -431,7 +721,7 @@ export default function Onboarding() {
 
         {/* Section A: Distributor Info */}
         <div className="space-y-4">
-          <Input label="Distributor Name *" name="name" value={distForm.name} onChange={onDistChange} required />
+          <Input label={<>Distributor Name <span className="text-red-500">*</span></>} name="name" value={distForm.name} onChange={onDistChange} required />
           <Input label="Phone" name="phone" type="tel" value={distForm.phone} onChange={onDistChange} />
           <Input label="Address" name="address" value={distForm.address} onChange={onDistChange} />
           <Input label="Billing Email" name="billing_email" type="email" value={distForm.billing_email} onChange={onDistChange} />
@@ -567,287 +857,8 @@ export default function Onboarding() {
     );
   }
 
-  // ── STEP 4: YOUR FACILITIES ────────────────────────────────────────────
-  function Step4() {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [showManual, setShowManual] = useState(false);
-    const [manualForm, setManualForm] = useState({ name: '', facility_type: 'hospital', address: '', city: '', state: userState, phone: '' });
-
-    useEffect(() => {
-      if (searchTerm.length >= 3) searchFacilities(searchTerm);
-    }, [searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    async function handleAddGlobal(result) {
-      setSaving(true);
-      try {
-        const facility = await importGlobalFacility.mutateAsync(result.value);
-        setAddedFacilities((p) => [...p, { id: facility.id, name: facility.name }]);
-        setSearchTerm('');
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setSaving(false);
-      }
-    }
-
-    async function handleAddManual() {
-      if (!manualForm.name.trim()) { setError('Facility name is required'); return; }
-      setSaving(true);
-      setError('');
-      try {
-        const facility = await createFacility.mutateAsync(manualForm);
-        setAddedFacilities((p) => [...p, { id: facility.id, name: facility.name }]);
-        setManualForm({ name: '', facility_type: 'hospital', address: '', city: '', state: userState, phone: '' });
-        setShowManual(false);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setSaving(false);
-      }
-    }
-
-    async function handleContinue() {
-      if (addedFacilities.length === 0) { setError('Add at least 1 facility to continue'); return; }
-      await goToStep(5);
-    }
-
-    const addedIds = new Set(addedFacilities.map((f) => f.id));
-    const filteredResults = facilityResults.filter((r) => !addedIds.has(r.value));
-
-    return (
-      <StepWrapper step={4} onBack={goBack}>
-        <h1 className="mb-1 mt-4 text-xl font-bold text-gray-900 dark:text-gray-100">Your Facilities</h1>
-        <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">Where do you cover cases?</p>
-
-        {/* Search */}
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search hospitals & facilities..."
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 pl-10 pr-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
-          />
-        </div>
-
-        {/* Search Results */}
-        {searchTerm.length >= 3 && (
-          <div className="mb-4 max-h-48 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-            {facilitySearching ? (
-              <p className="p-3 text-sm text-gray-400">Searching...</p>
-            ) : filteredResults.length === 0 ? (
-              <p className="p-3 text-sm text-gray-400">No results found</p>
-            ) : (
-              filteredResults.map((r) => (
-                <button key={r.value} onClick={() => handleAddGlobal(r)} className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-0">
-                  <div>
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{r.label}</p>
-                    {r.subtitle && <p className="text-xs text-gray-400">{r.subtitle}</p>}
-                  </div>
-                  <Plus className="h-4 w-4 text-brand-800 dark:text-brand-400" />
-                </button>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* Added Facilities */}
-        {addedFacilities.length > 0 && (
-          <div className="mb-4">
-            <p className="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">{addedFacilities.length} facilit{addedFacilities.length === 1 ? 'y' : 'ies'} added</p>
-            <div className="space-y-1.5">
-              {addedFacilities.map((f) => (
-                <div key={f.id} className="flex items-center gap-2 rounded-lg bg-green-50 dark:bg-green-900/20 px-3 py-2">
-                  <Check className="h-4 w-4 text-green-600" />
-                  <span className="flex-1 text-sm text-gray-800 dark:text-gray-200">{f.name}</span>
-                  <button onClick={() => setAddedFacilities((p) => p.filter((x) => x.id !== f.id))} className="text-gray-400 hover:text-red-500"><X className="h-3.5 w-3.5" /></button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Add Manually */}
-        <button type="button" onClick={() => setShowManual(!showManual)} className="mb-4 text-sm font-medium text-brand-800 dark:text-brand-400">
-          + Add Manually
-        </button>
-        {showManual && (
-          <div className="mb-4 space-y-3 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
-            <Input label="Name *" name="name" value={manualForm.name} onChange={(e) => setManualForm((p) => ({ ...p, name: e.target.value }))} />
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Type</label>
-              <select value={manualForm.facility_type} onChange={(e) => setManualForm((p) => ({ ...p, facility_type: e.target.value }))} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800">
-                <option value="hospital">Hospital</option>
-                <option value="asc">ASC</option>
-                <option value="clinic">Clinic</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <Input label="Address" name="address" value={manualForm.address} onChange={(e) => setManualForm((p) => ({ ...p, address: e.target.value }))} />
-            <div className="grid grid-cols-2 gap-3">
-              <Input label="City" value={manualForm.city} onChange={(e) => setManualForm((p) => ({ ...p, city: e.target.value }))} />
-              <Input label="Phone" type="tel" value={manualForm.phone} onChange={(e) => setManualForm((p) => ({ ...p, phone: e.target.value }))} />
-            </div>
-            <Button size="sm" onClick={handleAddManual} loading={saving}>Add Facility</Button>
-          </div>
-        )}
-
-        {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
-        <div className="mt-6 pb-6">
-          <Button fullWidth loading={saving} onClick={handleContinue}>Continue</Button>
-        </div>
-      </StepWrapper>
-    );
-  }
-
-  // ── STEP 5: YOUR SURGEONS ──────────────────────────────────────────────
-  function Step5() {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [showManual, setShowManual] = useState(false);
-    const [manualForm, setManualForm] = useState({
-      prefix: '', first_name: '', last_name: '', specialty: '',
-      primary_facility_id: '', phone: '', email: '',
-    });
-
-    useEffect(() => {
-      if (searchTerm.length >= 3) searchSurgeons(searchTerm);
-    }, [searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    async function handleAddGlobal(result) {
-      setSaving(true);
-      try {
-        const surgeon = await importGlobalSurgeon.mutateAsync(result.value);
-        setAddedSurgeons((p) => [...p, { id: surgeon.id, full_name: surgeon.full_name }]);
-        setSearchTerm('');
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setSaving(false);
-      }
-    }
-
-    async function handleAddManual() {
-      if (!manualForm.last_name.trim()) { setError('Last name is required'); return; }
-      setSaving(true);
-      setError('');
-      try {
-        const fullName = [manualForm.prefix, manualForm.first_name, manualForm.last_name].filter(Boolean).join(' ');
-        const surgeon = await createSurgeon.mutateAsync({
-          full_name: fullName,
-          specialty: manualForm.specialty || null,
-          primary_facility_id: manualForm.primary_facility_id || null,
-          phone: manualForm.phone || null,
-          email: manualForm.email || null,
-        });
-        setAddedSurgeons((p) => [...p, { id: surgeon.id, full_name: surgeon.full_name }]);
-        setManualForm({ prefix: '', first_name: '', last_name: '', specialty: '', primary_facility_id: '', phone: '', email: '' });
-        setShowManual(false);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setSaving(false);
-      }
-    }
-
-    async function handleContinue() {
-      if (addedSurgeons.length === 0) { setError('Add at least 1 surgeon to continue'); return; }
-      await goToStep(6);
-    }
-
-    const addedIds = new Set(addedSurgeons.map((s) => s.id));
-    const filteredResults = surgeonResults.filter((r) => !addedIds.has(r.value));
-
-    return (
-      <StepWrapper step={5} onBack={goBack}>
-        <h1 className="mb-1 mt-4 text-xl font-bold text-gray-900 dark:text-gray-100">Your Surgeons</h1>
-        <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">Who do you cover?</p>
-
-        {/* Search */}
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search surgeons..." className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 pl-10 pr-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20" />
-        </div>
-
-        {searchTerm.length >= 3 && (
-          <div className="mb-4 max-h-48 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-            {surgeonSearching ? (
-              <p className="p-3 text-sm text-gray-400">Searching...</p>
-            ) : filteredResults.length === 0 ? (
-              <p className="p-3 text-sm text-gray-400">No results found</p>
-            ) : (
-              filteredResults.map((r) => (
-                <button key={r.value} onClick={() => handleAddGlobal(r)} className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-0">
-                  <div>
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{r.label}</p>
-                    {r.subtitle && <p className="text-xs text-gray-400">{r.subtitle}</p>}
-                  </div>
-                  <Plus className="h-4 w-4 text-brand-800 dark:text-brand-400" />
-                </button>
-              ))
-            )}
-          </div>
-        )}
-
-        {addedSurgeons.length > 0 && (
-          <div className="mb-4">
-            <p className="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">{addedSurgeons.length} surgeon{addedSurgeons.length !== 1 ? 's' : ''} added</p>
-            <div className="space-y-1.5">
-              {addedSurgeons.map((s) => (
-                <div key={s.id} className="flex items-center gap-2 rounded-lg bg-green-50 dark:bg-green-900/20 px-3 py-2">
-                  <Check className="h-4 w-4 text-green-600" />
-                  <span className="flex-1 text-sm text-gray-800 dark:text-gray-200">{s.full_name}</span>
-                  <button onClick={() => setAddedSurgeons((p) => p.filter((x) => x.id !== s.id))} className="text-gray-400 hover:text-red-500"><X className="h-3.5 w-3.5" /></button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <button type="button" onClick={() => setShowManual(!showManual)} className="mb-4 text-sm font-medium text-brand-800 dark:text-brand-400">+ Add Manually</button>
-        {showManual && (
-          <div className="mb-4 space-y-3 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Prefix</label>
-                <select value={manualForm.prefix} onChange={(e) => setManualForm((p) => ({ ...p, prefix: e.target.value }))} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800">
-                  {SURGEON_PREFIXES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-                </select>
-              </div>
-              <Input label="First Name" value={manualForm.first_name} onChange={(e) => setManualForm((p) => ({ ...p, first_name: e.target.value }))} />
-              <Input label="Last Name *" value={manualForm.last_name} onChange={(e) => setManualForm((p) => ({ ...p, last_name: e.target.value }))} />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Specialty</label>
-              <select value={manualForm.specialty} onChange={(e) => setManualForm((p) => ({ ...p, specialty: e.target.value }))} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800">
-                <option value="">Select specialty</option>
-                {SURGEON_SPECIALTIES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
-            </div>
-            {addedFacilities.length > 0 && (
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Primary Facility</label>
-                <select value={manualForm.primary_facility_id} onChange={(e) => setManualForm((p) => ({ ...p, primary_facility_id: e.target.value }))} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800">
-                  <option value="">Select facility</option>
-                  {addedFacilities.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-                </select>
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-3">
-              <Input label="Phone" type="tel" value={manualForm.phone} onChange={(e) => setManualForm((p) => ({ ...p, phone: e.target.value }))} />
-              <Input label="Email" type="email" value={manualForm.email} onChange={(e) => setManualForm((p) => ({ ...p, email: e.target.value }))} />
-            </div>
-            <Button size="sm" onClick={handleAddManual} loading={saving}>Add Surgeon</Button>
-          </div>
-        )}
-
-        {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
-        <div className="mt-6 pb-6">
-          <Button fullWidth loading={saving} onClick={handleContinue}>Continue</Button>
-        </div>
-      </StepWrapper>
-    );
-  }
+  // Steps 4 & 5 are extracted as top-level components (Step4Facilities, Step5Surgeons)
+  // to prevent search state from being lost on parent re-renders
 
   // ── STEP 6: YOUR CONTACTS ─────────────────────────────────────────────
   function Step6() {
@@ -884,8 +895,8 @@ export default function Onboarding() {
 
         <div className="space-y-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3">
           <div className="grid grid-cols-2 gap-3">
-            <Input label="First Name *" value={contactForm.first_name} onChange={(e) => setContactForm((p) => ({ ...p, first_name: e.target.value }))} />
-            <Input label="Last Name *" value={contactForm.last_name} onChange={(e) => setContactForm((p) => ({ ...p, last_name: e.target.value }))} />
+            <Input label={<>First Name <span className="text-red-500">*</span></>} value={contactForm.first_name} onChange={(e) => setContactForm((p) => ({ ...p, first_name: e.target.value }))} />
+            <Input label={<>Last Name <span className="text-red-500">*</span></>} value={contactForm.last_name} onChange={(e) => setContactForm((p) => ({ ...p, last_name: e.target.value }))} />
           </div>
           <Input label="Role" value={contactForm.role} onChange={(e) => setContactForm((p) => ({ ...p, role: e.target.value }))} placeholder="e.g. Billing Contact, OR Manager" />
           <div className="grid grid-cols-2 gap-3">
@@ -969,7 +980,7 @@ export default function Onboarding() {
         <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">Which manufacturers make the products you sell?</p>
 
         <div className="space-y-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3">
-          <Input label="Name *" value={mfgForm.name} onChange={(e) => setMfgForm((p) => ({ ...p, name: e.target.value }))} />
+          <Input label={<>Name <span className="text-red-500">*</span></>} value={mfgForm.name} onChange={(e) => setMfgForm((p) => ({ ...p, name: e.target.value }))} />
           <Input label="Billing Email" type="email" value={mfgForm.billing_email} onChange={(e) => setMfgForm((p) => ({ ...p, billing_email: e.target.value }))} />
           <Input label="Billing Contact Name" value={mfgForm.billing_contact_name} onChange={(e) => setMfgForm((p) => ({ ...p, billing_contact_name: e.target.value }))} />
           <Input label="Phone" type="tel" value={mfgForm.phone} onChange={(e) => setMfgForm((p) => ({ ...p, phone: e.target.value }))} />
@@ -1057,14 +1068,14 @@ export default function Onboarding() {
 
         <div className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Surgeon *</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Surgeon <span className="text-red-500">*</span></label>
             <select value={caseForm.surgeon_id} onChange={(e) => setCaseForm((p) => ({ ...p, surgeon_id: e.target.value }))} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20">
               <option value="">Select surgeon</option>
               {addedSurgeons.map((s) => <option key={s.id} value={s.id}>{s.full_name}</option>)}
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Facility *</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Facility <span className="text-red-500">*</span></label>
             <select value={caseForm.facility_id} onChange={(e) => setCaseForm((p) => ({ ...p, facility_id: e.target.value }))} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20">
               <option value="">Select facility</option>
               {addedFacilities.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
@@ -1077,7 +1088,7 @@ export default function Onboarding() {
               {procedureOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
-          <Input label="Scheduled Date *" name="scheduled_date" type="date" value={caseForm.scheduled_date} onChange={(e) => setCaseForm((p) => ({ ...p, scheduled_date: e.target.value }))} />
+          <Input label={<>Scheduled Date <span className="text-red-500">*</span></>} name="scheduled_date" type="date" value={caseForm.scheduled_date} onChange={(e) => setCaseForm((p) => ({ ...p, scheduled_date: e.target.value }))} />
           <Input label="Scheduled Time" name="scheduled_time" type="time" value={caseForm.scheduled_time} onChange={(e) => setCaseForm((p) => ({ ...p, scheduled_time: e.target.value }))} />
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
@@ -1164,8 +1175,8 @@ export default function Onboarding() {
     case 1: return <Step1 />;
     case 2: return <Step2 />;
     case 3: return <Step3 />;
-    case 4: return <Step4 />;
-    case 5: return <Step5 />;
+    case 4: return <Step4Facilities userState={userState} addedFacilities={addedFacilities} setAddedFacilities={setAddedFacilities} importGlobalFacility={importGlobalFacility} createFacility={createFacility} goToStep={goToStep} goBack={goBack} />;
+    case 5: return <Step5Surgeons userState={userState} addedSurgeons={addedSurgeons} setAddedSurgeons={setAddedSurgeons} addedFacilities={addedFacilities} importGlobalSurgeon={importGlobalSurgeon} createSurgeon={createSurgeon} goToStep={goToStep} goBack={goBack} />;
     case 6: return <Step6 />;
     case 7: return <Step7 />;
     case 8: return <Step8 />;

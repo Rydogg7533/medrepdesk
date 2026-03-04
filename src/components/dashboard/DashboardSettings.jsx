@@ -19,7 +19,7 @@ export default function DashboardSettings({ isOpen, onClose }) {
   }
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} title="Dashboard Settings">
+    <BottomSheet isOpen={isOpen} onClose={onClose} title="Dashboard Settings" fullHeight>
       <div className="space-y-1">
         {SECTIONS.map(({ key, label }) => (
           <label
