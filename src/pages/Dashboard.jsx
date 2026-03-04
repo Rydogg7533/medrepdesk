@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Briefcase, AlertTriangle, TrendingUp, ChevronRight, Clock, CalendarCheck, Building2 } from 'lucide-react';
+import { Briefcase, AlertTriangle, TrendingUp, ChevronRight, Clock, CalendarCheck, Building2, MapPin, X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCases } from '@/hooks/useCases';
 import { usePOs } from '@/hooks/usePOs';
@@ -36,6 +37,15 @@ export default function Dashboard() {
   const { data: overduePromised = [] } = useOverduePromisedDates();
   const { data: allCommissions = [] } = useCommissions();
   const { data: overdueComms = [] } = useOverdueCommunications();
+  const [statesBannerDismissed, setStatesBannerDismissed] = useState(
+    () => localStorage.getItem('rep_states_banner_dismissed') === 'true'
+  );
+  const showStatesBanner = account?.rep_states == null && !statesBannerDismissed;
+
+  function dismissStatesBanner() {
+    localStorage.setItem('rep_states_banner_dismissed', 'true');
+    setStatesBannerDismissed(true);
+  }
 
   const todayCases = allCases?.filter((c) => c.scheduled_date === today) || [];
   const upcomingCases = allCases?.filter(
@@ -80,6 +90,30 @@ export default function Dashboard() {
       <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
         {getGreeting()}, {firstName}
       </h1>
+
+      {/* Rep States Banner */}
+      {showStatesBanner && (
+        <Card className="border border-blue-200 dark:border-blue-800/30 bg-blue-50 dark:bg-blue-800/10">
+          <div className="flex items-center gap-3">
+            <MapPin className="h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-blue-800 dark:text-blue-400">Set your operating states for better search results</p>
+              <button
+                onClick={() => navigate('/settings')}
+                className="text-xs font-medium text-blue-600 underline dark:text-blue-300"
+              >
+                Go to Settings
+              </button>
+            </div>
+            <button
+              onClick={dismissStatesBanner}
+              className="rounded-full p-1 text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800/30"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </Card>
+      )}
 
       {/* Distributor Setup Banner */}
       {!account?.primary_distributor_id && (

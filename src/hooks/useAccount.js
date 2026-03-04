@@ -19,6 +19,7 @@ export function useUpdateAccount() {
       return data;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['repStates'] });
       // Force reload to refresh account in auth context
       window.location.reload();
     },

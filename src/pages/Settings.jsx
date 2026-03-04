@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   CreditCard,
@@ -9,14 +9,20 @@ import {
   ChevronRight,
   AlertTriangle,
   CheckCircle,
+  MapPin,
+  X,
+  Search,
+  Check,
 } from 'lucide-react';
 import clsx from 'clsx';
 import Button from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
 import { useSubscription, useCreatePortalSession } from '@/hooks/useSubscription';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useUpdateAccount } from '@/hooks/useAccount';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import { PLAN_LIMITS } from '@/utils/constants';
+import { US_STATES } from '@/utils/usStates';
 
 const SUB_STATUS_DISPLAY = {
   active: { label: 'Active', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
@@ -33,6 +39,43 @@ export default function Settings() {
   const { plan, status, isActive, isPastDue, isCanceled, isTrialing, hasStripeCustomer } = useSubscription();
   const portalSession = useCreatePortalSession();
   const { supported: pushSupported, isSubscribed, subscribe, unsubscribe, loading: pushLoading } = usePushNotifications();
+  const updateAccount = useUpdateAccount();
+
+  const [selectedStates, setSelectedStates] = useState(() => account?.rep_states || []);
+  const [statesOpen, setStatesOpen] = useState(false);
+  const [stateFilter, setStateFilter] = useState('');
+  const statesRef = useRef(null);
+
+  const filteredStates = useMemo(
+    () => US_STATES.filter((s) =>
+      s.name.toLowerCase().includes(stateFilter.toLowerCase()) ||
+      s.code.toLowerCase().includes(stateFilter.toLowerCase())
+    ),
+    [stateFilter]
+  );
+
+  const savedStates = account?.rep_states || [];
+  const hasChanges = JSON.stringify([...selectedStates].sort()) !== JSON.stringify([...savedStates].sort());
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (statesRef.current && !statesRef.current.contains(e.target)) {
+        setStatesOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  function toggleState(code) {
+    setSelectedStates((prev) =>
+      prev.includes(code) ? prev.filter((s) => s !== code) : [...prev, code]
+    );
+  }
+
+  function handleSaveStates() {
+    updateAccount.mutate({ rep_states: selectedStates });
+  }
 
   const checkoutSuccess = searchParams.get('checkout') === 'success';
   const planInfo = PLAN_LIMITS[plan];
@@ -81,6 +124,109 @@ export default function Settings() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* My States */}
+      <section className="mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
+        <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">My States</h2>
+        <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+          Select the states you operate in for better search filtering.
+        </p>
+
+        {/* Selected state chips */}
+        {selectedStates.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {selectedStates
+              .slice()
+              .sort((a, b) => a.localeCompare(b))
+              .map((code) => (
+                <span
+                  key={code}
+                  className="inline-flex items-center gap-1 rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-medium text-brand-800 dark:bg-brand-900/30 dark:text-brand-400"
+                >
+                  {code}
+                  <button
+                    type="button"
+                    onClick={() => toggleState(code)}
+                    className="ml-0.5 rounded-full p-0.5 hover:bg-brand-200 dark:hover:bg-brand-800/50"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+          </div>
+        )}
+
+        {/* Multi-select dropdown */}
+        <div ref={statesRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setStatesOpen((v) => !v)}
+            className="flex w-full items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-left text-sm dark:border-gray-600 dark:bg-gray-700"
+          >
+            <MapPin className="h-4 w-4 text-gray-400" />
+            <span className="flex-1 text-gray-500 dark:text-gray-400">
+              {selectedStates.length === 0
+                ? 'Select states...'
+                : `${selectedStates.length} state${selectedStates.length !== 1 ? 's' : ''} selected`}
+            </span>
+          </button>
+
+          {statesOpen && (
+            <div className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800">
+              <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-2 dark:border-gray-700">
+                <Search className="h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={stateFilter}
+                  onChange={(e) => setStateFilter(e.target.value)}
+                  placeholder="Filter states..."
+                  className="w-full bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none dark:text-gray-100 dark:placeholder-gray-500"
+                  autoFocus
+                />
+              </div>
+              <div className="max-h-48 overflow-y-auto p-1">
+                {filteredStates.map((s) => {
+                  const checked = selectedStates.includes(s.code);
+                  return (
+                    <button
+                      key={s.code}
+                      type="button"
+                      onClick={() => toggleState(s.code)}
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
+                      <div className={clsx(
+                        'flex h-4 w-4 items-center justify-center rounded border',
+                        checked
+                          ? 'border-brand-800 bg-brand-800 dark:border-brand-400 dark:bg-brand-400'
+                          : 'border-gray-300 dark:border-gray-600'
+                      )}>
+                        {checked && <Check className="h-3 w-3 text-white dark:text-gray-900" />}
+                      </div>
+                      <span className="text-gray-900 dark:text-gray-100">{s.name}</span>
+                      <span className="ml-auto text-xs text-gray-400">{s.code}</span>
+                    </button>
+                  );
+                })}
+                {filteredStates.length === 0 && (
+                  <p className="px-3 py-2 text-sm text-gray-400">No states match</p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {hasChanges && (
+          <Button
+            variant="primary"
+            size="sm"
+            className="mt-3"
+            loading={updateAccount.isPending}
+            onClick={handleSaveStates}
+          >
+            Save States
+          </Button>
+        )}
       </section>
 
       {/* Subscription */}

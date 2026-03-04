@@ -1,0 +1,11 @@
+npi_data/
+*.csv
+*.zip
+npidata_*
+endpoint_pfile_*
+othername_pfile_*
+pl_pfile_*
+Hospital_General_Information.csv
+hospital_data.csv
+NPPES_*
+TASK_STEP6.md

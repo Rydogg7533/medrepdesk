@@ -1,15 +1,12 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Users, Search, Phone, Upload, Building, Factory, Stethoscope, Plus, Trash2, ChevronDown } from 'lucide-react';
+import { Users, Search, Phone, Upload, Building, Factory, Stethoscope, Plus, Trash2 } from 'lucide-react';
 import { useContacts, useUpdateContact } from '@/hooks/useContacts';
 import { useFacilities, useUpdateFacility, useDeleteFacility } from '@/hooks/useFacilities';
 import { useManufacturers, useUpdateManufacturer, useDeleteManufacturer } from '@/hooks/useManufacturers';
-import { useSurgeons, useUpdateSurgeon, useDeleteSurgeon, useSearchSurgeons } from '@/hooks/useSurgeons';
-import { useRepStates } from '@/hooks/useRepStates';
+import { useSurgeons, useUpdateSurgeon, useDeleteSurgeon } from '@/hooks/useSurgeons';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/lib/supabase';
 import Skeleton from '@/components/ui/Skeleton';
-import EmptyState from '@/components/ui/EmptyState';
 import ActiveToggle from '@/components/ui/ActiveToggle';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
@@ -33,30 +30,6 @@ function getContactOrg(contact) {
   return contact.facility?.name || contact.distributor?.name || contact.manufacturer?.name || '';
 }
 
-function GlobalBadge() {
-  return (
-    <span className="rounded bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 text-[10px] font-medium text-gray-400 dark:text-gray-500">
-      Global
-    </span>
-  );
-}
-
-function StateFilter({ repStates, stateFilter, onStateFilterChange }) {
-  return (
-    <select
-      value={stateFilter}
-      onChange={(e) => onStateFilterChange(e.target.value)}
-      className="min-h-touch rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-2 py-2 text-xs text-gray-700 dark:text-gray-300 outline-none focus:border-brand-800"
-    >
-      <option value="my_states">My States</option>
-      <option value="all">All States</option>
-      {repStates.map((st) => (
-        <option key={st} value={st}>{st}</option>
-      ))}
-    </select>
-  );
-}
-
 export default function Contacts() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -64,16 +37,13 @@ export default function Contacts() {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [showActiveOnly, setShowActiveOnly] = useState(true);
   const [search, setSearch] = useState('');
-  const [stateFilter, setStateFilter] = useState('my_states');
 
   const { user } = useAuth();
   const isOwner = user?.role === 'owner';
-  const { data: repStates = [] } = useRepStates();
 
   const { data: contacts, isLoading: contactsLoading } = useContacts();
   const { data: facilities, isLoading: facilitiesLoading } = useFacilities();
   const { data: manufacturers, isLoading: manufacturersLoading } = useManufacturers();
-  // Only fetch private surgeons for initial display
   const { data: privateSurgeons, isLoading: surgeonsLoading } = useSurgeons();
 
   const updateContact = useUpdateContact();
@@ -84,19 +54,7 @@ export default function Contacts() {
   const updateSurgeon = useUpdateSurgeon();
   const deleteSurgeon = useDeleteSurgeon();
 
-  // Server-side surgeon search for the surgeons tab
-  const filterStatesForSearch = stateFilter === 'all' ? [] :
-    stateFilter === 'my_states' ? repStates : [stateFilter];
-  const surgeonSearch = useSearchSurgeons({ filterStates: filterStatesForSearch });
-
   const isLoading = contactsLoading || facilitiesLoading || manufacturersLoading || surgeonsLoading;
-
-  // Compute active state filter for client-side filtering
-  const activeStateFilter = useMemo(() => {
-    if (stateFilter === 'all') return null;
-    if (stateFilter === 'my_states') return repStates.length > 0 ? repStates : null;
-    return [stateFilter];
-  }, [stateFilter, repStates]);
 
   const filteredContacts = useMemo(() => {
     if (!contacts) return [];
@@ -118,16 +76,12 @@ export default function Contacts() {
     if (!facilities) return [];
     let list = facilities;
     if (showActiveOnly) list = list.filter((f) => f.is_active !== false);
-    // Apply state filter (client-side since ~4.7k facilities is manageable)
-    if (activeStateFilter) {
-      list = list.filter((f) => !f.is_global || (f.state && activeStateFilter.includes(f.state)));
-    }
     if (search) {
       const q = search.toLowerCase();
       list = list.filter((f) => f.name?.toLowerCase().includes(q) || f.city?.toLowerCase().includes(q));
     }
     return list;
-  }, [facilities, search, showActiveOnly, activeStateFilter]);
+  }, [facilities, search, showActiveOnly]);
 
   const filteredManufacturers = useMemo(() => {
     if (!manufacturers) return [];
@@ -140,70 +94,22 @@ export default function Contacts() {
     return list;
   }, [manufacturers, search, showActiveOnly]);
 
-  // Surgeons: show private surgeons by default, switch to search results when searching
-  const [surgeonSearchResults, setSurgeonSearchResults] = useState(null);
-  const [surgeonSearching, setSurgeonSearching] = useState(false);
-  const surgeonTimerRef = useRef(null);
-
-  const handleSurgeonSearch = useCallback((term) => {
-    if (term.length < 3) {
-      setSurgeonSearchResults(null);
-      return;
-    }
-    if (surgeonTimerRef.current) clearTimeout(surgeonTimerRef.current);
-    surgeonTimerRef.current = setTimeout(async () => {
-      setSurgeonSearching(true);
-      try {
-        const { data, error } = await supabase.rpc('search_surgeons', {
-          search_term: term,
-          filter_states: filterStatesForSearch.length ? filterStatesForSearch : null,
-          result_limit: 50,
-        });
-        if (error) throw error;
-        setSurgeonSearchResults(data || []);
-      } catch {
-        setSurgeonSearchResults([]);
-      } finally {
-        setSurgeonSearching(false);
-      }
-    }, 300);
-  }, [filterStatesForSearch]);
-
-  const displaySurgeons = useMemo(() => {
-    // If actively searching (3+ chars typed), show search results
-    if (surgeonSearchResults !== null) {
-      let list = surgeonSearchResults;
-      if (showActiveOnly) list = list.filter((s) => s.is_active !== false);
-      return list;
-    }
-    // Default: show private surgeons only
+  const filteredSurgeons = useMemo(() => {
     if (!privateSurgeons) return [];
     let list = privateSurgeons;
     if (showActiveOnly) list = list.filter((s) => s.is_active !== false);
-    if (search && search.length < 3) {
+    if (search) {
       const q = search.toLowerCase();
       list = list.filter(
         (s) => s.full_name?.toLowerCase().includes(q) || s.specialty?.toLowerCase().includes(q)
       );
     }
     return list;
-  }, [privateSurgeons, surgeonSearchResults, search, showActiveOnly]);
-
-  function handleSearchChange(val) {
-    setSearch(val);
-    if (activeTab === 'surgeons') {
-      if (val.length >= 3) {
-        handleSurgeonSearch(val);
-      } else {
-        setSurgeonSearchResults(null);
-      }
-    }
-  }
+  }, [privateSurgeons, search, showActiveOnly]);
 
   function handleTabChange(tab) {
     setActiveTab(tab);
     setSearch('');
-    setSurgeonSearchResults(null);
   }
 
   if (isLoading) {
@@ -214,8 +120,6 @@ export default function Contacts() {
       </div>
     );
   }
-
-  const showStateFilter = activeTab === 'facilities' || activeTab === 'surgeons';
 
   return (
     <div className="pb-20">
@@ -246,25 +150,18 @@ export default function Contacts() {
         </div>
       </div>
 
-      {/* Controls: search + state filter + active toggle + CSV import */}
+      {/* Controls: search + active toggle + CSV import */}
       <div className="flex items-center gap-2 px-4 pt-3 pb-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
             type="text"
-            placeholder={
-              activeTab === 'surgeons'
-                ? 'Search surgeons (min 3 chars for global)...'
-                : `Search ${TABS.find((t) => t.key === activeTab)?.label.toLowerCase()}...`
-            }
+            placeholder={`Search ${TABS.find((t) => t.key === activeTab)?.label.toLowerCase()}...`}
             value={search}
-            onChange={(e) => handleSearchChange(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             className="min-h-touch w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2.5 pl-10 pr-3 text-sm text-gray-900 dark:text-gray-100 outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
           />
         </div>
-        {showStateFilter && (
-          <StateFilter repStates={repStates} stateFilter={stateFilter} onStateFilterChange={setStateFilter} />
-        )}
         <div className="flex min-h-touch items-center gap-2">
           <ActiveToggle isActive={showActiveOnly} onToggle={(val) => setShowActiveOnly(val)} size="sm" />
           <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{showActiveOnly ? 'Active' : 'All'}</span>
@@ -309,13 +206,11 @@ export default function Contacts() {
         )}
         {activeTab === 'surgeons' && (
           <SurgeonsTab
-            surgeons={displaySurgeons}
+            surgeons={filteredSurgeons}
             onToggle={(id, val) => updateSurgeon.mutate({ id, is_active: val })}
             onDelete={(id) => deleteSurgeon.mutate(id)}
             navigate={navigate}
             isOwner={isOwner}
-            isSearching={surgeonSearching}
-            searchLength={search.length}
           />
         )}
       </div>
@@ -403,7 +298,6 @@ function FacilitiesTab({ facilities, onToggle, onDelete, navigate, isOwner }) {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-gray-800 dark:text-gray-200">{f.name}</p>
-                  {f.is_global && <GlobalBadge />}
                   {f.facility_type && (
                     <span className="rounded bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">
                       {f.facility_type.toUpperCase()}
@@ -416,7 +310,7 @@ function FacilitiesTab({ facilities, onToggle, onDelete, navigate, isOwner }) {
                   </p>
                 )}
               </div>
-              {isOwner && !f.is_global && (
+              {isOwner && (
                 <button
                   onClick={(e) => { e.stopPropagation(); setDeleteTarget(f); }}
                   className="p-1.5 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
@@ -492,7 +386,7 @@ function ManufacturersTab({ manufacturers, onToggle, onDelete, navigate, isOwner
   );
 }
 
-function SurgeonsTab({ surgeons, onToggle, onDelete, navigate, isOwner, isSearching, searchLength }) {
+function SurgeonsTab({ surgeons, onToggle, onDelete, navigate, isOwner }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   return (
@@ -503,25 +397,9 @@ function SurgeonsTab({ surgeons, onToggle, onDelete, navigate, isOwner, isSearch
       >
         <Plus className="h-4 w-4" /> Add Surgeon
       </button>
-
-      {isSearching && (
-        <div className="flex items-center justify-center gap-2 py-6">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-brand-800 dark:border-gray-500 dark:border-t-brand-400" />
-          <span className="text-sm text-gray-400 dark:text-gray-500">Searching...</span>
-        </div>
-      )}
-
-      {!isSearching && searchLength > 0 && searchLength < 3 && (
-        <p className="py-4 text-center text-sm text-gray-400 dark:text-gray-500">
-          Type at least 3 characters to search global surgeons
-        </p>
-      )}
-
-      {!isSearching && surgeons.length === 0 && searchLength >= 3 ? (
+      {surgeons.length === 0 ? (
         <p className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">No surgeons found</p>
-      ) : !isSearching && surgeons.length === 0 && searchLength === 0 ? (
-        <p className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">No private surgeons yet. Search to find global surgeons.</p>
-      ) : !isSearching && (
+      ) : (
         <div className="space-y-1">
           {surgeons.map((s) => (
             <div
@@ -533,13 +411,12 @@ function SurgeonsTab({ surgeons, onToggle, onDelete, navigate, isOwner, isSearch
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-gray-800 dark:text-gray-200">{s.full_name}</p>
-                  {s.is_global && <GlobalBadge />}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {[s.specialty, s.primary_facility?.name || s.primary_facility_name].filter(Boolean).join(' · ')}
+                  {[s.specialty, s.primary_facility?.name].filter(Boolean).join(' · ')}
                 </p>
               </div>
-              {isOwner && !s.is_global && (
+              {isOwner && (
                 <button
                   onClick={(e) => { e.stopPropagation(); setDeleteTarget(s); }}
                   className="p-1.5 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"

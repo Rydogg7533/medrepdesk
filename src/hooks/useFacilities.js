@@ -13,7 +13,7 @@ export function useFacilities({ activeOnly = false } = {}) {
       let query = supabase
         .from('facilities')
         .select('*')
-        .or(`is_global.eq.true,account_id.eq.${accountId}`);
+        .eq('account_id', accountId);
       if (activeOnly) query = query.eq('is_active', true);
       const { data, error } = await query.order('name');
       if (error) throw error;
