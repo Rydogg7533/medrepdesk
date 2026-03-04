@@ -113,6 +113,35 @@ export function useDeleteSurgeon() {
   });
 }
 
+export function useImportGlobalSurgeon() {
+  const queryClient = useQueryClient();
+  const { account } = useAuth();
+  const accountId = account?.id;
+
+  return useMutation({
+    mutationFn: async (globalId) => {
+      const { data: source, error: fetchError } = await supabase
+        .from('surgeons')
+        .select('*')
+        .eq('id', globalId)
+        .single();
+      if (fetchError) throw fetchError;
+
+      const { id, created_at, updated_at, account_id, is_global, primary_facility_id, ...fields } = source;
+      const { data, error } = await supabase
+        .from('surgeons')
+        .insert({ ...fields, account_id: accountId, is_global: false })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['surgeons'] });
+    },
+  });
+}
+
 export function useUpdateSurgeon() {
   const queryClient = useQueryClient();
 

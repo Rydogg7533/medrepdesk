@@ -113,6 +113,35 @@ export function useDeleteFacility() {
   });
 }
 
+export function useImportGlobalFacility() {
+  const queryClient = useQueryClient();
+  const { account } = useAuth();
+  const accountId = account?.id;
+
+  return useMutation({
+    mutationFn: async (globalId) => {
+      const { data: source, error: fetchError } = await supabase
+        .from('facilities')
+        .select('*')
+        .eq('id', globalId)
+        .single();
+      if (fetchError) throw fetchError;
+
+      const { id, created_at, updated_at, account_id, is_global, ...fields } = source;
+      const { data, error } = await supabase
+        .from('facilities')
+        .insert({ ...fields, account_id: accountId, is_global: false })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['facilities'] });
+    },
+  });
+}
+
 export function useUpdateFacility() {
   const queryClient = useQueryClient();
 

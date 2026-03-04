@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Users, Search, Phone, Upload, Building, Factory, Stethoscope, Plus, Trash2 } from 'lucide-react';
+import { Users, Search, Phone, Upload, Building, Factory, Stethoscope, Plus, Trash2, Loader2 } from 'lucide-react';
 import { useContacts, useUpdateContact } from '@/hooks/useContacts';
-import { useFacilities, useUpdateFacility, useDeleteFacility } from '@/hooks/useFacilities';
+import { useFacilities, useUpdateFacility, useDeleteFacility, useSearchFacilities, useImportGlobalFacility } from '@/hooks/useFacilities';
 import { useManufacturers, useUpdateManufacturer, useDeleteManufacturer } from '@/hooks/useManufacturers';
-import { useSurgeons, useUpdateSurgeon, useDeleteSurgeon } from '@/hooks/useSurgeons';
+import { useSurgeons, useUpdateSurgeon, useDeleteSurgeon, useSearchSurgeons, useImportGlobalSurgeon } from '@/hooks/useSurgeons';
+import { useRepStates } from '@/hooks/useRepStates';
 import { useAuth } from '@/context/AuthContext';
 import Skeleton from '@/components/ui/Skeleton';
 import ActiveToggle from '@/components/ui/ActiveToggle';
@@ -53,6 +54,33 @@ export default function Contacts() {
   const deleteManufacturer = useDeleteManufacturer();
   const updateSurgeon = useUpdateSurgeon();
   const deleteSurgeon = useDeleteSurgeon();
+
+  const { data: repStates } = useRepStates();
+  const { search: searchFacilitiesRpc, results: facilitySearchResults, isSearching: isSearchingFacilities } =
+    useSearchFacilities({ filterStates: repStates });
+  const { search: searchSurgeonsRpc, results: surgeonSearchResults, isSearching: isSearchingSurgeons } =
+    useSearchSurgeons({ filterStates: repStates });
+  const importFacility = useImportGlobalFacility();
+  const importSurgeon = useImportGlobalSurgeon();
+
+  useEffect(() => {
+    if (activeTab === 'facilities' && search.length >= 3) {
+      searchFacilitiesRpc(search);
+    }
+    if (activeTab === 'surgeons' && search.length >= 3) {
+      searchSurgeonsRpc(search);
+    }
+  }, [search, activeTab, searchFacilitiesRpc, searchSurgeonsRpc]);
+
+  const globalFacilityResults = useMemo(
+    () => (activeTab === 'facilities' && search.length >= 3 ? facilitySearchResults.filter((r) => r.is_global) : []),
+    [activeTab, search, facilitySearchResults]
+  );
+
+  const globalSurgeonResults = useMemo(
+    () => (activeTab === 'surgeons' && search.length >= 3 ? surgeonSearchResults.filter((r) => r.is_global) : []),
+    [activeTab, search, surgeonSearchResults]
+  );
 
   const isLoading = contactsLoading || facilitiesLoading || manufacturersLoading || surgeonsLoading;
 
@@ -193,6 +221,10 @@ export default function Contacts() {
             onDelete={(id) => deleteFacility.mutate(id)}
             navigate={navigate}
             isOwner={isOwner}
+            globalResults={globalFacilityResults}
+            isSearchingGlobal={isSearchingFacilities && search.length >= 3}
+            onImport={(id) => importFacility.mutate(id)}
+            importingId={importFacility.isPending ? importFacility.variables : null}
           />
         )}
         {activeTab === 'manufacturers' && (
@@ -211,6 +243,10 @@ export default function Contacts() {
             onDelete={(id) => deleteSurgeon.mutate(id)}
             navigate={navigate}
             isOwner={isOwner}
+            globalResults={globalSurgeonResults}
+            isSearchingGlobal={isSearchingSurgeons && search.length >= 3}
+            onImport={(id) => importSurgeon.mutate(id)}
+            importingId={importSurgeon.isPending ? importSurgeon.variables : null}
           />
         )}
       </div>
@@ -273,7 +309,7 @@ function PeopleTab({ contacts, onToggle, navigate }) {
   );
 }
 
-function FacilitiesTab({ facilities, onToggle, onDelete, navigate, isOwner }) {
+function FacilitiesTab({ facilities, onToggle, onDelete, navigate, isOwner, globalResults, isSearchingGlobal, onImport, importingId }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   return (
@@ -284,6 +320,38 @@ function FacilitiesTab({ facilities, onToggle, onDelete, navigate, isOwner }) {
       >
         <Plus className="h-4 w-4" /> Add Facility
       </button>
+
+      {/* Global search results */}
+      {(isSearchingGlobal || globalResults.length > 0) && (
+        <div className="mb-3">
+          <div className="flex items-center gap-2 mb-1.5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Global Results</p>
+            {isSearchingGlobal && <Loader2 className="h-3 w-3 animate-spin text-gray-400" />}
+          </div>
+          <div className="space-y-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-2">
+            {globalResults.length === 0 && !isSearchingGlobal && (
+              <p className="py-2 text-center text-xs text-gray-400 dark:text-gray-500">No global facilities found</p>
+            )}
+            {globalResults.map((r) => (
+              <div key={r.value} className="flex items-center gap-3 rounded-lg px-3 py-2.5">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{r.label}</p>
+                  {r.subtitle && <p className="text-xs text-gray-500 dark:text-gray-400">{r.subtitle}</p>}
+                </div>
+                <button
+                  onClick={() => onImport(r.value)}
+                  disabled={importingId === r.value}
+                  className="flex shrink-0 items-center gap-1 rounded-lg bg-brand-800 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                >
+                  {importingId === r.value ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+                  Add
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {facilities.length === 0 ? (
         <p className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">No facilities found</p>
       ) : (
@@ -386,7 +454,7 @@ function ManufacturersTab({ manufacturers, onToggle, onDelete, navigate, isOwner
   );
 }
 
-function SurgeonsTab({ surgeons, onToggle, onDelete, navigate, isOwner }) {
+function SurgeonsTab({ surgeons, onToggle, onDelete, navigate, isOwner, globalResults, isSearchingGlobal, onImport, importingId }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   return (
@@ -397,6 +465,38 @@ function SurgeonsTab({ surgeons, onToggle, onDelete, navigate, isOwner }) {
       >
         <Plus className="h-4 w-4" /> Add Surgeon
       </button>
+
+      {/* Global search results */}
+      {(isSearchingGlobal || globalResults.length > 0) && (
+        <div className="mb-3">
+          <div className="flex items-center gap-2 mb-1.5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Global Results</p>
+            {isSearchingGlobal && <Loader2 className="h-3 w-3 animate-spin text-gray-400" />}
+          </div>
+          <div className="space-y-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-2">
+            {globalResults.length === 0 && !isSearchingGlobal && (
+              <p className="py-2 text-center text-xs text-gray-400 dark:text-gray-500">No global surgeons found</p>
+            )}
+            {globalResults.map((r) => (
+              <div key={r.value} className="flex items-center gap-3 rounded-lg px-3 py-2.5">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{r.label}</p>
+                  {r.subtitle && <p className="text-xs text-gray-500 dark:text-gray-400">{r.subtitle}</p>}
+                </div>
+                <button
+                  onClick={() => onImport(r.value)}
+                  disabled={importingId === r.value}
+                  className="flex shrink-0 items-center gap-1 rounded-lg bg-brand-800 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                >
+                  {importingId === r.value ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+                  Add
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {surgeons.length === 0 ? (
         <p className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">No surgeons found</p>
       ) : (
