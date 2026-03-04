@@ -6,7 +6,6 @@ import { caseInsertSchema } from '@/lib/schemas';
 import { useCase, useCreateCase, useUpdateCase } from '@/hooks/useCases';
 import { useSurgeons } from '@/hooks/useSurgeons';
 import { useFacilities } from '@/hooks/useFacilities';
-import { useDistributors } from '@/hooks/useDistributors';
 import { useSmartCaseEntry } from '@/hooks/useAI';
 import { useAuth } from '@/context/AuthContext';
 import { canUseAIExtraction, getRemainingExtractions } from '@/utils/planLimits';
@@ -26,12 +25,9 @@ export default function CaseForm() {
   const updateCase = useUpdateCase();
   const { data: surgeons = [] } = useSurgeons({ activeOnly: true });
   const { data: facilities = [] } = useFacilities({ activeOnly: true });
-  const { data: distributors = [] } = useDistributors({ activeOnly: true });
-
   const [form, setForm] = useState({
     surgeon_id: '',
     facility_id: '',
-    distributor_id: '',
     procedure_type: '',
     scheduled_date: '',
     time_hour: '',
@@ -70,7 +66,6 @@ export default function CaseForm() {
         ...prev,
         surgeon_id: result.surgeon_id || prev.surgeon_id,
         facility_id: result.facility_id || prev.facility_id,
-        distributor_id: result.distributor_id || prev.distributor_id,
         procedure_type: result.procedure_type || prev.procedure_type,
         scheduled_date: result.scheduled_date || prev.scheduled_date,
         notes: result.notes || prev.notes,
@@ -96,7 +91,6 @@ export default function CaseForm() {
       setForm({
         surgeon_id: existingCase.surgeon_id || '',
         facility_id: existingCase.facility_id || '',
-        distributor_id: existingCase.distributor_id || '',
         procedure_type: existingCase.procedure_type || '',
         scheduled_date: existingCase.scheduled_date || '',
         time_hour: hour,
@@ -128,7 +122,7 @@ export default function CaseForm() {
     const payload = {
       surgeon_id: form.surgeon_id || null,
       facility_id: form.facility_id || null,
-      distributor_id: form.distributor_id || null,
+      distributor_id: isEdit ? (existingCase?.distributor_id || null) : (account?.primary_distributor_id || null),
       procedure_type: form.procedure_type || null,
       scheduled_date: form.scheduled_date || null,
       scheduled_time,
@@ -150,7 +144,6 @@ export default function CaseForm() {
 
   const surgeonOpts = surgeons.map((s) => ({ value: s.id, label: s.full_name }));
   const facilityOpts = facilities.map((f) => ({ value: f.id, label: f.name }));
-  const distributorOpts = distributors.map((d) => ({ value: d.id, label: d.name }));
 
   const isPending = createCase.isPending || updateCase.isPending;
 
@@ -264,17 +257,6 @@ export default function CaseForm() {
             allRecords={facilities}
             allRecordsNameField="name"
           />
-          <SearchableSelect
-            label="Distributor"
-            options={distributorOpts}
-            value={form.distributor_id}
-            onChange={(v) => { setForm((p) => ({ ...p, distributor_id: v })); }}
-            placeholder="Select distributor"
-            onAddNew={() => navigate('/distributors/new')}
-            allRecords={distributors}
-            allRecordsNameField="name"
-          />
-
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Procedure Type

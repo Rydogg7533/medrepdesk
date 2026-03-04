@@ -8,6 +8,7 @@ import { useCaseCommunications } from '@/hooks/useCommunications';
 import { useChaseLog, useCreateChaseEntry } from '@/hooks/useChaseLog';
 import { useAuth } from '@/context/AuthContext';
 import { useDistributors } from '@/hooks/useDistributors';
+import { useBillSheetItems } from '@/hooks/useBillSheetItems';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -15,7 +16,6 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import BottomSheet from '@/components/ui/BottomSheet';
 import Skeleton from '@/components/ui/Skeleton';
 import InfoTooltip from '@/components/ui/InfoTooltip';
-import Input from '@/components/ui/Input';
 import PipelineGuide from '@/components/features/PipelineGuide';
 import { formatDate, formatTime, formatCurrency } from '@/utils/formatters';
 import { CASE_STATUSES, PROCEDURE_TYPES } from '@/utils/constants';
@@ -45,14 +45,13 @@ export default function CaseDetail() {
   const { data: caseCommunications = [] } = useCaseCommunications(id);
   const { data: chaseEntries = [] } = useChaseLog(id);
   const { data: distributors = [] } = useDistributors();
+  const { data: billSheetItems = [] } = useBillSheetItems(id);
   const updateCase = useUpdateCase();
   const deleteCase = useDeleteCase();
   const createCommission = useCreateCommission();
   const createChase = useCreateChaseEntry();
   const [showDelete, setShowDelete] = useState(false);
   const [showAddCommission, setShowAddCommission] = useState(false);
-  const [showBillSheet, setShowBillSheet] = useState(false);
-  const [billSheetCaseValue, setBillSheetCaseValue] = useState('');
   const [showPipeline, setShowPipeline] = useState(false);
 
   const procLabel = (type) =>
@@ -67,20 +66,23 @@ export default function CaseDetail() {
     navigate('/cases', { replace: true });
   }
 
-  async function handleLogBillSheet() {
-    if (!billSheetCaseValue || Number(billSheetCaseValue) <= 0) return;
-    const caseValue = Number(billSheetCaseValue);
-    await createChase.mutateAsync({
-      case_id: id,
-      chase_type: 'bill_sheet_submitted',
-      facility_id: caseData.facility_id,
-    });
-    await updateCase.mutateAsync({ id, status: 'bill_sheet_submitted', case_value: caseValue });
-    setShowBillSheet(false);
-    navigate(`/po/new?caseId=${id}`);
-  }
-
   async function handleAutoCommission() {
+    // If bill sheet items exist, calculate from those
+    if (billSheetItems.length > 0) {
+      const totalCommission = billSheetItems.reduce((sum, item) => sum + (item.commission_amount || 0), 0);
+      const totalCaseValue = billSheetItems.reduce((sum, item) => sum + (item.total || 0), 0);
+      await createCommission.mutateAsync({
+        case_id: id,
+        distributor_id: caseData.distributor_id,
+        commission_type: 'percentage',
+        case_value: totalCaseValue,
+        expected_amount: totalCommission,
+      });
+      setShowAddCommission(false);
+      return;
+    }
+
+    // Otherwise use distributor defaults
     const dist = distributors.find((d) => d.id === caseData.distributor_id);
     if (!dist) return;
 
@@ -372,7 +374,7 @@ export default function CaseDetail() {
           </Button>
         )}
         {caseData.status === 'completed' && (
-          <Button fullWidth onClick={() => setShowBillSheet(true)}>
+          <Button fullWidth onClick={() => navigate(`/bill-sheet?caseId=${id}`)}>
             Log Bill Sheet
           </Button>
         )}
@@ -394,33 +396,6 @@ export default function CaseDetail() {
           </Button>
         )}
       </div>
-
-      {/* Bill Sheet Submission */}
-      <BottomSheet isOpen={showBillSheet} onClose={() => setShowBillSheet(false)} title="Log Bill Sheet">
-        <div className="flex flex-col gap-3">
-          <div>
-            <div className="mb-1 flex items-center">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Case Value ($) *</label>
-              <InfoTooltip text="Total value of products/implants used in this case. This determines your commission calculation." />
-            </div>
-            <Input
-              type="number"
-              step="0.01"
-              placeholder="0.00"
-              value={billSheetCaseValue}
-              onChange={(e) => setBillSheetCaseValue(e.target.value)}
-            />
-          </div>
-          <Button
-            fullWidth
-            loading={createChase.isPending || updateCase.isPending}
-            onClick={handleLogBillSheet}
-            disabled={!billSheetCaseValue || Number(billSheetCaseValue) <= 0}
-          >
-            Submit Bill Sheet
-          </Button>
-        </div>
-      </BottomSheet>
 
       {/* Auto-Commission Sheet */}
       <BottomSheet isOpen={showAddCommission} onClose={() => setShowAddCommission(false)} title="Add Commission">

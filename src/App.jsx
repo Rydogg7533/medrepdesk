@@ -45,6 +45,8 @@ import Settings from '@/pages/Settings';
 import Referrals from '@/pages/Referrals';
 import JoinReferral from '@/pages/JoinReferral';
 import Landing from '@/pages/Landing';
+import MyDistributor from '@/pages/MyDistributor';
+import BillSheetForm from '@/pages/BillSheetForm';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -158,6 +160,8 @@ function App() {
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/referrals" element={<Referrals />} />
               <Route path="/notifications" element={<Notifications />} />
+              <Route path="/my-distributor" element={<MyDistributor />} />
+              <Route path="/bill-sheet" element={<BillSheetForm />} />
             </Route>
           </Routes>
           </ToastProvider>

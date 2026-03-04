@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import {
+  Building2,
   Gift,
   Settings,
   LogOut,
@@ -48,6 +49,10 @@ export default function More() {
   return (
     <div className="p-4">
       <h1 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">More</h1>
+
+      <div className="mb-4 rounded-xl bg-white shadow-sm dark:bg-gray-800">
+        <MenuItem icon={Building2} label="My Distributor" path="/my-distributor" />
+      </div>
 
       <RoleGate allowedRoles={['owner']}>
         <div className="rounded-xl bg-white shadow-sm dark:bg-gray-800">

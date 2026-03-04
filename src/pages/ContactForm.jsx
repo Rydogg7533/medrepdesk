@@ -4,7 +4,6 @@ import { ArrowLeft } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { useContact, useCreateContact, useUpdateContact } from '@/hooks/useContacts';
 import { useFacilities } from '@/hooks/useFacilities';
-import { useDistributors } from '@/hooks/useDistributors';
 import { useManufacturers } from '@/hooks/useManufacturers';
 import { useSurgeons } from '@/hooks/useSurgeons';
 import Card from '@/components/ui/Card';
@@ -49,7 +48,6 @@ export default function ContactForm() {
   const createContact = useCreateContact();
   const updateContact = useUpdateContact();
   const { data: facilities = [] } = useFacilities({ activeOnly: true });
-  const { data: distributors = [] } = useDistributors({ activeOnly: true });
   const { data: manufacturers = [] } = useManufacturers({ activeOnly: true });
   const { data: surgeons = [] } = useSurgeons({ activeOnly: true });
 
@@ -115,7 +113,6 @@ export default function ContactForm() {
     if (!phone && !email) newErrors.phone = 'Please add a phone number or email address';
     if (!contactType) newErrors.contact_type = 'Please select a contact type';
     else if (contactType === 'facility' && !form.facility_id) newErrors.facility_id = 'Please select a facility';
-    else if (contactType === 'distributor' && !form.distributor_id) newErrors.distributor_id = 'Please select a distributor';
     else if (contactType === 'manufacturer' && !form.manufacturer_id) newErrors.manufacturer_id = 'Please select a manufacturer';
     else if (contactType === 'surgeon_office' && !form.surgeon_id) newErrors.surgeon_id = 'Please select a surgeon';
     if (Object.keys(newErrors).length > 0) {
@@ -153,7 +150,6 @@ export default function ContactForm() {
   }
 
   const facilityOpts = facilities.map((f) => ({ value: f.id, label: f.name }));
-  const distributorOpts = distributors.map((d) => ({ value: d.id, label: d.name }));
   const manufacturerOpts = manufacturers.map((m) => ({ value: m.id, label: m.name }));
   const surgeonOpts = surgeons.map((s) => ({ value: s.id, label: s.full_name }));
   const isPending = createContact.isPending || updateContact.isPending;
@@ -198,7 +194,7 @@ export default function ContactForm() {
               Contact Type <span className="text-red-500">*</span>
             </label>
             <div className="flex gap-2">
-              {[{ value: 'facility', label: 'Facility' }, { value: 'distributor', label: 'Distributor' }, { value: 'manufacturer', label: 'Mfg' }, { value: 'surgeon_office', label: "Surgeon" }].map((t) => (
+              {[{ value: 'facility', label: 'Facility' }, { value: 'manufacturer', label: 'Mfg' }, { value: 'surgeon_office', label: "Surgeon" }].map((t) => (
                 <button
                   key={t.value}
                   type="button"
@@ -227,9 +223,6 @@ export default function ContactForm() {
           </div>
           {contactType === 'facility' && (
             <SearchableSelect label={<>Facility <span className="text-red-500">*</span></>} options={facilityOpts} value={form.facility_id} onChange={(v) => { setForm((p) => ({ ...p, facility_id: v })); setErrors((p) => ({ ...p, facility_id: undefined })); }} placeholder="Select facility" error={errors.facility_id} onAddNew={() => navigate('/facilities/new')} allRecords={facilities} allRecordsNameField="name" />
-          )}
-          {contactType === 'distributor' && (
-            <SearchableSelect label={<>Distributor <span className="text-red-500">*</span></>} options={distributorOpts} value={form.distributor_id} onChange={(v) => { setForm((p) => ({ ...p, distributor_id: v })); setErrors((p) => ({ ...p, distributor_id: undefined })); }} placeholder="Select distributor" error={errors.distributor_id} onAddNew={() => navigate('/distributors/new')} allRecords={distributors} allRecordsNameField="name" />
           )}
           {contactType === 'manufacturer' && (
             <SearchableSelect label={<>Manufacturer <span className="text-red-500">*</span></>} options={manufacturerOpts} value={form.manufacturer_id} onChange={(v) => { setForm((p) => ({ ...p, manufacturer_id: v })); setErrors((p) => ({ ...p, manufacturer_id: undefined })); }} placeholder="Select manufacturer" error={errors.manufacturer_id} onAddNew={() => navigate('/manufacturers/new')} allRecords={manufacturers} allRecordsNameField="name" />

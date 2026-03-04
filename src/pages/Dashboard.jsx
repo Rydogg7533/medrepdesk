@@ -1,5 +1,5 @@
-import { useNavigate } from 'react-router-dom';
-import { Briefcase, AlertTriangle, TrendingUp, ChevronRight, Clock, CalendarCheck } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Briefcase, AlertTriangle, TrendingUp, ChevronRight, Clock, CalendarCheck, Building2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCases } from '@/hooks/useCases';
 import { usePOs } from '@/hooks/usePOs';
@@ -23,7 +23,7 @@ function weekFromNowISO() {
 }
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, account } = useAuth();
   const navigate = useNavigate();
   const firstName = user?.full_name?.split(' ')[0] || 'there';
 
@@ -80,6 +80,23 @@ export default function Dashboard() {
       <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
         {getGreeting()}, {firstName}
       </h1>
+
+      {/* Distributor Setup Banner */}
+      {!account?.primary_distributor_id && (
+        <Card
+          className="cursor-pointer border border-brand-200 dark:border-brand-800/30 bg-brand-50 dark:bg-brand-800/10 active:bg-brand-100 dark:active:bg-brand-800/20"
+          onClick={() => navigate('/my-distributor')}
+        >
+          <div className="flex items-center gap-3">
+            <Building2 className="h-5 w-5 text-brand-800 dark:text-brand-400" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-brand-800 dark:text-brand-400">Set up your distributor to get started</p>
+              <p className="text-xs text-brand-600 dark:text-brand-500">Configure products and commission rates</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-brand-800 dark:text-brand-400" />
+          </div>
+        </Card>
+      )}
 
       {/* Today's Cases */}
       <Card

@@ -40,6 +40,8 @@ CREATE TABLE accounts (
   tos_agreed_at               timestamptz,
   tos_ip_address              text,
   privacy_agreed_at           timestamptz,
+  -- Primary distributor
+  primary_distributor_id      uuid REFERENCES distributors(id),
   -- Timestamps
   created_at                  timestamptz NOT NULL DEFAULT now(),
   updated_at                  timestamptz NOT NULL DEFAULT now()
@@ -94,6 +96,8 @@ CREATE TABLE distributors (
   billing_email_cc            text[],
   billing_contact_name        text,
   billing_contact_phone       text,
+  address                     text,
+  phone                       text,
   -- Commission defaults
   default_commission_type     text NOT NULL DEFAULT 'percentage'
                                 CHECK (default_commission_type IN ('percentage', 'flat')),
@@ -160,6 +164,30 @@ CREATE TABLE manufacturers (
 );
 
 -- ============================================================
+-- DISTRIBUTOR PRODUCTS
+-- Product types with commission rates per distributor.
+-- ============================================================
+CREATE TABLE distributor_products (
+  id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  account_id                  uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  distributor_id              uuid NOT NULL REFERENCES distributors(id) ON DELETE CASCADE,
+  product_type                text NOT NULL CHECK (product_type IN (
+                                'hip', 'knee', 'shoulder', 'elbow', 'ankle',
+                                'spine', 'sports_medicine', 'ancillary'
+                              )),
+  custom_name                 text,  -- for ancillary only
+  commission_rate             numeric(5,2),
+  is_active                   boolean NOT NULL DEFAULT true,
+  created_at                  timestamptz NOT NULL DEFAULT now(),
+  updated_at                  timestamptz NOT NULL DEFAULT now()
+);
+
+-- Partial unique: one per (distributor, product_type) except ancillary
+CREATE UNIQUE INDEX idx_dist_products_unique
+  ON distributor_products(distributor_id, product_type)
+  WHERE product_type != 'ancillary';
+
+-- ============================================================
 -- CASES
 -- Core entity. Every rep interaction flows through a case.
 -- ============================================================
@@ -186,6 +214,27 @@ CREATE TABLE cases (
   created_at                  timestamptz NOT NULL DEFAULT now(),
   updated_at                  timestamptz NOT NULL DEFAULT now(),
   UNIQUE(account_id, case_number)
+);
+
+-- ============================================================
+-- BILL SHEET ITEMS
+-- Line items for bill sheets, linked to cases.
+-- ============================================================
+CREATE TABLE bill_sheet_items (
+  id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  account_id                  uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  case_id                     uuid NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+  distributor_product_id      uuid REFERENCES distributor_products(id),
+  manufacturer_id             uuid NOT NULL REFERENCES manufacturers(id),
+  product_type                text,
+  product_description         text,
+  quantity                    integer NOT NULL DEFAULT 1,
+  unit_price                  numeric(10,2),
+  total                       numeric(10,2),
+  commission_rate             numeric(5,2),
+  commission_amount           numeric(10,2),
+  created_at                  timestamptz NOT NULL DEFAULT now(),
+  updated_at                  timestamptz NOT NULL DEFAULT now()
 );
 
 -- ============================================================
@@ -518,6 +567,12 @@ CREATE INDEX idx_notifications_account ON notifications(account_id);
 CREATE INDEX idx_contacts_account ON contacts(account_id);
 CREATE INDEX idx_contacts_facility ON contacts(facility_id);
 
+-- Distributor Products
+CREATE INDEX idx_dist_products_distributor ON distributor_products(distributor_id);
+
+-- Bill Sheet Items
+CREATE INDEX idx_bill_sheet_items_case ON bill_sheet_items(case_id);
+
 -- ============================================================
 -- DATABASE TRIGGERS
 -- ============================================================
@@ -690,6 +745,8 @@ ALTER TABLE po_email_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE case_documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_extractions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE distributor_products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE bill_sheet_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Helper function: get current user's account_id
@@ -734,6 +791,18 @@ CREATE POLICY "contacts_select" ON contacts FOR SELECT USING (account_id = get_a
 CREATE POLICY "contacts_insert" ON contacts FOR INSERT WITH CHECK (account_id = get_account_id());
 CREATE POLICY "contacts_update" ON contacts FOR UPDATE USING (account_id = get_account_id());
 CREATE POLICY "contacts_delete" ON contacts FOR DELETE USING (account_id = get_account_id() AND get_user_role() = 'owner');
+
+-- DISTRIBUTOR PRODUCTS
+CREATE POLICY "dist_products_select" ON distributor_products FOR SELECT USING (account_id = get_account_id());
+CREATE POLICY "dist_products_insert" ON distributor_products FOR INSERT WITH CHECK (account_id = get_account_id());
+CREATE POLICY "dist_products_update" ON distributor_products FOR UPDATE USING (account_id = get_account_id());
+CREATE POLICY "dist_products_delete" ON distributor_products FOR DELETE USING (account_id = get_account_id());
+
+-- BILL SHEET ITEMS
+CREATE POLICY "bill_items_select" ON bill_sheet_items FOR SELECT USING (account_id = get_account_id());
+CREATE POLICY "bill_items_insert" ON bill_sheet_items FOR INSERT WITH CHECK (account_id = get_account_id());
+CREATE POLICY "bill_items_update" ON bill_sheet_items FOR UPDATE USING (account_id = get_account_id());
+CREATE POLICY "bill_items_delete" ON bill_sheet_items FOR DELETE USING (account_id = get_account_id());
 
 -- DISTRIBUTORS
 CREATE POLICY "distributors_select" ON distributors FOR SELECT USING (account_id = get_account_id());

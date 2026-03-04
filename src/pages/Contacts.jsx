@@ -1,9 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Users, Search, Phone, Upload, Plus, Building, Building2, Factory, Stethoscope, Eye, EyeOff } from 'lucide-react';
+import { Users, Search, Phone, Upload, Building, Factory, Stethoscope } from 'lucide-react';
 import { useContacts, useUpdateContact } from '@/hooks/useContacts';
 import { useFacilities, useUpdateFacility } from '@/hooks/useFacilities';
-import { useDistributors, useUpdateDistributor } from '@/hooks/useDistributors';
 import { useManufacturers, useUpdateManufacturer } from '@/hooks/useManufacturers';
 import { useSurgeons, useUpdateSurgeon } from '@/hooks/useSurgeons';
 import Skeleton from '@/components/ui/Skeleton';
@@ -14,7 +13,6 @@ import { formatDate } from '@/utils/formatters';
 const TABS = [
   { key: 'people', label: 'People', icon: Users },
   { key: 'facilities', label: 'Facilities', icon: Building },
-  { key: 'distributors', label: 'Distributors', icon: Building2 },
   { key: 'manufacturers', label: 'Manufacturers', icon: Factory },
   { key: 'surgeons', label: 'Surgeons', icon: Stethoscope },
 ];
@@ -42,17 +40,15 @@ export default function Contacts() {
 
   const { data: contacts, isLoading: contactsLoading } = useContacts();
   const { data: facilities, isLoading: facilitiesLoading } = useFacilities();
-  const { data: distributors, isLoading: distributorsLoading } = useDistributors();
   const { data: manufacturers, isLoading: manufacturersLoading } = useManufacturers();
   const { data: surgeons, isLoading: surgeonsLoading } = useSurgeons();
 
   const updateContact = useUpdateContact();
   const updateFacility = useUpdateFacility();
-  const updateDistributor = useUpdateDistributor();
   const updateManufacturer = useUpdateManufacturer();
   const updateSurgeon = useUpdateSurgeon();
 
-  const isLoading = contactsLoading || facilitiesLoading || distributorsLoading || manufacturersLoading || surgeonsLoading;
+  const isLoading = contactsLoading || facilitiesLoading || manufacturersLoading || surgeonsLoading;
 
   const filteredContacts = useMemo(() => {
     if (!contacts) return [];
@@ -81,17 +77,6 @@ export default function Contacts() {
     return list;
   }, [facilities, search, showActiveOnly]);
 
-  const filteredDistributors = useMemo(() => {
-    if (!distributors) return [];
-    let list = distributors;
-    if (showActiveOnly) list = list.filter((d) => d.is_active !== false);
-    if (search) {
-      const q = search.toLowerCase();
-      list = list.filter((d) => d.name?.toLowerCase().includes(q));
-    }
-    return list;
-  }, [distributors, search, showActiveOnly]);
-
   const filteredManufacturers = useMemo(() => {
     if (!manufacturers) return [];
     let list = manufacturers;
@@ -116,17 +101,6 @@ export default function Contacts() {
     return list;
   }, [surgeons, search, showActiveOnly]);
 
-  function handleFAB() {
-    const routes = {
-      people: '/contacts/new',
-      facilities: `/facilities/new?returnTab=facilities`,
-      distributors: `/distributors/new?returnTab=distributors`,
-      manufacturers: `/manufacturers/new?returnTab=manufacturers`,
-      surgeons: `/surgeons/new?returnTab=surgeons`,
-    };
-    navigate(routes[activeTab]);
-  }
-
   if (isLoading) {
     return (
       <div className="p-4">
@@ -141,7 +115,7 @@ export default function Contacts() {
       {/* Banner */}
       <div className="bg-brand-50 dark:bg-brand-800/10 px-4 py-2.5">
         <p className="text-xs text-brand-800 dark:text-brand-400">
-          Manage your complete network — people, facilities, distributors, manufacturers, and surgeons all in one place.
+          Manage your complete network — people, facilities, manufacturers, and surgeons all in one place.
         </p>
       </div>
 
@@ -177,18 +151,10 @@ export default function Contacts() {
             className="min-h-touch w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2.5 pl-10 pr-3 text-sm text-gray-900 dark:text-gray-100 outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
           />
         </div>
-        <button
-          onClick={() => setShowActiveOnly((p) => !p)}
-          className={`flex min-h-touch items-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-            showActiveOnly
-              ? 'bg-brand-800 text-white'
-              : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
-          }`}
-          title={showActiveOnly ? 'Showing active only' : 'Showing all'}
-        >
-          {showActiveOnly ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-          {showActiveOnly ? 'Active' : 'All'}
-        </button>
+        <div className="flex min-h-touch items-center gap-2">
+          <ActiveToggle isActive={showActiveOnly} onToggle={(val) => setShowActiveOnly(val)} size="sm" />
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{showActiveOnly ? 'Active' : 'All'}</span>
+        </div>
         {activeTab === 'people' && (
           <button
             onClick={() => navigate('/contacts/import')}
@@ -216,13 +182,6 @@ export default function Contacts() {
             navigate={navigate}
           />
         )}
-        {activeTab === 'distributors' && (
-          <DistributorsTab
-            distributors={filteredDistributors}
-            onToggle={(id, val) => updateDistributor.mutate({ id, is_active: val })}
-            navigate={navigate}
-          />
-        )}
         {activeTab === 'manufacturers' && (
           <ManufacturersTab
             manufacturers={filteredManufacturers}
@@ -239,13 +198,6 @@ export default function Contacts() {
         )}
       </div>
 
-      {/* FAB */}
-      <button
-        onClick={handleFAB}
-        className="fixed bottom-20 right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-brand-800 text-white shadow-lg active:bg-brand-900"
-      >
-        <Plus className="h-6 w-6" />
-      </button>
     </div>
   );
 }
@@ -271,6 +223,7 @@ function PeopleTab({ contacts, onToggle, navigate }) {
           onClick={() => navigate(`/contacts/${c.id}`)}
           className="flex min-h-touch cursor-pointer items-center gap-3 rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800"
         >
+          <ActiveToggle isActive={c.is_active !== false} onToggle={(val) => onToggle(c.id, val)} />
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 dark:bg-brand-800/20 text-sm font-semibold text-brand-800 dark:text-brand-400">
             {c.full_name?.charAt(0)?.toUpperCase()}
           </div>
@@ -288,18 +241,15 @@ function PeopleTab({ contacts, onToggle, navigate }) {
               {getContactOrg(c)}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            {c.phone && (
-              <a
-                href={`tel:${c.phone}`}
-                onClick={(e) => e.stopPropagation()}
-                className="text-brand-800 dark:text-brand-400"
-              >
-                <Phone className="h-4 w-4" />
-              </a>
-            )}
-            <ActiveToggle isActive={c.is_active !== false} onToggle={(val) => onToggle(c.id, val)} />
-          </div>
+          {c.phone && (
+            <a
+              href={`tel:${c.phone}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-brand-800 dark:text-brand-400"
+            >
+              <Phone className="h-4 w-4" />
+            </a>
+          )}
         </div>
       ))}
     </div>
@@ -343,35 +293,6 @@ function FacilitiesTab({ facilities, onToggle, navigate }) {
             )}
           </div>
           <ActiveToggle isActive={f.is_active !== false} onToggle={(val) => onToggle(f.id, val)} />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function DistributorsTab({ distributors, onToggle, navigate }) {
-  if (distributors.length === 0) {
-    return (
-      <EmptyState
-        icon={Building2}
-        title="No distributors"
-        description="Add distributors you work with"
-        actionLabel="Add Distributor"
-        onAction={() => navigate('/distributors/new')}
-      />
-    );
-  }
-
-  return (
-    <div className="space-y-1">
-      {distributors.map((d) => (
-        <div
-          key={d.id}
-          onClick={() => navigate(`/distributors/${d.id}?returnTab=distributors`)}
-          className="flex min-h-touch cursor-pointer items-center justify-between rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800"
-        >
-          <p className="font-medium text-gray-800 dark:text-gray-200">{d.name}</p>
-          <ActiveToggle isActive={d.is_active !== false} onToggle={(val) => onToggle(d.id, val)} />
         </div>
       ))}
     </div>

@@ -61,6 +61,17 @@ export const PLAN_LIMITS = {
   },
 };
 
+export const PRODUCT_TYPES = [
+  { value: 'hip', label: 'Hip' },
+  { value: 'knee', label: 'Knee' },
+  { value: 'shoulder', label: 'Shoulder' },
+  { value: 'elbow', label: 'Elbow' },
+  { value: 'ankle', label: 'Ankle' },
+  { value: 'spine', label: 'Spine' },
+  { value: 'sports_medicine', label: 'Sports Medicine' },
+  { value: 'ancillary', label: 'Ancillary' },
+];
+
 export const THEME = {
   primary: '#0F4C81',
   primaryLight: '#EBF2F8',
