@@ -22,7 +22,9 @@ export default function ManufacturerForm() {
   const update = useUpdateManufacturer();
 
   const [form, setForm] = useState({
-    name: '', billing_email: '', billing_email_cc: '',
+    name: '', phone: '', address: '',
+    billing_email: '', billing_email_cc: '',
+    billing_contact_name: '', billing_contact_phone: '',
     notes: '', is_active: true,
   });
   const [errors, setErrors] = useState({});
@@ -32,8 +34,12 @@ export default function ManufacturerForm() {
     if (existing && isEdit) {
       setForm({
         name: existing.name || '',
+        phone: existing.phone || '',
+        address: existing.address || '',
         billing_email: existing.billing_email || '',
         billing_email_cc: existing.billing_email_cc || '',
+        billing_contact_name: existing.billing_contact_name || '',
+        billing_contact_phone: existing.billing_contact_phone || '',
         notes: existing.notes || '',
         is_active: existing.is_active !== false,
       });
@@ -84,8 +90,12 @@ export default function ManufacturerForm() {
 
     const payload = {
       name: DOMPurify.sanitize(form.name.trim()),
+      phone: sanitize(form.phone),
+      address: sanitize(form.address),
       billing_email: sanitize(form.billing_email),
       billing_email_cc: sanitize(form.billing_email_cc),
+      billing_contact_name: sanitize(form.billing_contact_name),
+      billing_contact_phone: sanitize(form.billing_contact_phone),
       is_active: form.is_active,
       notes: sanitize(form.notes),
     };
@@ -132,11 +142,15 @@ export default function ManufacturerForm() {
           {duplicateMatch && (
             <DuplicateBanner match={duplicateMatch} onReactivate={handleReactivate} reactivating={update.isPending} />
           )}
+          <Input label="Phone" name="phone" type="tel" value={form.phone} onChange={onChange} />
+          <Input label="Address" name="address" value={form.address} onChange={onChange} placeholder="Street, City, State ZIP" />
           <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
             <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Billing & PO Contact</h3>
             <div className="flex flex-col gap-4">
               <Input label="Billing Email" name="billing_email" type="email" value={form.billing_email} onChange={onChange} placeholder="billing@manufacturer.com" />
               <Input label="Billing Email CC" name="billing_email_cc" type="email" value={form.billing_email_cc} onChange={onChange} placeholder="cc@manufacturer.com" />
+              <Input label="Billing Contact Name" name="billing_contact_name" value={form.billing_contact_name} onChange={onChange} />
+              <Input label="Billing Contact Phone" name="billing_contact_phone" type="tel" value={form.billing_contact_phone} onChange={onChange} />
             </div>
           </div>
 
