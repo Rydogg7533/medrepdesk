@@ -436,6 +436,7 @@ export default function PODetail() {
               type="date"
               value={receivedDate}
               onChange={(e) => setReceivedDate(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
               className="min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
             />
           </div>
@@ -454,6 +455,7 @@ export default function PODetail() {
               type="date"
               value={paidDate}
               onChange={(e) => setPaidDate(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
               className="min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
             />
           </div>

@@ -3,9 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { useContact, useCreateContact, useUpdateContact } from '@/hooks/useContacts';
-import { useFacilities } from '@/hooks/useFacilities';
+import { useSearchFacilities } from '@/hooks/useFacilities';
 import { useManufacturers } from '@/hooks/useManufacturers';
-import { useSurgeons } from '@/hooks/useSurgeons';
+import { useSearchSurgeons } from '@/hooks/useSurgeons';
+import { useRepStates } from '@/hooks/useRepStates';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -47,9 +48,10 @@ export default function ContactForm() {
   const { data: existing } = useContact(isEdit ? id : null);
   const createContact = useCreateContact();
   const updateContact = useUpdateContact();
-  const { data: facilities = [] } = useFacilities({ activeOnly: true });
+  const { data: repStates = [] } = useRepStates();
+  const facilitySearch = useSearchFacilities({ filterStates: repStates });
   const { data: manufacturers = [] } = useManufacturers({ activeOnly: true });
-  const { data: surgeons = [] } = useSurgeons({ activeOnly: true });
+  const surgeonSearch = useSearchSurgeons({ filterStates: repStates });
 
   const [contactType, setContactType] = useState(''); // 'facility' | 'distributor' | 'manufacturer' | 'surgeon_office'
   const [form, setForm] = useState({
@@ -68,6 +70,9 @@ export default function ContactForm() {
   });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
+
+  const facilityInitialLabel = existing?.facility?.name || '';
+  const surgeonInitialLabel = existing?.surgeon?.full_name || '';
 
   useEffect(() => {
     if (existing && isEdit) {
@@ -149,9 +154,7 @@ export default function ContactForm() {
     }
   }
 
-  const facilityOpts = facilities.map((f) => ({ value: f.id, label: f.name }));
   const manufacturerOpts = manufacturers.map((m) => ({ value: m.id, label: m.name }));
-  const surgeonOpts = surgeons.map((s) => ({ value: s.id, label: s.full_name }));
   const isPending = createContact.isPending || updateContact.isPending;
 
   return (
@@ -222,13 +225,37 @@ export default function ContactForm() {
             {errors.contact_type && <p className="mt-1 text-xs text-red-500">{errors.contact_type}</p>}
           </div>
           {contactType === 'facility' && (
-            <SearchableSelect label={<>Facility <span className="text-red-500">*</span></>} options={facilityOpts} value={form.facility_id} onChange={(v) => { setForm((p) => ({ ...p, facility_id: v })); setErrors((p) => ({ ...p, facility_id: undefined })); }} placeholder="Select facility" error={errors.facility_id} onAddNew={() => navigate('/facilities/new')} allRecords={facilities} allRecordsNameField="name" />
+            <SearchableSelect
+              label={<>Facility <span className="text-red-500">*</span></>}
+              options={facilitySearch.results}
+              value={form.facility_id}
+              onChange={(v) => { setForm((p) => ({ ...p, facility_id: v })); setErrors((p) => ({ ...p, facility_id: undefined })); }}
+              placeholder="Search facilities..."
+              error={errors.facility_id}
+              onSearch={facilitySearch.search}
+              isSearching={facilitySearch.isSearching}
+              minChars={3}
+              initialLabel={facilityInitialLabel}
+              onAddNew={() => navigate('/facilities/new')}
+            />
           )}
           {contactType === 'manufacturer' && (
             <SearchableSelect label={<>Manufacturer <span className="text-red-500">*</span></>} options={manufacturerOpts} value={form.manufacturer_id} onChange={(v) => { setForm((p) => ({ ...p, manufacturer_id: v })); setErrors((p) => ({ ...p, manufacturer_id: undefined })); }} placeholder="Select manufacturer" error={errors.manufacturer_id} onAddNew={() => navigate('/manufacturers/new')} allRecords={manufacturers} allRecordsNameField="name" />
           )}
           {contactType === 'surgeon_office' && (
-            <SearchableSelect label={<>Surgeon <span className="text-red-500">*</span></>} options={surgeonOpts} value={form.surgeon_id} onChange={(v) => { setForm((p) => ({ ...p, surgeon_id: v })); setErrors((p) => ({ ...p, surgeon_id: undefined })); }} placeholder="Select surgeon" error={errors.surgeon_id} onAddNew={() => navigate('/surgeons/new')} allRecords={surgeons} allRecordsNameField="full_name" />
+            <SearchableSelect
+              label={<>Surgeon <span className="text-red-500">*</span></>}
+              options={surgeonSearch.results}
+              value={form.surgeon_id}
+              onChange={(v) => { setForm((p) => ({ ...p, surgeon_id: v })); setErrors((p) => ({ ...p, surgeon_id: undefined })); }}
+              placeholder="Search surgeons..."
+              error={errors.surgeon_id}
+              onSearch={surgeonSearch.search}
+              isSearching={surgeonSearch.isSearching}
+              minChars={3}
+              initialLabel={surgeonInitialLabel}
+              onAddNew={() => navigate('/surgeons/new')}
+            />
           )}
           <div>
             <Input label={<>Phone <span className="text-red-500">*</span></>} name="phone" type="tel" value={form.phone} onChange={onChange} error={errors.phone} placeholder="801-555-0100" />

@@ -325,6 +325,7 @@ export default function POForm() {
             type="date"
             value={form.invoice_date}
             onChange={onChange}
+            max={new Date().toISOString().split('T')[0]}
           />
 
           <div>
@@ -337,6 +338,7 @@ export default function POForm() {
               type="date"
               value={form.issue_date}
               onChange={onChange}
+              max={new Date().toISOString().split('T')[0]}
             />
           </div>
 

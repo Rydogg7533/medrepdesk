@@ -1,3 +1,4 @@
+import { useState, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
@@ -12,7 +13,7 @@ export function useSurgeons({ activeOnly = false } = {}) {
       let query = supabase
         .from('surgeons')
         .select('*, primary_facility:facilities(name)')
-        .or(`is_global.eq.true,account_id.eq.${accountId}`);
+        .eq('account_id', accountId);
       if (activeOnly) query = query.eq('is_active', true);
       const { data, error } = await query.order('full_name');
       if (error) throw error;
@@ -20,6 +21,45 @@ export function useSurgeons({ activeOnly = false } = {}) {
     },
     enabled: !!accountId,
   });
+}
+
+export function useSearchSurgeons({ filterStates } = {}) {
+  const [results, setResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const timerRef = useRef(null);
+
+  const search = useCallback(
+    (term) => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(async () => {
+        setIsSearching(true);
+        try {
+          const { data, error } = await supabase.rpc('search_surgeons', {
+            search_term: term,
+            filter_states: filterStates?.length ? filterStates : null,
+            result_limit: 20,
+          });
+          if (error) throw error;
+          setResults(
+            (data || []).map((s) => ({
+              value: s.id,
+              label: s.full_name,
+              subtitle: s.specialty || null,
+              is_global: s.is_global,
+            }))
+          );
+        } catch (err) {
+          console.error('search_surgeons error:', err);
+          setResults([]);
+        } finally {
+          setIsSearching(false);
+        }
+      }, 300);
+    },
+    [filterStates]
+  );
+
+  return { search, results, isSearching };
 }
 
 export function useSurgeon(id) {
@@ -52,6 +92,20 @@ export function useCreateSurgeon() {
         .single();
       if (error) throw error;
       return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['surgeons'] });
+    },
+  });
+}
+
+export function useDeleteSurgeon() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase.from('surgeons').delete().eq('id', id);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['surgeons'] });

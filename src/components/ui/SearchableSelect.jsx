@@ -14,30 +14,43 @@ export default function SearchableSelect({
   valueKey = 'value',
   allRecords,
   allRecordsNameField,
+  // Async mode props
+  onSearch,
+  isSearching = false,
+  minChars = 0,
+  initialLabel,
 }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
 
-  const selectedOption = options.find((o) => o[valueKey] === value);
-  const filtered = query
-    ? options.filter((o) =>
-        o[displayKey].toLowerCase().includes(query.toLowerCase())
-      )
-    : options;
+  const isAsync = !!onSearch;
 
-  // Fuzzy suggestion: check if user's typed query matches a record not in the filtered list
+  const selectedOption = options.find((o) => o[valueKey] === value);
+  const displayLabel = selectedOption
+    ? selectedOption[displayKey]
+    : initialLabel || '';
+
+  // In async mode, don't filter client-side — options come pre-filtered from server
+  const filtered = isAsync
+    ? options
+    : query
+      ? options.filter((o) =>
+          o[displayKey].toLowerCase().includes(query.toLowerCase())
+        )
+      : options;
+
+  // Fuzzy suggestion: only in sync mode
   const fuzzySuggestion = useMemo(() => {
-    if (!allRecords || !query || query.length < 2) return null;
+    if (isAsync || !allRecords || !query || query.length < 2) return null;
     const match = findFuzzyDuplicate(query, allRecords, allRecordsNameField || 'name');
     if (!match) return null;
-    // Check if this record is already in the visible filtered results
     const alreadyVisible = filtered.some(
       (o) => o[valueKey] === match.record.id
     );
     if (alreadyVisible) return null;
     return match.record;
-  }, [query, allRecords, allRecordsNameField, filtered, valueKey]);
+  }, [isAsync, query, allRecords, allRecordsNameField, filtered, valueKey]);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -61,6 +74,19 @@ export default function SearchableSelect({
     setOpen(false);
   }
 
+  function handleInputChange(e) {
+    const val = e.target.value;
+    setQuery(val);
+    if (isAsync && val.length >= minChars) {
+      onSearch(val);
+    }
+  }
+
+  const showMinCharsPrompt = isAsync && open && query.length < minChars && query.length > 0;
+  const showEmptyPrompt = isAsync && open && query.length === 0 && minChars > 0;
+  const showSpinner = isAsync && isSearching && query.length >= minChars;
+  const showResults = isAsync ? query.length >= minChars && !isSearching : true;
+
   return (
     <div ref={wrapperRef} className="relative w-full">
       {label && (
@@ -77,18 +103,34 @@ export default function SearchableSelect({
           'dark:bg-gray-700 dark:text-white',
           error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
         )}
-        placeholder={selectedOption ? selectedOption[displayKey] : placeholder}
-        value={open ? query : selectedOption ? selectedOption[displayKey] : ''}
+        placeholder={displayLabel || placeholder}
+        value={open ? query : displayLabel}
         onFocus={() => {
           setOpen(true);
           setQuery('');
         }}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={handleInputChange}
       />
 
       {open && (
         <div className="absolute z-30 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-700">
-          {fuzzySuggestion && (
+          {/* Min chars prompt */}
+          {(showMinCharsPrompt || showEmptyPrompt) && (
+            <div className="px-3 py-2.5 text-sm text-gray-400 dark:text-gray-500">
+              Type at least {minChars} characters to search...
+            </div>
+          )}
+
+          {/* Loading spinner */}
+          {showSpinner && (
+            <div className="flex items-center gap-2 px-3 py-2.5">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-brand-800 dark:border-gray-500 dark:border-t-brand-400" />
+              <span className="text-sm text-gray-400 dark:text-gray-500">Searching...</span>
+            </div>
+          )}
+
+          {/* Fuzzy suggestion (sync mode only) */}
+          {!isAsync && fuzzySuggestion && (
             <button
               type="button"
               className="min-h-touch w-full border-b border-amber-100 bg-amber-50 px-3 py-2.5 text-left text-sm dark:border-amber-800 dark:bg-amber-900/20"
@@ -101,19 +143,34 @@ export default function SearchableSelect({
               <span className="text-amber-700 dark:text-amber-400">?</span>
             </button>
           )}
-          {filtered.length === 0 && !fuzzySuggestion && (
+
+          {/* No results */}
+          {showResults && filtered.length === 0 && !fuzzySuggestion && (
             <div className="px-3 py-2.5 text-sm text-gray-400 dark:text-gray-500">No results</div>
           )}
-          {filtered.map((opt) => (
+
+          {/* Results */}
+          {showResults && filtered.map((opt) => (
             <button
               key={opt[valueKey]}
               type="button"
               className="min-h-touch w-full px-3 py-2.5 text-left text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-600"
               onClick={() => handleSelect(opt)}
             >
-              {opt[displayKey]}
+              <div className="flex items-center gap-2">
+                <span>{opt[displayKey]}</span>
+                {opt.is_global && (
+                  <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-400 dark:bg-gray-600 dark:text-gray-400">
+                    Global
+                  </span>
+                )}
+              </div>
+              {opt.subtitle && (
+                <p className="text-xs text-gray-400 dark:text-gray-500">{opt.subtitle}</p>
+              )}
             </button>
           ))}
+
           {onAddNew && (
             <button
               type="button"

@@ -4,10 +4,11 @@ import { ArrowLeft, Sparkles, Wand2 } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { caseInsertSchema } from '@/lib/schemas';
 import { useCase, useCreateCase, useUpdateCase } from '@/hooks/useCases';
-import { useSurgeons } from '@/hooks/useSurgeons';
-import { useFacilities } from '@/hooks/useFacilities';
+import { useSearchSurgeons } from '@/hooks/useSurgeons';
+import { useSearchFacilities } from '@/hooks/useFacilities';
 import { useSmartCaseEntry } from '@/hooks/useAI';
 import { useAuth } from '@/context/AuthContext';
+import { useRepStates } from '@/hooks/useRepStates';
 import { canUseAIExtraction, getRemainingExtractions } from '@/utils/planLimits';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -24,8 +25,9 @@ export default function CaseForm() {
   const { data: existingCase } = useCase(isEdit ? id : null);
   const createCase = useCreateCase();
   const updateCase = useUpdateCase();
-  const { data: surgeons = [] } = useSurgeons({ activeOnly: true });
-  const { data: facilities = [] } = useFacilities({ activeOnly: true });
+  const { data: repStates = [] } = useRepStates();
+  const surgeonSearch = useSearchSurgeons({ filterStates: repStates });
+  const facilitySearch = useSearchFacilities({ filterStates: repStates });
   const [form, setForm] = useState({
     surgeon_id: '',
     facility_id: '',
@@ -48,6 +50,10 @@ export default function CaseForm() {
   const smartEntry = useSmartCaseEntry();
   const aiLimitReached = !canUseAIExtraction(account);
   const remainingExtractions = getRemainingExtractions(account);
+
+  // Initial labels for edit mode
+  const surgeonInitialLabel = existingCase?.surgeon?.full_name || '';
+  const facilityInitialLabel = existingCase?.facility?.name || '';
 
   function convertScheduledTime(time24) {
     if (!time24) return {};
@@ -145,9 +151,6 @@ export default function CaseForm() {
     }
   }
 
-  const surgeonOpts = surgeons.map((s) => ({ value: s.id, label: s.full_name }));
-  const facilityOpts = facilities.map((f) => ({ value: f.id, label: f.name }));
-
   const isPending = createCase.isPending || updateCase.isPending;
 
   return (
@@ -242,23 +245,27 @@ export default function CaseForm() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <SearchableSelect
             label="Surgeon"
-            options={surgeonOpts}
+            options={surgeonSearch.results}
             value={form.surgeon_id}
             onChange={(v) => { setForm((p) => ({ ...p, surgeon_id: v })); }}
-            placeholder="Select surgeon"
+            placeholder="Search surgeons..."
+            onSearch={surgeonSearch.search}
+            isSearching={surgeonSearch.isSearching}
+            minChars={3}
+            initialLabel={surgeonInitialLabel}
             onAddNew={() => navigate('/surgeons/new')}
-            allRecords={surgeons}
-            allRecordsNameField="full_name"
           />
           <SearchableSelect
             label="Facility"
-            options={facilityOpts}
+            options={facilitySearch.results}
             value={form.facility_id}
             onChange={(v) => { setForm((p) => ({ ...p, facility_id: v })); }}
-            placeholder="Select facility"
+            placeholder="Search facilities..."
+            onSearch={facilitySearch.search}
+            isSearching={facilitySearch.isSearching}
+            minChars={3}
+            initialLabel={facilityInitialLabel}
             onAddNew={() => navigate('/facilities/new')}
-            allRecords={facilities}
-            allRecordsNameField="name"
           />
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">

@@ -1,3 +1,4 @@
+import { useState, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
@@ -20,6 +21,45 @@ export function useFacilities({ activeOnly = false } = {}) {
     },
     enabled: !!accountId,
   });
+}
+
+export function useSearchFacilities({ filterStates } = {}) {
+  const [results, setResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const timerRef = useRef(null);
+
+  const search = useCallback(
+    (term) => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(async () => {
+        setIsSearching(true);
+        try {
+          const { data, error } = await supabase.rpc('search_facilities', {
+            search_term: term,
+            filter_states: filterStates?.length ? filterStates : null,
+            result_limit: 20,
+          });
+          if (error) throw error;
+          setResults(
+            (data || []).map((f) => ({
+              value: f.id,
+              label: f.name,
+              subtitle: [f.city, f.state].filter(Boolean).join(', ') || null,
+              is_global: f.is_global,
+            }))
+          );
+        } catch (err) {
+          console.error('search_facilities error:', err);
+          setResults([]);
+        } finally {
+          setIsSearching(false);
+        }
+      }, 300);
+    },
+    [filterStates]
+  );
+
+  return { search, results, isSearching };
 }
 
 export function useFacility(id) {
@@ -52,6 +92,20 @@ export function useCreateFacility() {
         .single();
       if (error) throw error;
       return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['facilities'] });
+    },
+  });
+}
+
+export function useDeleteFacility() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase.from('facilities').delete().eq('id', id);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['facilities'] });

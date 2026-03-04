@@ -21,7 +21,10 @@ export default function ManufacturerForm() {
   const create = useCreateManufacturer();
   const update = useUpdateManufacturer();
 
-  const [form, setForm] = useState({ name: '', notes: '', is_active: true });
+  const [form, setForm] = useState({
+    name: '', billing_email: '', billing_contact_name: '', billing_contact_phone: '',
+    phone: '', address: '', notes: '', is_active: true,
+  });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
 
@@ -29,6 +32,11 @@ export default function ManufacturerForm() {
     if (existing && isEdit) {
       setForm({
         name: existing.name || '',
+        billing_email: existing.billing_email || '',
+        billing_contact_name: existing.billing_contact_name || '',
+        billing_contact_phone: existing.billing_contact_phone || '',
+        phone: existing.phone || '',
+        address: existing.address || '',
         notes: existing.notes || '',
         is_active: existing.is_active !== false,
       });
@@ -75,10 +83,17 @@ export default function ManufacturerForm() {
 
     if (duplicateMatch?.isActive) return;
 
+    const sanitize = (v) => v ? DOMPurify.sanitize(v.trim()) : null;
+
     const payload = {
       name: DOMPurify.sanitize(form.name.trim()),
+      billing_email: sanitize(form.billing_email),
+      billing_contact_name: sanitize(form.billing_contact_name),
+      billing_contact_phone: sanitize(form.billing_contact_phone),
+      phone: sanitize(form.phone),
+      address: sanitize(form.address),
       is_active: form.is_active,
-      notes: form.notes ? DOMPurify.sanitize(form.notes) : null,
+      notes: sanitize(form.notes),
     };
 
     try {
@@ -123,6 +138,18 @@ export default function ManufacturerForm() {
           {duplicateMatch && (
             <DuplicateBanner match={duplicateMatch} onReactivate={handleReactivate} reactivating={update.isPending} />
           )}
+          <Input label="Phone" name="phone" type="tel" value={form.phone} onChange={onChange} />
+          <Input label="Address" name="address" value={form.address} onChange={onChange} placeholder="Street, City, State ZIP" />
+
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Billing & PO Contact</h3>
+            <div className="flex flex-col gap-4">
+              <Input label="Billing Email" name="billing_email" type="email" value={form.billing_email} onChange={onChange} placeholder="billing@manufacturer.com" />
+              <Input label="Billing Contact Name" name="billing_contact_name" value={form.billing_contact_name} onChange={onChange} />
+              <Input label="Billing Contact Phone" name="billing_contact_phone" type="tel" value={form.billing_contact_phone} onChange={onChange} />
+            </div>
+          </div>
+
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Active</label>
             <ActiveToggle
