@@ -23,7 +23,7 @@ export default function ManufacturerForm() {
 
   const [form, setForm] = useState({
     name: '', billing_email: '', billing_contact_name: '', billing_contact_phone: '',
-    phone: '', address: '', notes: '', is_active: true,
+    notes: '', is_active: true,
   });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
@@ -35,8 +35,6 @@ export default function ManufacturerForm() {
         billing_email: existing.billing_email || '',
         billing_contact_name: existing.billing_contact_name || '',
         billing_contact_phone: existing.billing_contact_phone || '',
-        phone: existing.phone || '',
-        address: existing.address || '',
         notes: existing.notes || '',
         is_active: existing.is_active !== false,
       });
@@ -90,8 +88,6 @@ export default function ManufacturerForm() {
       billing_email: sanitize(form.billing_email),
       billing_contact_name: sanitize(form.billing_contact_name),
       billing_contact_phone: sanitize(form.billing_contact_phone),
-      phone: sanitize(form.phone),
-      address: sanitize(form.address),
       is_active: form.is_active,
       notes: sanitize(form.notes),
     };
@@ -138,9 +134,6 @@ export default function ManufacturerForm() {
           {duplicateMatch && (
             <DuplicateBanner match={duplicateMatch} onReactivate={handleReactivate} reactivating={update.isPending} />
           )}
-          <Input label="Phone" name="phone" type="tel" value={form.phone} onChange={onChange} />
-          <Input label="Address" name="address" value={form.address} onChange={onChange} placeholder="Street, City, State ZIP" />
-
           <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
             <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Billing & PO Contact</h3>
             <div className="flex flex-col gap-4">
