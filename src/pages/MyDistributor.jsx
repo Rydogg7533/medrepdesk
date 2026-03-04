@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, X, Phone, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, X, Phone, ChevronDown, ChevronRight, Trash2, Lock, Unlock } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useDistributor, useCreateDistributor, useUpdateDistributor } from '@/hooks/useDistributors';
 import { useAllDistributorProducts, useUpsertDistributorProducts } from '@/hooks/useDistributorProducts';
@@ -10,6 +10,7 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Skeleton from '@/components/ui/Skeleton';
+import BottomSheet from '@/components/ui/BottomSheet';
 import { PRODUCT_CATALOG } from '@/utils/productCatalog';
 
 export default function MyDistributor() {
@@ -40,23 +41,11 @@ export default function MyDistributor() {
   const [checkedProducts, setCheckedProducts] = useState({});
   const [customProducts, setCustomProducts] = useState([]);
   const [expandedGroups, setExpandedGroups] = useState(new Set());
+  const [lockedGroups, setLockedGroups] = useState(new Set());
   const [showGroupPicker, setShowGroupPicker] = useState(false);
   const [validationError, setValidationError] = useState('');
   const [serverError, setServerError] = useState('');
   const [saving, setSaving] = useState(false);
-  const pickerRef = useRef(null);
-
-  // Close picker on outside click
-  useEffect(() => {
-    if (!showGroupPicker) return;
-    function handleClick(e) {
-      if (pickerRef.current && !pickerRef.current.contains(e.target)) {
-        setShowGroupPicker(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [showGroupPicker]);
 
   // Load existing distributor data
   useEffect(() => {
@@ -97,6 +86,7 @@ export default function MyDistributor() {
       setCustomProducts(custom);
       setAddedGroups(Array.from(groupKeys));
       setExpandedGroups(expanded);
+      setLockedGroups(new Set(groupKeys));
     }
   }, [existingProducts]);
 
@@ -109,6 +99,15 @@ export default function MyDistributor() {
     setAddedGroups((prev) => [...prev, catKey]);
     setExpandedGroups((prev) => new Set(prev).add(catKey));
     setShowGroupPicker(false);
+  }
+
+  function toggleGroupLock(key) {
+    setLockedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   }
 
   function removeGroup(catKey) {
@@ -360,6 +359,7 @@ export default function MyDistributor() {
               const cat = PRODUCT_CATALOG.find((c) => c.key === catKey);
               if (!cat) return null;
               const isExpanded = expandedGroups.has(catKey);
+              const isLocked = lockedGroups.has(catKey);
               const checkedCount = getCategoryCheckedCount(cat);
 
               return (
@@ -398,12 +398,13 @@ export default function MyDistributor() {
                         const isChecked = checkedProducts[product.value]?.checked;
                         return (
                           <div key={product.value} className="flex items-center gap-3 py-1">
-                            <label className="flex flex-1 items-center gap-2 cursor-pointer">
+                            <label className={`flex flex-1 items-center gap-2 ${isLocked ? 'pointer-events-none' : 'cursor-pointer'}`}>
                               <input
                                 type="checkbox"
                                 checked={!!isChecked}
                                 onChange={() => toggleProduct(product.value)}
-                                className="h-4 w-4 rounded border-gray-300 text-brand-800 focus:ring-brand-800"
+                                disabled={isLocked}
+                                className="h-4 w-4 rounded border-gray-300 text-brand-800 focus:ring-brand-800 disabled:opacity-50"
                               />
                               <span className={`text-sm ${isChecked ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}>
                                 {product.label}
@@ -419,7 +420,8 @@ export default function MyDistributor() {
                                   placeholder="0.00"
                                   value={checkedProducts[product.value]?.commission_rate || ''}
                                   onChange={(e) => setProductRate(product.value, e.target.value)}
-                                  className="w-20 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1.5 text-sm text-right dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+                                  disabled={isLocked}
+                                  className="w-20 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1.5 text-sm text-right dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 disabled:opacity-50 disabled:bg-gray-50 dark:disabled:bg-gray-800"
                                 />
                                 <span className="text-sm text-gray-400">%</span>
                               </div>
@@ -427,6 +429,25 @@ export default function MyDistributor() {
                           </div>
                         );
                       })}
+
+                      {/* Lock/Unlock toggle */}
+                      <button
+                        type="button"
+                        onClick={() => toggleGroupLock(catKey)}
+                        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 active:bg-gray-100 dark:active:bg-gray-700"
+                      >
+                        {isLocked ? (
+                          <>
+                            <Lock className="h-3.5 w-3.5" />
+                            Locked
+                          </>
+                        ) : (
+                          <>
+                            <Unlock className="h-3.5 w-3.5" />
+                            Unlocked
+                          </>
+                        )}
+                      </button>
                     </div>
                   )}
                 </Card>
@@ -435,32 +456,36 @@ export default function MyDistributor() {
           </div>
 
           {/* Add Product Group button */}
-          <div className="relative mt-3" ref={pickerRef}>
+          <div className="mt-3">
             <button
               type="button"
-              onClick={() => setShowGroupPicker((prev) => !prev)}
+              onClick={() => setShowGroupPicker(true)}
               disabled={availableGroups.length === 0}
               className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 active:bg-gray-50 dark:active:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Plus className="h-4 w-4" /> Add Product Group
             </button>
-
-            {showGroupPicker && availableGroups.length > 0 && (
-              <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg">
-                {availableGroups.map((cat) => (
-                  <button
-                    key={cat.key}
-                    type="button"
-                    onClick={() => addGroup(cat.key)}
-                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600"
-                  >
-                    <span className="flex-1">{cat.label}</span>
-                    <span className="text-xs text-gray-400 dark:text-gray-500">{cat.products.length} products</span>
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
+
+          {/* Product Group Picker Bottom Sheet */}
+          <BottomSheet isOpen={showGroupPicker} onClose={() => setShowGroupPicker(false)} title="Add Product Group">
+            <div className="space-y-1">
+              {availableGroups.map((cat) => (
+                <button
+                  key={cat.key}
+                  type="button"
+                  onClick={() => addGroup(cat.key)}
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left active:bg-gray-100 dark:active:bg-gray-700"
+                >
+                  <span className="flex-1 text-sm font-medium text-gray-700 dark:text-gray-300">{cat.label}</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500">{cat.products.length} products</span>
+                </button>
+              ))}
+              {availableGroups.length === 0 && (
+                <p className="py-4 text-center text-sm text-gray-400 dark:text-gray-500">All product groups have been added</p>
+              )}
+            </div>
+          </BottomSheet>
 
           {/* Custom Products */}
           <div className="mt-4">
