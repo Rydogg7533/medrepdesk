@@ -952,7 +952,7 @@ export default function Onboarding() {
   // ── STEP 7: MANUFACTURERS ─────────────────────────────────────────────
   function Step7() {
     const [showSkipConfirm, setShowSkipConfirm] = useState(false);
-    const [mfgForm, setMfgForm] = useState({ name: '', billing_email: '', billing_contact_name: '', phone: '' });
+    const [mfgForm, setMfgForm] = useState({ name: '', billing_email: '' });
 
     async function handleAddManufacturer() {
       if (!mfgForm.name.trim()) { setError('Name is required'); return; }
@@ -962,11 +962,9 @@ export default function Onboarding() {
         const mfg = await createManufacturer.mutateAsync({
           name: mfgForm.name.trim(),
           billing_email: mfgForm.billing_email || null,
-          billing_contact_name: mfgForm.billing_contact_name || null,
-          billing_contact_phone: mfgForm.phone || null,
         });
         setAddedManufacturers((p) => [...p, { id: mfg.id, name: mfg.name }]);
-        setMfgForm({ name: '', billing_email: '', billing_contact_name: '', phone: '' });
+        setMfgForm({ name: '', billing_email: '' });
       } catch (err) {
         setError(err.message);
       } finally {
@@ -982,8 +980,6 @@ export default function Onboarding() {
         <div className="space-y-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3">
           <Input label={<>Name <span className="text-red-500">*</span></>} value={mfgForm.name} onChange={(e) => setMfgForm((p) => ({ ...p, name: e.target.value }))} />
           <Input label="Billing Email" type="email" value={mfgForm.billing_email} onChange={(e) => setMfgForm((p) => ({ ...p, billing_email: e.target.value }))} />
-          <Input label="Billing Contact Name" value={mfgForm.billing_contact_name} onChange={(e) => setMfgForm((p) => ({ ...p, billing_contact_name: e.target.value }))} />
-          <Input label="Phone" type="tel" value={mfgForm.phone} onChange={(e) => setMfgForm((p) => ({ ...p, phone: e.target.value }))} />
           <Button size="sm" onClick={handleAddManufacturer} loading={saving}>Add Manufacturer</Button>
         </div>
 

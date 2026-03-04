@@ -3,7 +3,7 @@ import clsx from 'clsx';
 export default function ActiveToggle({ isActive, onToggle, size = 'sm' }) {
   const sizes = {
     sm: { track: 'h-5 w-9', thumb: 'h-3.5 w-3.5', translate: 'translate-x-4' },
-    md: { track: 'h-6 w-11', thumb: 'h-4.5 w-4.5', translate: 'translate-x-5' },
+    md: { track: 'h-6 w-11', thumb: 'h-4 w-4', translate: 'translate-x-5' },
   };
   const s = sizes[size] || sizes.sm;
 
