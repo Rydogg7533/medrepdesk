@@ -18,7 +18,8 @@ import Skeleton from '@/components/ui/Skeleton';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import PipelineGuide from '@/components/features/PipelineGuide';
 import { formatDate, formatTime, formatCurrency } from '@/utils/formatters';
-import { CASE_STATUSES, PROCEDURE_TYPES } from '@/utils/constants';
+import { CASE_STATUSES } from '@/utils/constants';
+import { getProductLabel } from '@/utils/productCatalog';
 
 const STATUS_ORDER = [
   'scheduled', 'confirmed', 'completed',
@@ -54,8 +55,7 @@ export default function CaseDetail() {
   const [showAddCommission, setShowAddCommission] = useState(false);
   const [showPipeline, setShowPipeline] = useState(false);
 
-  const procLabel = (type) =>
-    PROCEDURE_TYPES.find((p) => p.value === type)?.label || type;
+  const procLabel = (type) => getProductLabel(type);
 
   async function advanceStatus(newStatus) {
     await updateCase.mutateAsync({ id, status: newStatus });

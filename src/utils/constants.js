@@ -28,15 +28,6 @@ export const COMMISSION_STATUSES = {
   written_off: { label: 'Written Off', bg: 'bg-gray-100', text: 'text-gray-700' },
 };
 
-export const PROCEDURE_TYPES = [
-  { value: 'hip', label: 'Hip' },
-  { value: 'knee', label: 'Knee' },
-  { value: 'shoulder', label: 'Shoulder' },
-  { value: 'spine', label: 'Spine' },
-  { value: 'trauma', label: 'Trauma' },
-  { value: 'other', label: 'Other' },
-];
-
 export const PLAN_LIMITS = {
   solo: {
     label: 'Solo Rep',
@@ -61,7 +52,7 @@ export const PLAN_LIMITS = {
   },
 };
 
-export const PRODUCT_TYPES = [
+export const SURGEON_SPECIALTIES = [
   { value: 'hip', label: 'Hip' },
   { value: 'knee', label: 'Knee' },
   { value: 'shoulder', label: 'Shoulder' },
@@ -69,7 +60,12 @@ export const PRODUCT_TYPES = [
   { value: 'ankle', label: 'Ankle' },
   { value: 'spine', label: 'Spine' },
   { value: 'sports_medicine', label: 'Sports Medicine' },
-  { value: 'ancillary', label: 'Ancillary' },
+  { value: 'other', label: 'Other' },
+];
+
+export const SURGEON_PREFIXES = [
+  { value: '', label: 'None' },
+  { value: 'Dr.', label: 'Dr.' },
 ];
 
 export const THEME = {

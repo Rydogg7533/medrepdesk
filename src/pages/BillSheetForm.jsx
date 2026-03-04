@@ -12,7 +12,7 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import SearchableSelect from '@/components/ui/SearchableSelect';
 import { formatCurrency } from '@/utils/formatters';
-import { PRODUCT_TYPES } from '@/utils/constants';
+import { groupProductsByCategory, getProductLabel } from '@/utils/productCatalog';
 
 const emptyItem = () => ({
   distributor_product_id: '',
@@ -44,13 +44,7 @@ export default function BillSheetForm() {
   const [serverError, setServerError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Build product options from distributor_products
-  const productOptions = distProducts.map((dp) => ({
-    value: dp.id,
-    label: dp.product_type === 'ancillary' ? dp.custom_name : PRODUCT_TYPES.find((t) => t.value === dp.product_type)?.label || dp.product_type,
-    product_type: dp.product_type,
-    commission_rate: dp.commission_rate,
-  }));
+  const groupedProducts = groupProductsByCategory(distProducts);
 
   const manufacturerOptions = manufacturers.map((m) => ({ value: m.id, label: m.name }));
 
@@ -190,7 +184,7 @@ export default function BillSheetForm() {
 
               <div className="flex flex-col gap-3">
                 {/* Product Type */}
-                {productOptions.length > 0 && (
+                {groupedProducts.length > 0 && (
                   <div>
                     <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Product Type</label>
                     <select
@@ -199,8 +193,14 @@ export default function BillSheetForm() {
                       className="min-h-touch w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
                     >
                       <option value="">Select product</option>
-                      {productOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      {groupedProducts.map((group) => (
+                        <optgroup key={group.label} label={group.label}>
+                          {group.products.map((dp) => (
+                            <option key={dp.id} value={dp.id}>
+                              {dp.product_type === 'custom' ? dp.custom_name : getProductLabel(dp.product_type)}
+                            </option>
+                          ))}
+                        </optgroup>
                       ))}
                     </select>
                   </div>

@@ -6,7 +6,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import Skeleton from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
 import { formatDate, formatCurrency } from '@/utils/formatters';
-import { PROCEDURE_TYPES } from '@/utils/constants';
+import { getProductLabel } from '@/utils/productCatalog';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import PipelineGuide from '@/components/features/PipelineGuide';
 import clsx from 'clsx';
@@ -46,8 +46,7 @@ export default function Cases() {
     return result;
   }, [cases, activeTab, search]);
 
-  const procLabel = (type) =>
-    PROCEDURE_TYPES.find((p) => p.value === type)?.label || type;
+  const procLabel = (type) => getProductLabel(type);
 
   if (isLoading) {
     return (

@@ -13,7 +13,8 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import SearchableSelect from '@/components/ui/SearchableSelect';
-import { PROCEDURE_TYPES } from '@/utils/constants';
+import { useDistributorProducts } from '@/hooks/useDistributorProducts';
+import { groupProductsByCategory, getProductLabel } from '@/utils/productCatalog';
 
 export default function CaseForm() {
   const { id } = useParams();
@@ -42,6 +43,8 @@ export default function CaseForm() {
   const [parseBanner, setParseBanner] = useState('');
 
   const { account } = useAuth();
+  const { data: distProducts = [] } = useDistributorProducts(account?.primary_distributor_id);
+  const groupedProcedureTypes = groupProductsByCategory(distProducts);
   const smartEntry = useSmartCaseEntry();
   const aiLimitReached = !canUseAIExtraction(account);
   const remainingExtractions = getRemainingExtractions(account);
@@ -268,9 +271,19 @@ export default function CaseForm() {
               className="min-h-touch w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
             >
               <option value="">Select type</option>
-              {PROCEDURE_TYPES.map((p) => (
-                <option key={p.value} value={p.value}>{p.label}</option>
+              {groupedProcedureTypes.map((group) => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.products.map((dp) => (
+                    <option
+                      key={dp.product_type === 'custom' ? dp.id : dp.product_type}
+                      value={dp.product_type === 'custom' ? dp.custom_name : dp.product_type}
+                    >
+                      {dp.product_type === 'custom' ? dp.custom_name : getProductLabel(dp.product_type)}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
+              <option value="other">Other</option>
             </select>
           </div>
 

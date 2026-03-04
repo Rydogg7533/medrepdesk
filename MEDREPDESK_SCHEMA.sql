@@ -157,6 +157,11 @@ CREATE TABLE manufacturers (
   id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id                  uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   name                        text NOT NULL,
+  billing_email               text,
+  billing_contact_name        text,
+  billing_contact_phone       text,
+  phone                       text,
+  address                     text,
   is_active                   boolean NOT NULL DEFAULT true,
   notes                       text,
   created_at                  timestamptz NOT NULL DEFAULT now(),
@@ -172,20 +177,36 @@ CREATE TABLE distributor_products (
   account_id                  uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   distributor_id              uuid NOT NULL REFERENCES distributors(id) ON DELETE CASCADE,
   product_type                text NOT NULL CHECK (product_type IN (
-                                'hip', 'knee', 'shoulder', 'elbow', 'ankle',
-                                'spine', 'sports_medicine', 'ancillary'
+                                'hip', 'knee', 'shoulder', 'elbow', 'ankle', 'trauma',
+                                'cervical_spine', 'lumbar_spine', 'thoracic_spine', 'spinal_fusion', 'disc_replacement', 'spine',
+                                'sports_medicine', 'acl_reconstruction', 'rotator_cuff', 'meniscus', 'arthroscopy',
+                                'cardiac_implants', 'stents', 'heart_valves', 'pacemakers', 'vascular_grafts',
+                                'deep_brain_stimulation', 'spinal_cord_stimulation', 'neurovascular',
+                                'dental_implants', 'maxillofacial',
+                                'intraocular_lenses', 'ophthalmic_surgical',
+                                'cochlear_implants', 'sinus_surgery', 'ent_instruments',
+                                'hernia_mesh', 'surgical_stapling', 'energy_devices', 'minimally_invasive',
+                                'surgical_robotics', 'navigation_systems', 'computer_assisted',
+                                'wound_care', 'skin_substitutes', 'bone_grafts', 'biologics',
+                                'urological_implants', 'kidney_stone',
+                                'gyn_surgical', 'pelvic_floor',
+                                'breast_implants', 'reconstructive', 'tissue_expanders',
+                                'bariatric_stapling', 'gastric_banding',
+                                'intrathecal_pumps', 'peripheral_nerve', 'radiofrequency_ablation',
+                                'surgical_instruments', 'sterilization', 'ppe', 'disposables',
+                                'custom'
                               )),
-  custom_name                 text,  -- for ancillary only
+  custom_name                 text,  -- for custom products only
   commission_rate             numeric(5,2),
   is_active                   boolean NOT NULL DEFAULT true,
   created_at                  timestamptz NOT NULL DEFAULT now(),
   updated_at                  timestamptz NOT NULL DEFAULT now()
 );
 
--- Partial unique: one per (distributor, product_type) except ancillary
+-- Partial unique: one per (account, distributor, product_type) except custom
 CREATE UNIQUE INDEX idx_dist_products_unique
-  ON distributor_products(distributor_id, product_type)
-  WHERE product_type != 'ancillary';
+  ON distributor_products(account_id, distributor_id, product_type)
+  WHERE product_type != 'custom';
 
 -- ============================================================
 -- CASES
@@ -199,9 +220,7 @@ CREATE TABLE cases (
   surgeon_id                  uuid REFERENCES surgeons(id),
   facility_id                 uuid REFERENCES facilities(id),
   distributor_id              uuid REFERENCES distributors(id),
-  procedure_type              text CHECK (procedure_type IN (
-                                'hip', 'knee', 'shoulder', 'spine', 'trauma', 'other'
-                              )),
+  procedure_type              text,   -- dynamic, from distributor_products
   scheduled_date              date,
   scheduled_time              time,
   status                      text NOT NULL DEFAULT 'scheduled' CHECK (status IN (
