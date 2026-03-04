@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Users, Search, Phone, Upload, Building, Factory, Stethoscope, Plus, Trash2, Loader2, RotateCcw } from 'lucide-react';
+import { Users, Search, Phone, Upload, Building, Factory, Stethoscope, Plus, Loader2 } from 'lucide-react';
 import { useContacts, useUpdateContact, useDeleteContact, useArchiveContact, useUnarchiveContact } from '@/hooks/useContacts';
 import { useFacilities, useUpdateFacility, useDeleteFacility, useArchiveFacility, useUnarchiveFacility, useSearchFacilities, useImportGlobalFacility, checkLinkedFacility } from '@/hooks/useFacilities';
 import { useManufacturers, useUpdateManufacturer, useDeleteManufacturer, useArchiveManufacturer, useUnarchiveManufacturer, checkLinkedManufacturer } from '@/hooks/useManufacturers';
@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import Skeleton from '@/components/ui/Skeleton';
 import ActiveToggle from '@/components/ui/ActiveToggle';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import SwipeableRow from '@/components/ui/SwipeableRow';
 
 const TABS = [
   { key: 'people', label: 'People', icon: Users },
@@ -249,6 +250,7 @@ export default function Contacts() {
             onDelete={(id) => deleteContact.mutate(id)}
             onArchive={(id) => archiveContact.mutate(id)}
             onUnarchive={(id) => unarchiveContact.mutate(id)}
+            onDeactivate={(id) => updateContact.mutate({ id, is_active: false })}
             navigate={navigate}
             isOwner={isOwner}
           />
@@ -261,6 +263,7 @@ export default function Contacts() {
             onDelete={(id) => deleteFacility.mutate(id)}
             onArchive={(id) => archiveFacility.mutate(id)}
             onUnarchive={(id) => unarchiveFacility.mutate(id)}
+            onDeactivate={(id) => updateFacility.mutate({ id, is_active: false })}
             navigate={navigate}
             isOwner={isOwner}
             globalResults={globalFacilityResults}
@@ -277,6 +280,7 @@ export default function Contacts() {
             onDelete={(id) => deleteManufacturer.mutate(id)}
             onArchive={(id) => archiveManufacturer.mutate(id)}
             onUnarchive={(id) => unarchiveManufacturer.mutate(id)}
+            onDeactivate={(id) => updateManufacturer.mutate({ id, is_active: false })}
             navigate={navigate}
             isOwner={isOwner}
           />
@@ -289,6 +293,7 @@ export default function Contacts() {
             onDelete={(id) => deleteSurgeon.mutate(id)}
             onArchive={(id) => archiveSurgeon.mutate(id)}
             onUnarchive={(id) => unarchiveSurgeon.mutate(id)}
+            onDeactivate={(id) => updateSurgeon.mutate({ id, is_active: false })}
             navigate={navigate}
             isOwner={isOwner}
             globalResults={globalSurgeonResults}
@@ -303,9 +308,26 @@ export default function Contacts() {
   );
 }
 
-function PeopleTab({ contacts, filterMode, onToggle, onDelete, onArchive, onUnarchive, navigate, isOwner }) {
+function PeopleTab({ contacts, filterMode, onToggle, onDelete, onArchive, onUnarchive, onDeactivate, navigate, isOwner }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const isArchived = filterMode === 'archived';
+
+  function getSwipeMode() {
+    if (filterMode === 'active') return 'deactivate';
+    if (filterMode === 'archived') return 'unarchive';
+    return 'delete';
+  }
+
+  function handleSwipe(c) {
+    if (filterMode === 'active') {
+      onDeactivate(c.id);
+    } else if (filterMode === 'archived') {
+      onUnarchive(c.id);
+    } else {
+      // Inactive: contacts are leaf nodes, always true delete
+      setDeleteTarget(c);
+    }
+  }
 
   return (
     <>
@@ -320,58 +342,47 @@ function PeopleTab({ contacts, filterMode, onToggle, onDelete, onArchive, onUnar
       ) : (
         <div className="space-y-1">
           {contacts.map((c) => (
-            <div
+            <SwipeableRow
               key={c.id}
-              onClick={() => navigate(`/contacts/${c.id}`)}
-              className="flex min-h-touch cursor-pointer items-center gap-3 rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800"
+              mode={getSwipeMode()}
+              disabled={!isOwner}
+              onSwipe={() => handleSwipe(c)}
             >
-              {!isArchived && (
-                <ActiveToggle isActive={c.is_active !== false} onToggle={(val) => onToggle(c.id, val)} />
-              )}
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 dark:bg-brand-800/20 text-sm font-semibold text-brand-800 dark:text-brand-400">
-                {c.full_name?.charAt(0)?.toUpperCase()}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="font-medium text-gray-800 dark:text-gray-200">{c.full_name}</p>
-                  {getContactTypeBadge(c) && (
-                    <span className="rounded bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">
-                      {getContactTypeBadge(c)}
-                    </span>
-                  )}
+              <div
+                onClick={() => navigate(`/contacts/${c.id}`)}
+                className="flex min-h-touch cursor-pointer items-center gap-3 rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800"
+              >
+                {!isArchived && (
+                  <ActiveToggle isActive={c.is_active !== false} onToggle={(val) => onToggle(c.id, val)} />
+                )}
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 dark:bg-brand-800/20 text-sm font-semibold text-brand-800 dark:text-brand-400">
+                  {c.full_name?.charAt(0)?.toUpperCase()}
                 </div>
-                <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-                  {c.role && `${c.role} · `}
-                  {getContactOrg(c)}
-                </p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-gray-800 dark:text-gray-200">{c.full_name}</p>
+                    {getContactTypeBadge(c) && (
+                      <span className="rounded bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">
+                        {getContactTypeBadge(c)}
+                      </span>
+                    )}
+                  </div>
+                  <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                    {c.role && `${c.role} · `}
+                    {getContactOrg(c)}
+                  </p>
+                </div>
+                {c.phone && (
+                  <a
+                    href={`tel:${c.phone}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-brand-800 dark:text-brand-400"
+                  >
+                    <Phone className="h-4 w-4" />
+                  </a>
+                )}
               </div>
-              {c.phone && !isArchived && (
-                <a
-                  href={`tel:${c.phone}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-brand-800 dark:text-brand-400"
-                >
-                  <Phone className="h-4 w-4" />
-                </a>
-              )}
-              {isArchived && isOwner && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onUnarchive(c.id); }}
-                  className="p-1.5 text-gray-400 hover:text-brand-800 dark:text-gray-500 dark:hover:text-brand-400"
-                  title="Unarchive"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </button>
-              )}
-              {!isArchived && isOwner && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); setDeleteTarget(c); }}
-                  className="p-1.5 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              )}
-            </div>
+            </SwipeableRow>
           ))}
         </div>
       )}
@@ -387,16 +398,25 @@ function PeopleTab({ contacts, filterMode, onToggle, onDelete, onArchive, onUnar
   );
 }
 
-function FacilitiesTab({ facilities, filterMode, onToggle, onDelete, onArchive, onUnarchive, navigate, isOwner, globalResults, isSearchingGlobal, onImport, importingId }) {
+function FacilitiesTab({ facilities, filterMode, onToggle, onDelete, onArchive, onUnarchive, onDeactivate, navigate, isOwner, globalResults, isSearchingGlobal, onImport, importingId }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [archiveTarget, setArchiveTarget] = useState(null);
   const [linkedDescription, setLinkedDescription] = useState('');
-  const [checking, setChecking] = useState(false);
   const isArchived = filterMode === 'archived';
 
-  async function handleTrashClick(f) {
-    setChecking(true);
-    try {
+  function getSwipeMode() {
+    if (filterMode === 'active') return 'deactivate';
+    if (filterMode === 'archived') return 'unarchive';
+    return 'delete';
+  }
+
+  async function handleSwipe(f) {
+    if (filterMode === 'active') {
+      onDeactivate(f.id);
+    } else if (filterMode === 'archived') {
+      onUnarchive(f.id);
+    } else {
+      // Inactive: smart delete
       const linked = await checkLinkedFacility(f.id);
       if (linked.count === 0) {
         setDeleteTarget(f);
@@ -404,8 +424,6 @@ function FacilitiesTab({ facilities, filterMode, onToggle, onDelete, onArchive, 
         setLinkedDescription(linked.description);
         setArchiveTarget(f);
       }
-    } finally {
-      setChecking(false);
     }
   }
 
@@ -454,48 +472,36 @@ function FacilitiesTab({ facilities, filterMode, onToggle, onDelete, onArchive, 
       ) : (
         <div className="space-y-1">
           {facilities.map((f) => (
-            <div
+            <SwipeableRow
               key={f.id}
-              onClick={() => navigate(`/facilities/${f.id}/edit?returnTab=facilities`)}
-              className="flex min-h-touch cursor-pointer items-center gap-3 rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800"
+              mode={getSwipeMode()}
+              disabled={!isOwner}
+              onSwipe={() => handleSwipe(f)}
             >
-              {!isArchived && (
-                <ActiveToggle isActive={f.is_active !== false} onToggle={(val) => onToggle(f.id, val)} />
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="font-medium text-gray-800 dark:text-gray-200">{f.name}</p>
-                  {f.facility_type && (
-                    <span className="rounded bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">
-                      {f.facility_type.toUpperCase()}
-                    </span>
+              <div
+                onClick={() => navigate(`/facilities/${f.id}/edit?returnTab=facilities`)}
+                className="flex min-h-touch cursor-pointer items-center gap-3 rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800"
+              >
+                {!isArchived && (
+                  <ActiveToggle isActive={f.is_active !== false} onToggle={(val) => onToggle(f.id, val)} />
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-gray-800 dark:text-gray-200">{f.name}</p>
+                    {f.facility_type && (
+                      <span className="rounded bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">
+                        {f.facility_type.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  {(f.city || f.state) && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {[f.city, f.state].filter(Boolean).join(', ')}
+                    </p>
                   )}
                 </div>
-                {(f.city || f.state) && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {[f.city, f.state].filter(Boolean).join(', ')}
-                  </p>
-                )}
               </div>
-              {isArchived && isOwner && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onUnarchive(f.id); }}
-                  className="p-1.5 text-gray-400 hover:text-brand-800 dark:text-gray-500 dark:hover:text-brand-400"
-                  title="Unarchive"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </button>
-              )}
-              {!isArchived && isOwner && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleTrashClick(f); }}
-                  disabled={checking}
-                  className="p-1.5 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              )}
-            </div>
+            </SwipeableRow>
           ))}
         </div>
       )}
@@ -519,16 +525,24 @@ function FacilitiesTab({ facilities, filterMode, onToggle, onDelete, onArchive, 
   );
 }
 
-function ManufacturersTab({ manufacturers, filterMode, onToggle, onDelete, onArchive, onUnarchive, navigate, isOwner }) {
+function ManufacturersTab({ manufacturers, filterMode, onToggle, onDelete, onArchive, onUnarchive, onDeactivate, navigate, isOwner }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [archiveTarget, setArchiveTarget] = useState(null);
   const [linkedDescription, setLinkedDescription] = useState('');
-  const [checking, setChecking] = useState(false);
   const isArchived = filterMode === 'archived';
 
-  async function handleTrashClick(m) {
-    setChecking(true);
-    try {
+  function getSwipeMode() {
+    if (filterMode === 'active') return 'deactivate';
+    if (filterMode === 'archived') return 'unarchive';
+    return 'delete';
+  }
+
+  async function handleSwipe(m) {
+    if (filterMode === 'active') {
+      onDeactivate(m.id);
+    } else if (filterMode === 'archived') {
+      onUnarchive(m.id);
+    } else {
       const linked = await checkLinkedManufacturer(m.id);
       if (linked.count === 0) {
         setDeleteTarget(m);
@@ -536,8 +550,6 @@ function ManufacturersTab({ manufacturers, filterMode, onToggle, onDelete, onArc
         setLinkedDescription(linked.description);
         setArchiveTarget(m);
       }
-    } finally {
-      setChecking(false);
     }
   }
 
@@ -554,39 +566,27 @@ function ManufacturersTab({ manufacturers, filterMode, onToggle, onDelete, onArc
       ) : (
         <div className="space-y-1">
           {manufacturers.map((m) => (
-            <div
+            <SwipeableRow
               key={m.id}
-              onClick={() => navigate(`/manufacturers/${m.id}?returnTab=manufacturers`)}
-              className="flex min-h-touch cursor-pointer items-center gap-3 rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800"
+              mode={getSwipeMode()}
+              disabled={!isOwner}
+              onSwipe={() => handleSwipe(m)}
             >
-              {!isArchived && (
-                <ActiveToggle isActive={m.is_active !== false} onToggle={(val) => onToggle(m.id, val)} />
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-gray-800 dark:text-gray-200">{m.name}</p>
-                {m.phone && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{m.phone}</p>
+              <div
+                onClick={() => navigate(`/manufacturers/${m.id}?returnTab=manufacturers`)}
+                className="flex min-h-touch cursor-pointer items-center gap-3 rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800"
+              >
+                {!isArchived && (
+                  <ActiveToggle isActive={m.is_active !== false} onToggle={(val) => onToggle(m.id, val)} />
                 )}
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-gray-800 dark:text-gray-200">{m.name}</p>
+                  {m.phone && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{m.phone}</p>
+                  )}
+                </div>
               </div>
-              {isArchived && isOwner && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onUnarchive(m.id); }}
-                  className="p-1.5 text-gray-400 hover:text-brand-800 dark:text-gray-500 dark:hover:text-brand-400"
-                  title="Unarchive"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </button>
-              )}
-              {!isArchived && isOwner && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleTrashClick(m); }}
-                  disabled={checking}
-                  className="p-1.5 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              )}
-            </div>
+            </SwipeableRow>
           ))}
         </div>
       )}
@@ -610,16 +610,24 @@ function ManufacturersTab({ manufacturers, filterMode, onToggle, onDelete, onArc
   );
 }
 
-function SurgeonsTab({ surgeons, filterMode, onToggle, onDelete, onArchive, onUnarchive, navigate, isOwner, globalResults, isSearchingGlobal, onImport, importingId }) {
+function SurgeonsTab({ surgeons, filterMode, onToggle, onDelete, onArchive, onUnarchive, onDeactivate, navigate, isOwner, globalResults, isSearchingGlobal, onImport, importingId }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [archiveTarget, setArchiveTarget] = useState(null);
   const [linkedDescription, setLinkedDescription] = useState('');
-  const [checking, setChecking] = useState(false);
   const isArchived = filterMode === 'archived';
 
-  async function handleTrashClick(s) {
-    setChecking(true);
-    try {
+  function getSwipeMode() {
+    if (filterMode === 'active') return 'deactivate';
+    if (filterMode === 'archived') return 'unarchive';
+    return 'delete';
+  }
+
+  async function handleSwipe(s) {
+    if (filterMode === 'active') {
+      onDeactivate(s.id);
+    } else if (filterMode === 'archived') {
+      onUnarchive(s.id);
+    } else {
       const linked = await checkLinkedSurgeon(s.id);
       if (linked.count === 0) {
         setDeleteTarget(s);
@@ -627,8 +635,6 @@ function SurgeonsTab({ surgeons, filterMode, onToggle, onDelete, onArchive, onUn
         setLinkedDescription(linked.description);
         setArchiveTarget(s);
       }
-    } finally {
-      setChecking(false);
     }
   }
 
@@ -677,41 +683,29 @@ function SurgeonsTab({ surgeons, filterMode, onToggle, onDelete, onArchive, onUn
       ) : (
         <div className="space-y-1">
           {surgeons.map((s) => (
-            <div
+            <SwipeableRow
               key={s.id}
-              onClick={() => navigate(`/surgeons/${s.id}/edit?returnTab=surgeons`)}
-              className="flex min-h-touch cursor-pointer items-center gap-3 rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800"
+              mode={getSwipeMode()}
+              disabled={!isOwner}
+              onSwipe={() => handleSwipe(s)}
             >
-              {!isArchived && (
-                <ActiveToggle isActive={s.is_active !== false} onToggle={(val) => onToggle(s.id, val)} />
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="font-medium text-gray-800 dark:text-gray-200">{s.full_name}</p>
+              <div
+                onClick={() => navigate(`/surgeons/${s.id}/edit?returnTab=surgeons`)}
+                className="flex min-h-touch cursor-pointer items-center gap-3 rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800"
+              >
+                {!isArchived && (
+                  <ActiveToggle isActive={s.is_active !== false} onToggle={(val) => onToggle(s.id, val)} />
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-gray-800 dark:text-gray-200">{s.full_name}</p>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {[s.specialty, s.primary_facility?.name].filter(Boolean).join(' · ')}
+                  </p>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {[s.specialty, s.primary_facility?.name].filter(Boolean).join(' · ')}
-                </p>
               </div>
-              {isArchived && isOwner && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onUnarchive(s.id); }}
-                  className="p-1.5 text-gray-400 hover:text-brand-800 dark:text-gray-500 dark:hover:text-brand-400"
-                  title="Unarchive"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </button>
-              )}
-              {!isArchived && isOwner && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleTrashClick(s); }}
-                  disabled={checking}
-                  className="p-1.5 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              )}
-            </div>
+            </SwipeableRow>
           ))}
         </div>
       )}
