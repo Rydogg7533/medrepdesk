@@ -1,10 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Users, Search, Phone, Upload, Building, Factory, Stethoscope, Plus, Trash2, Loader2 } from 'lucide-react';
-import { useContacts, useUpdateContact } from '@/hooks/useContacts';
-import { useFacilities, useUpdateFacility, useDeleteFacility, useSearchFacilities, useImportGlobalFacility } from '@/hooks/useFacilities';
-import { useManufacturers, useUpdateManufacturer, useDeleteManufacturer } from '@/hooks/useManufacturers';
-import { useSurgeons, useUpdateSurgeon, useDeleteSurgeon, useSearchSurgeons, useImportGlobalSurgeon } from '@/hooks/useSurgeons';
+import { Users, Search, Phone, Upload, Building, Factory, Stethoscope, Plus, Trash2, Loader2, RotateCcw } from 'lucide-react';
+import { useContacts, useUpdateContact, useDeleteContact, useArchiveContact, useUnarchiveContact } from '@/hooks/useContacts';
+import { useFacilities, useUpdateFacility, useDeleteFacility, useArchiveFacility, useUnarchiveFacility, useSearchFacilities, useImportGlobalFacility, checkLinkedFacility } from '@/hooks/useFacilities';
+import { useManufacturers, useUpdateManufacturer, useDeleteManufacturer, useArchiveManufacturer, useUnarchiveManufacturer, checkLinkedManufacturer } from '@/hooks/useManufacturers';
+import { useSurgeons, useUpdateSurgeon, useDeleteSurgeon, useArchiveSurgeon, useUnarchiveSurgeon, useSearchSurgeons, useImportGlobalSurgeon, checkLinkedSurgeon } from '@/hooks/useSurgeons';
 import { useRepStates } from '@/hooks/useRepStates';
 import { useAuth } from '@/context/AuthContext';
 import Skeleton from '@/components/ui/Skeleton';
@@ -16,6 +16,12 @@ const TABS = [
   { key: 'facilities', label: 'Facilities', icon: Building },
   { key: 'manufacturers', label: 'Manufacturers', icon: Factory },
   { key: 'surgeons', label: 'Surgeons', icon: Stethoscope },
+];
+
+const FILTER_OPTIONS = [
+  { key: 'active', label: 'Active' },
+  { key: 'inactive', label: 'Inactive' },
+  { key: 'archived', label: 'Archived' },
 ];
 
 function getContactTypeBadge(contact) {
@@ -36,7 +42,7 @@ export default function Contacts() {
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'people';
   const [activeTab, setActiveTab] = useState(initialTab);
-  const [showActiveOnly, setShowActiveOnly] = useState(true);
+  const [filterMode, setFilterMode] = useState('active');
   const [search, setSearch] = useState('');
 
   const { user } = useAuth();
@@ -48,12 +54,21 @@ export default function Contacts() {
   const { data: privateSurgeons, isLoading: surgeonsLoading } = useSurgeons();
 
   const updateContact = useUpdateContact();
+  const deleteContact = useDeleteContact();
+  const archiveContact = useArchiveContact();
+  const unarchiveContact = useUnarchiveContact();
   const updateFacility = useUpdateFacility();
   const deleteFacility = useDeleteFacility();
+  const archiveFacility = useArchiveFacility();
+  const unarchiveFacility = useUnarchiveFacility();
   const updateManufacturer = useUpdateManufacturer();
   const deleteManufacturer = useDeleteManufacturer();
+  const archiveManufacturer = useArchiveManufacturer();
+  const unarchiveManufacturer = useUnarchiveManufacturer();
   const updateSurgeon = useUpdateSurgeon();
   const deleteSurgeon = useDeleteSurgeon();
+  const archiveSurgeon = useArchiveSurgeon();
+  const unarchiveSurgeon = useUnarchiveSurgeon();
 
   const { data: repStates } = useRepStates();
   const { search: searchFacilitiesRpc, results: facilitySearchResults, isSearching: isSearchingFacilities } =
@@ -87,7 +102,9 @@ export default function Contacts() {
   const filteredContacts = useMemo(() => {
     if (!contacts) return [];
     let list = contacts;
-    if (showActiveOnly) list = list.filter((c) => c.is_active !== false);
+    if (filterMode === 'active') list = list.filter((c) => c.is_active !== false && !c.is_archived);
+    else if (filterMode === 'inactive') list = list.filter((c) => c.is_active === false && !c.is_archived);
+    else if (filterMode === 'archived') list = list.filter((c) => c.is_archived === true);
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -98,34 +115,40 @@ export default function Contacts() {
       );
     }
     return list;
-  }, [contacts, search, showActiveOnly]);
+  }, [contacts, search, filterMode]);
 
   const filteredFacilities = useMemo(() => {
     if (!facilities) return [];
     let list = facilities;
-    if (showActiveOnly) list = list.filter((f) => f.is_active !== false);
+    if (filterMode === 'active') list = list.filter((f) => f.is_active !== false && !f.is_archived);
+    else if (filterMode === 'inactive') list = list.filter((f) => f.is_active === false && !f.is_archived);
+    else if (filterMode === 'archived') list = list.filter((f) => f.is_archived === true);
     if (search) {
       const q = search.toLowerCase();
       list = list.filter((f) => f.name?.toLowerCase().includes(q) || f.city?.toLowerCase().includes(q));
     }
     return list;
-  }, [facilities, search, showActiveOnly]);
+  }, [facilities, search, filterMode]);
 
   const filteredManufacturers = useMemo(() => {
     if (!manufacturers) return [];
     let list = manufacturers;
-    if (showActiveOnly) list = list.filter((m) => m.is_active !== false);
+    if (filterMode === 'active') list = list.filter((m) => m.is_active !== false && !m.is_archived);
+    else if (filterMode === 'inactive') list = list.filter((m) => m.is_active === false && !m.is_archived);
+    else if (filterMode === 'archived') list = list.filter((m) => m.is_archived === true);
     if (search) {
       const q = search.toLowerCase();
       list = list.filter((m) => m.name?.toLowerCase().includes(q));
     }
     return list;
-  }, [manufacturers, search, showActiveOnly]);
+  }, [manufacturers, search, filterMode]);
 
   const filteredSurgeons = useMemo(() => {
     if (!privateSurgeons) return [];
     let list = privateSurgeons;
-    if (showActiveOnly) list = list.filter((s) => s.is_active !== false);
+    if (filterMode === 'active') list = list.filter((s) => s.is_active !== false && !s.is_archived);
+    else if (filterMode === 'inactive') list = list.filter((s) => s.is_active === false && !s.is_archived);
+    else if (filterMode === 'archived') list = list.filter((s) => s.is_archived === true);
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -133,7 +156,7 @@ export default function Contacts() {
       );
     }
     return list;
-  }, [privateSurgeons, search, showActiveOnly]);
+  }, [privateSurgeons, search, filterMode]);
 
   function handleTabChange(tab) {
     setActiveTab(tab);
@@ -178,7 +201,7 @@ export default function Contacts() {
         </div>
       </div>
 
-      {/* Controls: search + active toggle + CSV import */}
+      {/* Controls: search + filter segmented control + CSV import */}
       <div className="flex items-center gap-2 px-4 pt-3 pb-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
@@ -190,9 +213,20 @@ export default function Contacts() {
             className="min-h-touch w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2.5 pl-10 pr-3 text-sm text-gray-900 dark:text-gray-100 outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
           />
         </div>
-        <div className="flex min-h-touch items-center gap-2">
-          <ActiveToggle isActive={showActiveOnly} onToggle={(val) => setShowActiveOnly(val)} size="sm" />
-          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{showActiveOnly ? 'Active' : 'All'}</span>
+        <div className="flex min-h-touch items-center rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
+          {FILTER_OPTIONS.map((opt) => (
+            <button
+              key={opt.key}
+              onClick={() => setFilterMode(opt.key)}
+              className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                filterMode === opt.key
+                  ? 'bg-brand-800 text-white dark:bg-brand-600'
+                  : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
         {activeTab === 'people' && (
           <button
@@ -210,15 +244,23 @@ export default function Contacts() {
         {activeTab === 'people' && (
           <PeopleTab
             contacts={filteredContacts}
+            filterMode={filterMode}
             onToggle={(id, val) => updateContact.mutate({ id, is_active: val })}
+            onDelete={(id) => deleteContact.mutate(id)}
+            onArchive={(id) => archiveContact.mutate(id)}
+            onUnarchive={(id) => unarchiveContact.mutate(id)}
             navigate={navigate}
+            isOwner={isOwner}
           />
         )}
         {activeTab === 'facilities' && (
           <FacilitiesTab
             facilities={filteredFacilities}
+            filterMode={filterMode}
             onToggle={(id, val) => updateFacility.mutate({ id, is_active: val })}
             onDelete={(id) => deleteFacility.mutate(id)}
+            onArchive={(id) => archiveFacility.mutate(id)}
+            onUnarchive={(id) => unarchiveFacility.mutate(id)}
             navigate={navigate}
             isOwner={isOwner}
             globalResults={globalFacilityResults}
@@ -230,8 +272,11 @@ export default function Contacts() {
         {activeTab === 'manufacturers' && (
           <ManufacturersTab
             manufacturers={filteredManufacturers}
+            filterMode={filterMode}
             onToggle={(id, val) => updateManufacturer.mutate({ id, is_active: val })}
             onDelete={(id) => deleteManufacturer.mutate(id)}
+            onArchive={(id) => archiveManufacturer.mutate(id)}
+            onUnarchive={(id) => unarchiveManufacturer.mutate(id)}
             navigate={navigate}
             isOwner={isOwner}
           />
@@ -239,8 +284,11 @@ export default function Contacts() {
         {activeTab === 'surgeons' && (
           <SurgeonsTab
             surgeons={filteredSurgeons}
+            filterMode={filterMode}
             onToggle={(id, val) => updateSurgeon.mutate({ id, is_active: val })}
             onDelete={(id) => deleteSurgeon.mutate(id)}
+            onArchive={(id) => archiveSurgeon.mutate(id)}
+            onUnarchive={(id) => unarchiveSurgeon.mutate(id)}
             navigate={navigate}
             isOwner={isOwner}
             globalResults={globalSurgeonResults}
@@ -255,7 +303,10 @@ export default function Contacts() {
   );
 }
 
-function PeopleTab({ contacts, onToggle, navigate }) {
+function PeopleTab({ contacts, filterMode, onToggle, onDelete, onArchive, onUnarchive, navigate, isOwner }) {
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const isArchived = filterMode === 'archived';
+
   return (
     <>
       <button
@@ -274,7 +325,9 @@ function PeopleTab({ contacts, onToggle, navigate }) {
               onClick={() => navigate(`/contacts/${c.id}`)}
               className="flex min-h-touch cursor-pointer items-center gap-3 rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800"
             >
-              <ActiveToggle isActive={c.is_active !== false} onToggle={(val) => onToggle(c.id, val)} />
+              {!isArchived && (
+                <ActiveToggle isActive={c.is_active !== false} onToggle={(val) => onToggle(c.id, val)} />
+              )}
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 dark:bg-brand-800/20 text-sm font-semibold text-brand-800 dark:text-brand-400">
                 {c.full_name?.charAt(0)?.toUpperCase()}
               </div>
@@ -292,7 +345,7 @@ function PeopleTab({ contacts, onToggle, navigate }) {
                   {getContactOrg(c)}
                 </p>
               </div>
-              {c.phone && (
+              {c.phone && !isArchived && (
                 <a
                   href={`tel:${c.phone}`}
                   onClick={(e) => e.stopPropagation()}
@@ -301,16 +354,60 @@ function PeopleTab({ contacts, onToggle, navigate }) {
                   <Phone className="h-4 w-4" />
                 </a>
               )}
+              {isArchived && isOwner && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onUnarchive(c.id); }}
+                  className="p-1.5 text-gray-400 hover:text-brand-800 dark:text-gray-500 dark:hover:text-brand-400"
+                  title="Unarchive"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </button>
+              )}
+              {!isArchived && isOwner && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setDeleteTarget(c); }}
+                  className="p-1.5 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
             </div>
           ))}
         </div>
       )}
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => { onDelete(deleteTarget.id); setDeleteTarget(null); }}
+        title="Delete Contact"
+        message={`Permanently delete "${deleteTarget?.full_name}"? This cannot be undone.`}
+        confirmLabel="Delete"
+      />
     </>
   );
 }
 
-function FacilitiesTab({ facilities, onToggle, onDelete, navigate, isOwner, globalResults, isSearchingGlobal, onImport, importingId }) {
+function FacilitiesTab({ facilities, filterMode, onToggle, onDelete, onArchive, onUnarchive, navigate, isOwner, globalResults, isSearchingGlobal, onImport, importingId }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [archiveTarget, setArchiveTarget] = useState(null);
+  const [linkedDescription, setLinkedDescription] = useState('');
+  const [checking, setChecking] = useState(false);
+  const isArchived = filterMode === 'archived';
+
+  async function handleTrashClick(f) {
+    setChecking(true);
+    try {
+      const linked = await checkLinkedFacility(f.id);
+      if (linked.count === 0) {
+        setDeleteTarget(f);
+      } else {
+        setLinkedDescription(linked.description);
+        setArchiveTarget(f);
+      }
+    } finally {
+      setChecking(false);
+    }
+  }
 
   return (
     <>
@@ -362,7 +459,9 @@ function FacilitiesTab({ facilities, onToggle, onDelete, navigate, isOwner, glob
               onClick={() => navigate(`/facilities/${f.id}/edit?returnTab=facilities`)}
               className="flex min-h-touch cursor-pointer items-center gap-3 rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800"
             >
-              <ActiveToggle isActive={f.is_active !== false} onToggle={(val) => onToggle(f.id, val)} />
+              {!isArchived && (
+                <ActiveToggle isActive={f.is_active !== false} onToggle={(val) => onToggle(f.id, val)} />
+              )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-gray-800 dark:text-gray-200">{f.name}</p>
@@ -378,9 +477,19 @@ function FacilitiesTab({ facilities, onToggle, onDelete, navigate, isOwner, glob
                   </p>
                 )}
               </div>
-              {isOwner && (
+              {isArchived && isOwner && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); setDeleteTarget(f); }}
+                  onClick={(e) => { e.stopPropagation(); onUnarchive(f.id); }}
+                  className="p-1.5 text-gray-400 hover:text-brand-800 dark:text-gray-500 dark:hover:text-brand-400"
+                  title="Unarchive"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </button>
+              )}
+              {!isArchived && isOwner && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleTrashClick(f); }}
+                  disabled={checking}
                   className="p-1.5 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -398,12 +507,39 @@ function FacilitiesTab({ facilities, onToggle, onDelete, navigate, isOwner, glob
         message={`Permanently delete "${deleteTarget?.name}"? This cannot be undone.`}
         confirmLabel="Delete"
       />
+      <ConfirmDialog
+        isOpen={!!archiveTarget}
+        onClose={() => setArchiveTarget(null)}
+        onConfirm={() => { onArchive(archiveTarget.id); setArchiveTarget(null); }}
+        title="Archive Facility"
+        message={`"${archiveTarget?.name}" is linked to ${linkedDescription}. Archive instead of deleting?`}
+        confirmLabel="Archive"
+      />
     </>
   );
 }
 
-function ManufacturersTab({ manufacturers, onToggle, onDelete, navigate, isOwner }) {
+function ManufacturersTab({ manufacturers, filterMode, onToggle, onDelete, onArchive, onUnarchive, navigate, isOwner }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [archiveTarget, setArchiveTarget] = useState(null);
+  const [linkedDescription, setLinkedDescription] = useState('');
+  const [checking, setChecking] = useState(false);
+  const isArchived = filterMode === 'archived';
+
+  async function handleTrashClick(m) {
+    setChecking(true);
+    try {
+      const linked = await checkLinkedManufacturer(m.id);
+      if (linked.count === 0) {
+        setDeleteTarget(m);
+      } else {
+        setLinkedDescription(linked.description);
+        setArchiveTarget(m);
+      }
+    } finally {
+      setChecking(false);
+    }
+  }
 
   return (
     <>
@@ -423,16 +559,28 @@ function ManufacturersTab({ manufacturers, onToggle, onDelete, navigate, isOwner
               onClick={() => navigate(`/manufacturers/${m.id}?returnTab=manufacturers`)}
               className="flex min-h-touch cursor-pointer items-center gap-3 rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800"
             >
-              <ActiveToggle isActive={m.is_active !== false} onToggle={(val) => onToggle(m.id, val)} />
+              {!isArchived && (
+                <ActiveToggle isActive={m.is_active !== false} onToggle={(val) => onToggle(m.id, val)} />
+              )}
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-gray-800 dark:text-gray-200">{m.name}</p>
                 {m.phone && (
                   <p className="text-xs text-gray-500 dark:text-gray-400">{m.phone}</p>
                 )}
               </div>
-              {isOwner && (
+              {isArchived && isOwner && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); setDeleteTarget(m); }}
+                  onClick={(e) => { e.stopPropagation(); onUnarchive(m.id); }}
+                  className="p-1.5 text-gray-400 hover:text-brand-800 dark:text-gray-500 dark:hover:text-brand-400"
+                  title="Unarchive"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </button>
+              )}
+              {!isArchived && isOwner && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleTrashClick(m); }}
+                  disabled={checking}
                   className="p-1.5 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -450,12 +598,39 @@ function ManufacturersTab({ manufacturers, onToggle, onDelete, navigate, isOwner
         message={`Permanently delete "${deleteTarget?.name}"? This cannot be undone.`}
         confirmLabel="Delete"
       />
+      <ConfirmDialog
+        isOpen={!!archiveTarget}
+        onClose={() => setArchiveTarget(null)}
+        onConfirm={() => { onArchive(archiveTarget.id); setArchiveTarget(null); }}
+        title="Archive Manufacturer"
+        message={`"${archiveTarget?.name}" is linked to ${linkedDescription}. Archive instead of deleting?`}
+        confirmLabel="Archive"
+      />
     </>
   );
 }
 
-function SurgeonsTab({ surgeons, onToggle, onDelete, navigate, isOwner, globalResults, isSearchingGlobal, onImport, importingId }) {
+function SurgeonsTab({ surgeons, filterMode, onToggle, onDelete, onArchive, onUnarchive, navigate, isOwner, globalResults, isSearchingGlobal, onImport, importingId }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [archiveTarget, setArchiveTarget] = useState(null);
+  const [linkedDescription, setLinkedDescription] = useState('');
+  const [checking, setChecking] = useState(false);
+  const isArchived = filterMode === 'archived';
+
+  async function handleTrashClick(s) {
+    setChecking(true);
+    try {
+      const linked = await checkLinkedSurgeon(s.id);
+      if (linked.count === 0) {
+        setDeleteTarget(s);
+      } else {
+        setLinkedDescription(linked.description);
+        setArchiveTarget(s);
+      }
+    } finally {
+      setChecking(false);
+    }
+  }
 
   return (
     <>
@@ -507,7 +682,9 @@ function SurgeonsTab({ surgeons, onToggle, onDelete, navigate, isOwner, globalRe
               onClick={() => navigate(`/surgeons/${s.id}/edit?returnTab=surgeons`)}
               className="flex min-h-touch cursor-pointer items-center gap-3 rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800"
             >
-              <ActiveToggle isActive={s.is_active !== false} onToggle={(val) => onToggle(s.id, val)} />
+              {!isArchived && (
+                <ActiveToggle isActive={s.is_active !== false} onToggle={(val) => onToggle(s.id, val)} />
+              )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-gray-800 dark:text-gray-200">{s.full_name}</p>
@@ -516,9 +693,19 @@ function SurgeonsTab({ surgeons, onToggle, onDelete, navigate, isOwner, globalRe
                   {[s.specialty, s.primary_facility?.name].filter(Boolean).join(' · ')}
                 </p>
               </div>
-              {isOwner && (
+              {isArchived && isOwner && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); setDeleteTarget(s); }}
+                  onClick={(e) => { e.stopPropagation(); onUnarchive(s.id); }}
+                  className="p-1.5 text-gray-400 hover:text-brand-800 dark:text-gray-500 dark:hover:text-brand-400"
+                  title="Unarchive"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </button>
+              )}
+              {!isArchived && isOwner && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleTrashClick(s); }}
+                  disabled={checking}
                   className="p-1.5 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -535,6 +722,14 @@ function SurgeonsTab({ surgeons, onToggle, onDelete, navigate, isOwner, globalRe
         title="Delete Surgeon"
         message={`Permanently delete "${deleteTarget?.full_name}"? This cannot be undone.`}
         confirmLabel="Delete"
+      />
+      <ConfirmDialog
+        isOpen={!!archiveTarget}
+        onClose={() => setArchiveTarget(null)}
+        onConfirm={() => { onArchive(archiveTarget.id); setArchiveTarget(null); }}
+        title="Archive Surgeon"
+        message={`"${archiveTarget?.full_name}" is linked to ${linkedDescription}. Archive instead of deleting?`}
+        confirmLabel="Archive"
       />
     </>
   );

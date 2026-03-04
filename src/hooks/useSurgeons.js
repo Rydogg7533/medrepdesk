@@ -3,18 +3,26 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 
-export function useSurgeons({ activeOnly = false } = {}) {
+export function useSurgeons({ activeOnly, filter } = {}) {
   const { account } = useAuth();
   const accountId = account?.id;
 
+  const resolvedFilter = filter ?? (activeOnly ? 'active' : undefined);
+
   return useQuery({
-    queryKey: ['surgeons', accountId, { activeOnly }],
+    queryKey: ['surgeons', accountId, { filter: resolvedFilter }],
     queryFn: async () => {
       let query = supabase
         .from('surgeons')
         .select('*, primary_facility:facilities(name)')
         .eq('account_id', accountId);
-      if (activeOnly) query = query.eq('is_active', true);
+      if (resolvedFilter === 'active') {
+        query = query.eq('is_active', true).eq('is_archived', false);
+      } else if (resolvedFilter === 'inactive') {
+        query = query.eq('is_active', false).eq('is_archived', false);
+      } else if (resolvedFilter === 'archived') {
+        query = query.eq('is_archived', true);
+      }
       const { data, error } = await query.order('full_name');
       if (error) throw error;
       return data;
@@ -111,6 +119,52 @@ export function useDeleteSurgeon() {
       queryClient.invalidateQueries({ queryKey: ['surgeons'] });
     },
   });
+}
+
+export function useArchiveSurgeon() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('surgeons')
+        .update({ is_archived: true, is_active: false, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['surgeons'] });
+    },
+  });
+}
+
+export function useUnarchiveSurgeon() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('surgeons')
+        .update({ is_archived: false, is_active: false, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['surgeons'] });
+    },
+  });
+}
+
+export async function checkLinkedSurgeon(id) {
+  const counts = [];
+  const [cases, contacts] = await Promise.all([
+    supabase.from('cases').select('id', { count: 'exact', head: true }).eq('surgeon_id', id),
+    supabase.from('contacts').select('id', { count: 'exact', head: true }).eq('surgeon_id', id),
+  ]);
+  if (cases.count > 0) counts.push(`${cases.count} case${cases.count > 1 ? 's' : ''}`);
+  if (contacts.count > 0) counts.push(`${contacts.count} contact${contacts.count > 1 ? 's' : ''}`);
+  const total = (cases.count || 0) + (contacts.count || 0);
+  return { count: total, description: counts.join(' and ') };
 }
 
 export function useImportGlobalSurgeon() {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit2, Trash2, Phone, Mail } from 'lucide-react';
-import { useContact, useDeleteContact } from '@/hooks/useContacts';
+import { ArrowLeft, Edit2, Archive, Phone, Mail } from 'lucide-react';
+import { useContact, useArchiveContact } from '@/hooks/useContacts';
 import { useAuth } from '@/context/AuthContext';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -14,11 +14,11 @@ export default function ContactDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: contact, isLoading } = useContact(id);
-  const deleteContact = useDeleteContact();
-  const [showDelete, setShowDelete] = useState(false);
+  const archiveContact = useArchiveContact();
+  const [showArchive, setShowArchive] = useState(false);
 
-  async function handleDelete() {
-    await deleteContact.mutateAsync(id);
+  async function handleArchive() {
+    await archiveContact.mutateAsync(id);
     navigate('/contacts', { replace: true });
   }
 
@@ -94,25 +94,25 @@ export default function ContactDetail() {
         <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">Communication history coming soon</p>
       </Card>
 
-      {user?.role === 'owner' && (
+      {user?.role === 'owner' && !contact.is_archived && (
         <Button
           variant="outline"
           fullWidth
           className="text-red-500"
-          onClick={() => setShowDelete(true)}
+          onClick={() => setShowArchive(true)}
         >
-          <Trash2 className="h-4 w-4" />
-          Delete Contact
+          <Archive className="h-4 w-4" />
+          Archive Contact
         </Button>
       )}
 
       <ConfirmDialog
-        isOpen={showDelete}
-        onClose={() => setShowDelete(false)}
-        onConfirm={handleDelete}
-        title="Delete Contact"
-        message={`Delete ${contact.full_name}? This cannot be undone.`}
-        confirmLabel="Delete"
+        isOpen={showArchive}
+        onClose={() => setShowArchive(false)}
+        onConfirm={handleArchive}
+        title="Archive Contact"
+        message={`Archive ${contact.full_name}? They will be moved to the Archived view.`}
+        confirmLabel="Archive"
       />
     </div>
   );

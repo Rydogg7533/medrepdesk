@@ -2,18 +2,26 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 
-export function useContacts({ activeOnly = false } = {}) {
+export function useContacts({ activeOnly, filter } = {}) {
   const { account } = useAuth();
   const accountId = account?.id;
 
+  const resolvedFilter = filter ?? (activeOnly ? 'active' : undefined);
+
   return useQuery({
-    queryKey: ['contacts', accountId, { activeOnly }],
+    queryKey: ['contacts', accountId, { filter: resolvedFilter }],
     queryFn: async () => {
       let query = supabase
         .from('contacts')
         .select('*, facility:facilities(name), distributor:distributors(name), manufacturer:manufacturers(name), surgeon:surgeons(full_name)')
         .eq('account_id', accountId);
-      if (activeOnly) query = query.eq('is_active', true);
+      if (resolvedFilter === 'active') {
+        query = query.eq('is_active', true).eq('is_archived', false);
+      } else if (resolvedFilter === 'inactive') {
+        query = query.eq('is_active', false).eq('is_archived', false);
+      } else if (resolvedFilter === 'archived') {
+        query = query.eq('is_archived', true);
+      }
       const { data, error } = await query.order('full_name');
       if (error) throw error;
       return data;
@@ -96,4 +104,42 @@ export function useDeleteContact() {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
     },
   });
+}
+
+export function useArchiveContact() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('contacts')
+        .update({ is_archived: true, is_active: false, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+    },
+  });
+}
+
+export function useUnarchiveContact() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('contacts')
+        .update({ is_archived: false, is_active: false, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+    },
+  });
+}
+
+export async function checkLinkedContact() {
+  return { count: 0, description: '' };
 }

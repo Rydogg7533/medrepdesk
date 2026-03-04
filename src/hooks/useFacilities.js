@@ -3,18 +3,27 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 
-export function useFacilities({ activeOnly = false } = {}) {
+export function useFacilities({ activeOnly, filter } = {}) {
   const { account } = useAuth();
   const accountId = account?.id;
 
+  // Backward compat: activeOnly: true → filter: 'active'
+  const resolvedFilter = filter ?? (activeOnly ? 'active' : undefined);
+
   return useQuery({
-    queryKey: ['facilities', accountId, { activeOnly }],
+    queryKey: ['facilities', accountId, { filter: resolvedFilter }],
     queryFn: async () => {
       let query = supabase
         .from('facilities')
         .select('*')
         .eq('account_id', accountId);
-      if (activeOnly) query = query.eq('is_active', true);
+      if (resolvedFilter === 'active') {
+        query = query.eq('is_active', true).eq('is_archived', false);
+      } else if (resolvedFilter === 'inactive') {
+        query = query.eq('is_active', false).eq('is_archived', false);
+      } else if (resolvedFilter === 'archived') {
+        query = query.eq('is_archived', true);
+      }
       const { data, error } = await query.order('name');
       if (error) throw error;
       return data;
@@ -111,6 +120,56 @@ export function useDeleteFacility() {
       queryClient.invalidateQueries({ queryKey: ['facilities'] });
     },
   });
+}
+
+export function useArchiveFacility() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('facilities')
+        .update({ is_archived: true, is_active: false, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['facilities'] });
+    },
+  });
+}
+
+export function useUnarchiveFacility() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('facilities')
+        .update({ is_archived: false, is_active: false, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['facilities'] });
+    },
+  });
+}
+
+export async function checkLinkedFacility(id) {
+  const counts = [];
+  const [cases, contacts, surgeons, pos] = await Promise.all([
+    supabase.from('cases').select('id', { count: 'exact', head: true }).eq('facility_id', id),
+    supabase.from('contacts').select('id', { count: 'exact', head: true }).eq('facility_id', id),
+    supabase.from('surgeons').select('id', { count: 'exact', head: true }).eq('primary_facility_id', id),
+    supabase.from('purchase_orders').select('id', { count: 'exact', head: true }).eq('facility_id', id),
+  ]);
+  if (cases.count > 0) counts.push(`${cases.count} case${cases.count > 1 ? 's' : ''}`);
+  if (contacts.count > 0) counts.push(`${contacts.count} contact${contacts.count > 1 ? 's' : ''}`);
+  if (surgeons.count > 0) counts.push(`${surgeons.count} surgeon${surgeons.count > 1 ? 's' : ''}`);
+  if (pos.count > 0) counts.push(`${pos.count} PO${pos.count > 1 ? 's' : ''}`);
+  const total = (cases.count || 0) + (contacts.count || 0) + (surgeons.count || 0) + (pos.count || 0);
+  return { count: total, description: counts.join(' and ') };
 }
 
 export function useImportGlobalFacility() {
