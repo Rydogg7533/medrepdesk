@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, X, Phone, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Plus, X, Phone, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useDistributor, useCreateDistributor, useUpdateDistributor } from '@/hooks/useDistributors';
 import { useAllDistributorProducts, useUpsertDistributorProducts } from '@/hooks/useDistributorProducts';
@@ -34,12 +34,29 @@ export default function MyDistributor() {
     address: '',
     phone: '',
   });
+  // Which category keys the rep has added
+  const [addedGroups, setAddedGroups] = useState([]);
   // { [product_value]: { checked: boolean, commission_rate: string } }
   const [checkedProducts, setCheckedProducts] = useState({});
   const [customProducts, setCustomProducts] = useState([]);
-  const [expandedCategories, setExpandedCategories] = useState(new Set());
+  const [expandedGroups, setExpandedGroups] = useState(new Set());
+  const [showGroupPicker, setShowGroupPicker] = useState(false);
+  const [validationError, setValidationError] = useState('');
   const [serverError, setServerError] = useState('');
   const [saving, setSaving] = useState(false);
+  const pickerRef = useRef(null);
+
+  // Close picker on outside click
+  useEffect(() => {
+    if (!showGroupPicker) return;
+    function handleClick(e) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target)) {
+        setShowGroupPicker(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showGroupPicker]);
 
   // Load existing distributor data
   useEffect(() => {
@@ -55,11 +72,12 @@ export default function MyDistributor() {
     }
   }, [distributor]);
 
-  // Load existing product rates
+  // Load existing product rates — reconstruct groups from saved products
   useEffect(() => {
     if (existingProducts.length > 0) {
       const checked = {};
       const custom = [];
+      const groupKeys = new Set();
       const expanded = new Set();
 
       existingProducts.forEach((p) => {
@@ -67,15 +85,18 @@ export default function MyDistributor() {
           custom.push({ custom_name: p.custom_name || '', commission_rate: p.commission_rate?.toString() || '' });
         } else if (p.is_active) {
           checked[p.product_type] = { checked: true, commission_rate: p.commission_rate?.toString() || '' };
-          // Auto-expand categories with checked products
           const cat = PRODUCT_CATALOG.find((c) => c.products.some((pr) => pr.value === p.product_type));
-          if (cat) expanded.add(cat.key);
+          if (cat) {
+            groupKeys.add(cat.key);
+            expanded.add(cat.key);
+          }
         }
       });
 
       setCheckedProducts(checked);
       setCustomProducts(custom);
-      setExpandedCategories(expanded);
+      setAddedGroups(Array.from(groupKeys));
+      setExpandedGroups(expanded);
     }
   }, [existingProducts]);
 
@@ -84,8 +105,32 @@ export default function MyDistributor() {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
-  function toggleCategory(key) {
-    setExpandedCategories((prev) => {
+  function addGroup(catKey) {
+    setAddedGroups((prev) => [...prev, catKey]);
+    setExpandedGroups((prev) => new Set(prev).add(catKey));
+    setShowGroupPicker(false);
+  }
+
+  function removeGroup(catKey) {
+    setAddedGroups((prev) => prev.filter((k) => k !== catKey));
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      next.delete(catKey);
+      return next;
+    });
+    // Uncheck all products in this group
+    const cat = PRODUCT_CATALOG.find((c) => c.key === catKey);
+    if (cat) {
+      setCheckedProducts((prev) => {
+        const next = { ...prev };
+        cat.products.forEach((p) => delete next[p.value]);
+        return next;
+      });
+    }
+  }
+
+  function toggleGroupExpand(key) {
+    setExpandedGroups((prev) => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
@@ -103,6 +148,7 @@ export default function MyDistributor() {
       }
       return { ...prev, [value]: { checked: true, commission_rate: '' } };
     });
+    setValidationError('');
   }
 
   function setProductRate(value, rate) {
@@ -110,10 +156,38 @@ export default function MyDistributor() {
       ...prev,
       [value]: { ...prev[value], commission_rate: rate },
     }));
+    setValidationError('');
   }
 
   function getCategoryCheckedCount(cat) {
     return cat.products.filter((p) => checkedProducts[p.value]?.checked).length;
+  }
+
+  const availableGroups = PRODUCT_CATALOG.filter((cat) => !addedGroups.includes(cat.key));
+
+  function buildProductsArray() {
+    const products = [];
+    Object.entries(checkedProducts).forEach(([productType, data]) => {
+      if (data.checked && data.commission_rate !== '' && data.commission_rate != null) {
+        products.push({ product_type: productType, commission_rate: data.commission_rate });
+      }
+    });
+    customProducts.forEach((a) => {
+      if (a.commission_rate !== '' && a.custom_name.trim()) {
+        products.push({ product_type: 'custom', custom_name: a.custom_name, commission_rate: a.commission_rate });
+      }
+    });
+    return products;
+  }
+
+  function validate() {
+    const products = buildProductsArray();
+    if (products.length === 0) {
+      setValidationError('Add at least one product group with a commission rate to save.');
+      return false;
+    }
+    setValidationError('');
+    return true;
   }
 
   async function handleSetup(e) {
@@ -151,6 +225,7 @@ export default function MyDistributor() {
   async function handleSaveDistributor(e) {
     e.preventDefault();
     setServerError('');
+    if (!validate()) return;
     setSaving(true);
     try {
       await updateDistributor.mutateAsync({
@@ -163,20 +238,7 @@ export default function MyDistributor() {
         phone: form.phone || null,
       });
 
-      // Build products array
-      const products = [];
-      Object.entries(checkedProducts).forEach(([productType, data]) => {
-        if (data.checked && data.commission_rate !== '' && data.commission_rate != null) {
-          products.push({ product_type: productType, commission_rate: data.commission_rate });
-        }
-      });
-      customProducts.forEach((a) => {
-        if (a.commission_rate !== '' && a.custom_name.trim()) {
-          products.push({ product_type: 'custom', custom_name: a.custom_name, commission_rate: a.commission_rate });
-        }
-      });
-
-      await upsertProducts.mutateAsync({ distributorId, products });
+      await upsertProducts.mutateAsync({ distributorId, products: buildProductsArray() });
       setSaving(false);
     } catch (err) {
       setServerError(err.message);
@@ -278,37 +340,60 @@ export default function MyDistributor() {
         </Card>
 
         {/* Product & Commission Settings */}
-        <Card>
+        <div>
           <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Product & Commission Settings</h2>
-          <div className="space-y-1">
-            {PRODUCT_CATALOG.map((cat) => {
-              const isExpanded = expandedCategories.has(cat.key);
+
+          {validationError && (
+            <div className="mb-3 rounded-lg bg-red-50 dark:bg-red-900/30 p-3 text-sm text-red-600 dark:text-red-400">{validationError}</div>
+          )}
+
+          {/* Added group cards */}
+          {addedGroups.length === 0 && customProducts.length === 0 && (
+            <div className="mb-3 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 p-6 text-center">
+              <p className="text-sm text-gray-400 dark:text-gray-500">No product groups added yet</p>
+              <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Add a product group to set commission rates</p>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {addedGroups.map((catKey) => {
+              const cat = PRODUCT_CATALOG.find((c) => c.key === catKey);
+              if (!cat) return null;
+              const isExpanded = expandedGroups.has(catKey);
               const checkedCount = getCategoryCheckedCount(cat);
 
               return (
-                <div key={cat.key}>
-                  {/* Category header */}
-                  <button
-                    type="button"
-                    onClick={() => toggleCategory(cat.key)}
-                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 active:bg-gray-100 dark:active:bg-gray-700"
-                  >
-                    {isExpanded ? (
-                      <ChevronDown className="h-4 w-4 text-gray-400" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4 text-gray-400" />
-                    )}
-                    <span className="flex-1 text-sm font-medium text-gray-700 dark:text-gray-300">{cat.label}</span>
-                    {checkedCount > 0 && (
-                      <span className="rounded-full bg-brand-800/10 px-2 py-0.5 text-xs font-medium text-brand-800 dark:bg-brand-400/20 dark:text-brand-400">
-                        {checkedCount}
+                <Card key={catKey}>
+                  {/* Group header */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleGroupExpand(catKey)}
+                      className="flex flex-1 items-center gap-2 py-0.5 text-left"
+                    >
+                      {isExpanded ? (
+                        <ChevronDown className="h-4 w-4 text-gray-400" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-gray-400" />
+                      )}
+                      <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{cat.label}</span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        ({checkedCount} product{checkedCount !== 1 ? 's' : ''})
                       </span>
-                    )}
-                  </button>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeGroup(catKey)}
+                      className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/30 dark:hover:text-red-400"
+                      title="Remove group"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
 
-                  {/* Products in category */}
+                  {/* Products */}
                   {isExpanded && (
-                    <div className="ml-6 space-y-1 pb-2">
+                    <div className="mt-3 space-y-1 border-t border-gray-100 dark:border-gray-700 pt-3">
                       {cat.products.map((product) => {
                         const isChecked = checkedProducts[product.value]?.checked;
                         return (
@@ -320,7 +405,9 @@ export default function MyDistributor() {
                                 onChange={() => toggleProduct(product.value)}
                                 className="h-4 w-4 rounded border-gray-300 text-brand-800 focus:ring-brand-800"
                               />
-                              <span className="text-sm text-gray-700 dark:text-gray-300">{product.label}</span>
+                              <span className={`text-sm ${isChecked ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}>
+                                {product.label}
+                              </span>
                             </label>
                             {isChecked && (
                               <div className="flex items-center gap-1">
@@ -342,18 +429,46 @@ export default function MyDistributor() {
                       })}
                     </div>
                   )}
-                </div>
+                </Card>
               );
             })}
           </div>
 
+          {/* Add Product Group button */}
+          <div className="relative mt-3" ref={pickerRef}>
+            <button
+              type="button"
+              onClick={() => setShowGroupPicker((prev) => !prev)}
+              disabled={availableGroups.length === 0}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 active:bg-gray-50 dark:active:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Plus className="h-4 w-4" /> Add Product Group
+            </button>
+
+            {showGroupPicker && availableGroups.length > 0 && (
+              <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg">
+                {availableGroups.map((cat) => (
+                  <button
+                    key={cat.key}
+                    type="button"
+                    onClick={() => addGroup(cat.key)}
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600"
+                  >
+                    <span className="flex-1">{cat.label}</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">{cat.products.length} products</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Custom Products */}
-          <div className="mt-3 border-t border-gray-200 dark:border-gray-700 pt-3">
+          <div className="mt-4">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Custom Products</span>
               <button
                 type="button"
-                onClick={() => setCustomProducts((prev) => [...prev, { custom_name: '', commission_rate: '' }])}
+                onClick={() => { setCustomProducts((prev) => [...prev, { custom_name: '', commission_rate: '' }]); setValidationError(''); }}
                 className="flex items-center gap-1 text-xs font-medium text-brand-800 dark:text-brand-400"
               >
                 <Plus className="h-3.5 w-3.5" /> Add
@@ -402,7 +517,7 @@ export default function MyDistributor() {
               <p className="text-xs text-gray-400 dark:text-gray-500">No custom products added</p>
             )}
           </div>
-        </Card>
+        </div>
 
         <Button type="submit" fullWidth loading={saving}>Save Changes</Button>
       </form>
