@@ -247,10 +247,10 @@ export default function Contacts() {
             contacts={filteredContacts}
             filterMode={filterMode}
             onToggle={(id, val) => updateContact.mutate({ id, is_active: val })}
-            onDelete={(id) => deleteContact.mutate(id)}
-            onArchive={(id) => archiveContact.mutate(id)}
-            onUnarchive={(id) => unarchiveContact.mutate(id)}
-            onDeactivate={(id) => updateContact.mutate({ id, is_active: false })}
+            onDeleteAsync={(id) => deleteContact.mutateAsync(id)}
+            onArchiveAsync={(id) => archiveContact.mutateAsync(id)}
+            onUnarchiveAsync={(id) => unarchiveContact.mutateAsync(id)}
+            onDeactivateAsync={(id) => updateContact.mutateAsync({ id, is_active: false })}
             navigate={navigate}
             isOwner={isOwner}
           />
@@ -260,10 +260,10 @@ export default function Contacts() {
             facilities={filteredFacilities}
             filterMode={filterMode}
             onToggle={(id, val) => updateFacility.mutate({ id, is_active: val })}
-            onDelete={(id) => deleteFacility.mutate(id)}
-            onArchive={(id) => archiveFacility.mutate(id)}
-            onUnarchive={(id) => unarchiveFacility.mutate(id)}
-            onDeactivate={(id) => updateFacility.mutate({ id, is_active: false })}
+            onDeleteAsync={(id) => deleteFacility.mutateAsync(id)}
+            onArchiveAsync={(id) => archiveFacility.mutateAsync(id)}
+            onUnarchiveAsync={(id) => unarchiveFacility.mutateAsync(id)}
+            onDeactivateAsync={(id) => updateFacility.mutateAsync({ id, is_active: false })}
             navigate={navigate}
             isOwner={isOwner}
             globalResults={globalFacilityResults}
@@ -277,10 +277,10 @@ export default function Contacts() {
             manufacturers={filteredManufacturers}
             filterMode={filterMode}
             onToggle={(id, val) => updateManufacturer.mutate({ id, is_active: val })}
-            onDelete={(id) => deleteManufacturer.mutate(id)}
-            onArchive={(id) => archiveManufacturer.mutate(id)}
-            onUnarchive={(id) => unarchiveManufacturer.mutate(id)}
-            onDeactivate={(id) => updateManufacturer.mutate({ id, is_active: false })}
+            onDeleteAsync={(id) => deleteManufacturer.mutateAsync(id)}
+            onArchiveAsync={(id) => archiveManufacturer.mutateAsync(id)}
+            onUnarchiveAsync={(id) => unarchiveManufacturer.mutateAsync(id)}
+            onDeactivateAsync={(id) => updateManufacturer.mutateAsync({ id, is_active: false })}
             navigate={navigate}
             isOwner={isOwner}
           />
@@ -290,10 +290,10 @@ export default function Contacts() {
             surgeons={filteredSurgeons}
             filterMode={filterMode}
             onToggle={(id, val) => updateSurgeon.mutate({ id, is_active: val })}
-            onDelete={(id) => deleteSurgeon.mutate(id)}
-            onArchive={(id) => archiveSurgeon.mutate(id)}
-            onUnarchive={(id) => unarchiveSurgeon.mutate(id)}
-            onDeactivate={(id) => updateSurgeon.mutate({ id, is_active: false })}
+            onDeleteAsync={(id) => deleteSurgeon.mutateAsync(id)}
+            onArchiveAsync={(id) => archiveSurgeon.mutateAsync(id)}
+            onUnarchiveAsync={(id) => unarchiveSurgeon.mutateAsync(id)}
+            onDeactivateAsync={(id) => updateSurgeon.mutateAsync({ id, is_active: false })}
             navigate={navigate}
             isOwner={isOwner}
             globalResults={globalSurgeonResults}
@@ -308,7 +308,7 @@ export default function Contacts() {
   );
 }
 
-function PeopleTab({ contacts, filterMode, onToggle, onDelete, onArchive, onUnarchive, onDeactivate, navigate, isOwner }) {
+function PeopleTab({ contacts, filterMode, onToggle, onDeleteAsync, onArchiveAsync, onUnarchiveAsync, onDeactivateAsync, navigate, isOwner }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const isArchived = filterMode === 'archived';
 
@@ -318,14 +318,15 @@ function PeopleTab({ contacts, filterMode, onToggle, onDelete, onArchive, onUnar
     return 'delete';
   }
 
-  function handleSwipe(c) {
+  async function handleSwipe(c) {
     if (filterMode === 'active') {
-      onDeactivate(c.id);
+      await onDeactivateAsync(c.id);
     } else if (filterMode === 'archived') {
-      onUnarchive(c.id);
+      await onUnarchiveAsync(c.id);
     } else {
-      // Inactive: contacts are leaf nodes, always true delete
+      // Inactive: show confirm dialog, snap row back
       setDeleteTarget(c);
+      return false;
     }
   }
 
@@ -389,7 +390,7 @@ function PeopleTab({ contacts, filterMode, onToggle, onDelete, onArchive, onUnar
       <ConfirmDialog
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => { onDelete(deleteTarget.id); setDeleteTarget(null); }}
+        onConfirm={async () => { await onDeleteAsync(deleteTarget.id); setDeleteTarget(null); }}
         title="Delete Contact"
         message={`Permanently delete "${deleteTarget?.full_name}"? This cannot be undone.`}
         confirmLabel="Delete"
@@ -398,7 +399,7 @@ function PeopleTab({ contacts, filterMode, onToggle, onDelete, onArchive, onUnar
   );
 }
 
-function FacilitiesTab({ facilities, filterMode, onToggle, onDelete, onArchive, onUnarchive, onDeactivate, navigate, isOwner, globalResults, isSearchingGlobal, onImport, importingId }) {
+function FacilitiesTab({ facilities, filterMode, onToggle, onDeleteAsync, onArchiveAsync, onUnarchiveAsync, onDeactivateAsync, navigate, isOwner, globalResults, isSearchingGlobal, onImport, importingId }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [archiveTarget, setArchiveTarget] = useState(null);
   const [linkedDescription, setLinkedDescription] = useState('');
@@ -412,11 +413,11 @@ function FacilitiesTab({ facilities, filterMode, onToggle, onDelete, onArchive, 
 
   async function handleSwipe(f) {
     if (filterMode === 'active') {
-      onDeactivate(f.id);
+      await onDeactivateAsync(f.id);
     } else if (filterMode === 'archived') {
-      onUnarchive(f.id);
+      await onUnarchiveAsync(f.id);
     } else {
-      // Inactive: smart delete
+      // Inactive: smart delete — show dialog, snap row back
       const linked = await checkLinkedFacility(f.id);
       if (linked.count === 0) {
         setDeleteTarget(f);
@@ -424,6 +425,7 @@ function FacilitiesTab({ facilities, filterMode, onToggle, onDelete, onArchive, 
         setLinkedDescription(linked.description);
         setArchiveTarget(f);
       }
+      return false;
     }
   }
 
@@ -508,7 +510,7 @@ function FacilitiesTab({ facilities, filterMode, onToggle, onDelete, onArchive, 
       <ConfirmDialog
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => { onDelete(deleteTarget.id); setDeleteTarget(null); }}
+        onConfirm={async () => { await onDeleteAsync(deleteTarget.id); setDeleteTarget(null); }}
         title="Delete Facility"
         message={`Permanently delete "${deleteTarget?.name}"? This cannot be undone.`}
         confirmLabel="Delete"
@@ -516,7 +518,7 @@ function FacilitiesTab({ facilities, filterMode, onToggle, onDelete, onArchive, 
       <ConfirmDialog
         isOpen={!!archiveTarget}
         onClose={() => setArchiveTarget(null)}
-        onConfirm={() => { onArchive(archiveTarget.id); setArchiveTarget(null); }}
+        onConfirm={async () => { await onArchiveAsync(archiveTarget.id); setArchiveTarget(null); }}
         title="Archive Facility"
         message={`"${archiveTarget?.name}" is linked to ${linkedDescription}. Archive instead of deleting?`}
         confirmLabel="Archive"
@@ -525,7 +527,7 @@ function FacilitiesTab({ facilities, filterMode, onToggle, onDelete, onArchive, 
   );
 }
 
-function ManufacturersTab({ manufacturers, filterMode, onToggle, onDelete, onArchive, onUnarchive, onDeactivate, navigate, isOwner }) {
+function ManufacturersTab({ manufacturers, filterMode, onToggle, onDeleteAsync, onArchiveAsync, onUnarchiveAsync, onDeactivateAsync, navigate, isOwner }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [archiveTarget, setArchiveTarget] = useState(null);
   const [linkedDescription, setLinkedDescription] = useState('');
@@ -539,9 +541,9 @@ function ManufacturersTab({ manufacturers, filterMode, onToggle, onDelete, onArc
 
   async function handleSwipe(m) {
     if (filterMode === 'active') {
-      onDeactivate(m.id);
+      await onDeactivateAsync(m.id);
     } else if (filterMode === 'archived') {
-      onUnarchive(m.id);
+      await onUnarchiveAsync(m.id);
     } else {
       const linked = await checkLinkedManufacturer(m.id);
       if (linked.count === 0) {
@@ -550,6 +552,7 @@ function ManufacturersTab({ manufacturers, filterMode, onToggle, onDelete, onArc
         setLinkedDescription(linked.description);
         setArchiveTarget(m);
       }
+      return false;
     }
   }
 
@@ -593,7 +596,7 @@ function ManufacturersTab({ manufacturers, filterMode, onToggle, onDelete, onArc
       <ConfirmDialog
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => { onDelete(deleteTarget.id); setDeleteTarget(null); }}
+        onConfirm={async () => { await onDeleteAsync(deleteTarget.id); setDeleteTarget(null); }}
         title="Delete Manufacturer"
         message={`Permanently delete "${deleteTarget?.name}"? This cannot be undone.`}
         confirmLabel="Delete"
@@ -601,7 +604,7 @@ function ManufacturersTab({ manufacturers, filterMode, onToggle, onDelete, onArc
       <ConfirmDialog
         isOpen={!!archiveTarget}
         onClose={() => setArchiveTarget(null)}
-        onConfirm={() => { onArchive(archiveTarget.id); setArchiveTarget(null); }}
+        onConfirm={async () => { await onArchiveAsync(archiveTarget.id); setArchiveTarget(null); }}
         title="Archive Manufacturer"
         message={`"${archiveTarget?.name}" is linked to ${linkedDescription}. Archive instead of deleting?`}
         confirmLabel="Archive"
@@ -610,7 +613,7 @@ function ManufacturersTab({ manufacturers, filterMode, onToggle, onDelete, onArc
   );
 }
 
-function SurgeonsTab({ surgeons, filterMode, onToggle, onDelete, onArchive, onUnarchive, onDeactivate, navigate, isOwner, globalResults, isSearchingGlobal, onImport, importingId }) {
+function SurgeonsTab({ surgeons, filterMode, onToggle, onDeleteAsync, onArchiveAsync, onUnarchiveAsync, onDeactivateAsync, navigate, isOwner, globalResults, isSearchingGlobal, onImport, importingId }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [archiveTarget, setArchiveTarget] = useState(null);
   const [linkedDescription, setLinkedDescription] = useState('');
@@ -624,9 +627,9 @@ function SurgeonsTab({ surgeons, filterMode, onToggle, onDelete, onArchive, onUn
 
   async function handleSwipe(s) {
     if (filterMode === 'active') {
-      onDeactivate(s.id);
+      await onDeactivateAsync(s.id);
     } else if (filterMode === 'archived') {
-      onUnarchive(s.id);
+      await onUnarchiveAsync(s.id);
     } else {
       const linked = await checkLinkedSurgeon(s.id);
       if (linked.count === 0) {
@@ -635,6 +638,7 @@ function SurgeonsTab({ surgeons, filterMode, onToggle, onDelete, onArchive, onUn
         setLinkedDescription(linked.description);
         setArchiveTarget(s);
       }
+      return false;
     }
   }
 
@@ -712,7 +716,7 @@ function SurgeonsTab({ surgeons, filterMode, onToggle, onDelete, onArchive, onUn
       <ConfirmDialog
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => { onDelete(deleteTarget.id); setDeleteTarget(null); }}
+        onConfirm={async () => { await onDeleteAsync(deleteTarget.id); setDeleteTarget(null); }}
         title="Delete Surgeon"
         message={`Permanently delete "${deleteTarget?.full_name}"? This cannot be undone.`}
         confirmLabel="Delete"
@@ -720,7 +724,7 @@ function SurgeonsTab({ surgeons, filterMode, onToggle, onDelete, onArchive, onUn
       <ConfirmDialog
         isOpen={!!archiveTarget}
         onClose={() => setArchiveTarget(null)}
-        onConfirm={() => { onArchive(archiveTarget.id); setArchiveTarget(null); }}
+        onConfirm={async () => { await onArchiveAsync(archiveTarget.id); setArchiveTarget(null); }}
         title="Archive Surgeon"
         message={`"${archiveTarget?.full_name}" is linked to ${linkedDescription}. Archive instead of deleting?`}
         confirmLabel="Archive"

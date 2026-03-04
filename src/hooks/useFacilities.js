@@ -113,11 +113,25 @@ export function useDeleteFacility() {
 
   return useMutation({
     mutationFn: async (id) => {
-      const { error } = await supabase.from('facilities').delete().eq('id', id);
-      if (error) throw error;
+      console.log('[useDeleteFacility] Attempting delete for id:', id);
+      const { data, error, status, statusText } = await supabase.from('facilities').delete().eq('id', id).select();
+      console.log('[useDeleteFacility] Response:', { data, error, status, statusText });
+      if (error) {
+        console.error('[useDeleteFacility] Supabase error:', error);
+        throw error;
+      }
+      if (!data || data.length === 0) {
+        console.error('[useDeleteFacility] No rows deleted — likely RLS policy blocking. Check is_global and account_id.');
+        throw new Error('Delete failed — record not found or permission denied. Check that this is not a global facility.');
+      }
+      console.log('[useDeleteFacility] Successfully deleted:', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['facilities'] });
+    },
+    onError: (error) => {
+      console.error('[useDeleteFacility] Mutation error:', error);
+      alert(`Failed to delete facility: ${error.message}`);
     },
   });
 }
@@ -186,10 +200,10 @@ export function useImportGlobalFacility() {
         .single();
       if (fetchError) throw fetchError;
 
-      const { id, created_at, updated_at, account_id, is_global, ...fields } = source;
+      const { id, created_at, updated_at, account_id, is_global, is_archived, ...fields } = source;
       const { data, error } = await supabase
         .from('facilities')
-        .insert({ ...fields, account_id: accountId, is_global: false })
+        .insert({ ...fields, account_id: accountId, is_global: false, is_archived: false })
         .select()
         .single();
       if (error) throw error;

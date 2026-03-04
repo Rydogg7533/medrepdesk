@@ -97,11 +97,25 @@ export function useDeleteManufacturer() {
 
   return useMutation({
     mutationFn: async (id) => {
-      const { error } = await supabase.from('manufacturers').delete().eq('id', id);
-      if (error) throw error;
+      console.log('[useDeleteManufacturer] Attempting delete for id:', id);
+      const { data, error, status, statusText } = await supabase.from('manufacturers').delete().eq('id', id).select();
+      console.log('[useDeleteManufacturer] Response:', { data, error, status, statusText });
+      if (error) {
+        console.error('[useDeleteManufacturer] Supabase error:', error);
+        throw error;
+      }
+      if (!data || data.length === 0) {
+        console.error('[useDeleteManufacturer] No rows deleted — likely RLS policy blocking.');
+        throw new Error('Delete failed — record not found or permission denied');
+      }
+      console.log('[useDeleteManufacturer] Successfully deleted:', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['manufacturers'] });
+    },
+    onError: (error) => {
+      console.error('[useDeleteManufacturer] Mutation error:', error);
+      alert(`Failed to delete manufacturer: ${error.message}`);
     },
   });
 }

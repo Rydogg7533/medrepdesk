@@ -97,11 +97,25 @@ export function useDeleteContact() {
 
   return useMutation({
     mutationFn: async (id) => {
-      const { error } = await supabase.from('contacts').delete().eq('id', id);
-      if (error) throw error;
+      console.log('[useDeleteContact] Attempting delete for id:', id);
+      const { data, error, status, statusText } = await supabase.from('contacts').delete().eq('id', id).select();
+      console.log('[useDeleteContact] Response:', { data, error, status, statusText });
+      if (error) {
+        console.error('[useDeleteContact] Supabase error:', error);
+        throw error;
+      }
+      if (!data || data.length === 0) {
+        console.error('[useDeleteContact] No rows deleted — likely RLS policy blocking.');
+        throw new Error('Delete failed — record not found or permission denied');
+      }
+      console.log('[useDeleteContact] Successfully deleted:', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
+    },
+    onError: (error) => {
+      console.error('[useDeleteContact] Mutation error:', error);
+      alert(`Failed to delete contact: ${error.message}`);
     },
   });
 }

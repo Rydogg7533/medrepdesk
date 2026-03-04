@@ -112,11 +112,25 @@ export function useDeleteSurgeon() {
 
   return useMutation({
     mutationFn: async (id) => {
-      const { error } = await supabase.from('surgeons').delete().eq('id', id);
-      if (error) throw error;
+      console.log('[useDeleteSurgeon] Attempting delete for id:', id);
+      const { data, error, status, statusText } = await supabase.from('surgeons').delete().eq('id', id).select();
+      console.log('[useDeleteSurgeon] Response:', { data, error, status, statusText });
+      if (error) {
+        console.error('[useDeleteSurgeon] Supabase error:', error);
+        throw error;
+      }
+      if (!data || data.length === 0) {
+        console.error('[useDeleteSurgeon] No rows deleted — likely RLS policy blocking. Check is_global and account_id.');
+        throw new Error('Delete failed — record not found or permission denied. Check that this is not a global surgeon.');
+      }
+      console.log('[useDeleteSurgeon] Successfully deleted:', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['surgeons'] });
+    },
+    onError: (error) => {
+      console.error('[useDeleteSurgeon] Mutation error:', error);
+      alert(`Failed to delete surgeon: ${error.message}`);
     },
   });
 }
@@ -181,10 +195,10 @@ export function useImportGlobalSurgeon() {
         .single();
       if (fetchError) throw fetchError;
 
-      const { id, created_at, updated_at, account_id, is_global, primary_facility_id, ...fields } = source;
+      const { id, created_at, updated_at, account_id, is_global, is_archived, primary_facility_id, ...fields } = source;
       const { data, error } = await supabase
         .from('surgeons')
-        .insert({ ...fields, account_id: accountId, is_global: false })
+        .insert({ ...fields, account_id: accountId, is_global: false, is_archived: false })
         .select()
         .single();
       if (error) throw error;

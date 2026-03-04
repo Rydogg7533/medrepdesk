@@ -11,6 +11,12 @@ function getActionConfig(mode) {
   return { icon: Trash2, label: 'Delete', bg: 'bg-red-500' };
 }
 
+/**
+ * onSwipe is called after slide-off animation.
+ * - If it resolves (or returns truthy/undefined): row collapses and is removed.
+ * - If it returns `false`: row snaps back (used when a confirmation dialog takes over).
+ * - If it throws: row snaps back and error propagates to mutation's onError.
+ */
 export default function SwipeableRow({ children, onSwipe, mode = 'delete', disabled = false }) {
   const rowRef = useRef(null);
   const innerRef = useRef(null);
@@ -22,7 +28,7 @@ export default function SwipeableRow({ children, onSwipe, mode = 'delete', disab
   const isHorizontal = useRef(false);
   const startTime = useRef(0);
   const rafId = useRef(null);
-  const [dismissed, setDismissed] = useState(false);
+  const actioning = useRef(false);
   const [collapsing, setCollapsing] = useState(false);
   const rowWidth = useRef(0);
 
@@ -44,22 +50,22 @@ export default function SwipeableRow({ children, onSwipe, mode = 'delete', disab
     if (!el) return;
     el.style.transition = 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)';
     applyTransform(0);
-    const cleanup = () => { el.style.transition = ''; };
+    const bg = rowRef.current?.querySelector('[data-swipe-bg]');
+    if (bg) {
+      bg.style.transition = 'opacity 0.35s ease-out';
+      bg.style.opacity = '0';
+    }
+    const cleanup = () => {
+      el.style.transition = '';
+      if (bg) bg.style.transition = '';
+      actioning.current = false;
+    };
     el.addEventListener('transitionend', cleanup, { once: true });
   }, [applyTransform]);
 
-  const dismiss = useCallback(() => {
-    const el = innerRef.current;
-    if (!el) return;
-    const width = rowWidth.current;
-    el.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0, 1)';
-    applyTransform(-width);
-    setDismissed(true);
-
-    el.addEventListener('transitionend', () => {
-      setCollapsing(true);
-    }, { once: true });
-  }, [applyTransform]);
+  const collapse = useCallback(() => {
+    setCollapsing(true);
+  }, []);
 
   useEffect(() => {
     if (!collapsing) return;
@@ -73,13 +79,43 @@ export default function SwipeableRow({ children, onSwipe, mode = 'delete', disab
       row.style.opacity = '0';
       row.style.overflow = 'hidden';
     });
-    const handler = () => { onSwipe?.(); };
-    row.addEventListener('transitionend', handler, { once: true });
-    return () => row.removeEventListener('transitionend', handler);
-  }, [collapsing, onSwipe]);
+  }, [collapsing]);
+
+  // Slide off screen, then call onSwipe and decide what to do
+  const dismiss = useCallback(async () => {
+    if (actioning.current) return;
+    actioning.current = true;
+
+    const el = innerRef.current;
+    if (!el) return;
+    const width = rowWidth.current;
+    el.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0, 1)';
+    applyTransform(-width);
+
+    // Wait for slide-off animation to finish
+    await new Promise((resolve) => {
+      el.addEventListener('transitionend', resolve, { once: true });
+    });
+
+    // Call the action
+    try {
+      const result = await onSwipe?.();
+      if (result === false) {
+        // Caller wants snap-back (e.g. showing a confirmation dialog)
+        resetPosition();
+      } else {
+        // Success — collapse the row
+        collapse();
+      }
+    } catch (err) {
+      // Mutation failed — snap back, error is handled by mutation's onError
+      console.error('Swipe action failed:', err);
+      resetPosition();
+    }
+  }, [applyTransform, onSwipe, resetPosition, collapse]);
 
   const onStart = useCallback((clientX, clientY) => {
-    if (disabled || dismissed) return;
+    if (disabled || actioning.current) return;
     rowWidth.current = rowRef.current?.offsetWidth || 300;
     startX.current = clientX;
     startY.current = clientY;
@@ -90,7 +126,7 @@ export default function SwipeableRow({ children, onSwipe, mode = 'delete', disab
     startTime.current = Date.now();
     const el = innerRef.current;
     if (el) el.style.transition = '';
-  }, [disabled, dismissed]);
+  }, [disabled]);
 
   const onMove = useCallback((clientX, clientY) => {
     if (!dragging.current) return;
