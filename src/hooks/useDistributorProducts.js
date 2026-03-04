@@ -52,66 +52,48 @@ export function useUpsertDistributorProducts() {
 
   return useMutation({
     mutationFn: async ({ distributorId, products }) => {
-      // 1. Deactivate all existing products for this distributor
-      const { error: deactivateError } = await supabase
-        .from('distributor_products')
-        .update({ is_active: false, updated_at: new Date().toISOString() })
-        .eq('distributor_id', distributorId)
-        .eq('account_id', accountId);
-      if (deactivateError) throw deactivateError;
-
-      // 2. Delete old custom products (we'll re-insert the current ones)
-      const { error: deleteCustomError } = await supabase
+      // 1. Delete all existing products for this distributor (clean slate)
+      const { error: deleteError } = await supabase
         .from('distributor_products')
         .delete()
         .eq('distributor_id', distributorId)
-        .eq('account_id', accountId)
-        .eq('product_type', 'custom');
-      if (deleteCustomError) throw deleteCustomError;
+        .eq('account_id', accountId);
+      if (deleteError) throw deleteError;
 
-      // 3. Separate standard and custom products
-      const standardProducts = products.filter((p) => p.product_type !== 'custom');
-      const customProducts = products.filter((p) => p.product_type === 'custom');
+      // 2. Build insert array for all products (standard + custom)
+      const toInsert = [];
 
-      // 4. Upsert standard products (unique index on account_id, distributor_id, product_type)
-      if (standardProducts.length > 0) {
-        const toUpsert = standardProducts.map((p) => ({
-          account_id: accountId,
-          distributor_id: distributorId,
-          product_type: p.product_type,
-          custom_name: null,
-          commission_rate: Number(p.commission_rate),
-          is_active: true,
-          updated_at: new Date().toISOString(),
-        }));
-
-        const { error } = await supabase
-          .from('distributor_products')
-          .upsert(toUpsert, { onConflict: 'account_id,distributor_id,product_type', ignoreDuplicates: false })
-          .select();
-        if (error) throw error;
-      }
-
-      // 5. Insert custom products
-      if (customProducts.length > 0) {
-        const toInsert = customProducts
-          .filter((p) => p.custom_name?.trim() && p.commission_rate !== '' && p.commission_rate != null)
-          .map((p) => ({
+      products.forEach((p) => {
+        if (p.product_type === 'custom') {
+          if (p.custom_name?.trim() && p.commission_rate !== '' && p.commission_rate != null) {
+            toInsert.push({
+              account_id: accountId,
+              distributor_id: distributorId,
+              product_type: 'custom',
+              custom_name: p.custom_name,
+              commission_rate: Number(p.commission_rate),
+              is_active: true,
+            });
+          }
+        } else {
+          toInsert.push({
             account_id: accountId,
             distributor_id: distributorId,
-            product_type: 'custom',
-            custom_name: p.custom_name,
+            product_type: p.product_type,
+            custom_name: null,
             commission_rate: Number(p.commission_rate),
             is_active: true,
-          }));
-
-        if (toInsert.length > 0) {
-          const { error } = await supabase
-            .from('distributor_products')
-            .insert(toInsert)
-            .select();
-          if (error) throw error;
+          });
         }
+      });
+
+      // 3. Insert all checked products
+      if (toInsert.length > 0) {
+        const { error } = await supabase
+          .from('distributor_products')
+          .insert(toInsert)
+          .select();
+        if (error) throw error;
       }
 
       return true;
