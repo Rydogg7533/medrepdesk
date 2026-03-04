@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
-import { Plus, Briefcase, MessageSquare, UserPlus, FileText } from 'lucide-react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Plus, Briefcase, MessageSquare, UserPlus, FileText, Settings } from 'lucide-react';
 import BottomNav from './BottomNav';
 import BottomSheet from '@/components/ui/BottomSheet';
 import NotificationBell from '@/components/ui/NotificationBell';
@@ -10,6 +10,8 @@ import PageTransition from '@/components/ui/PageTransition';
 export default function AppLayout() {
   const [fabOpen, setFabOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const isDashboard = location.pathname === '/dashboard';
 
   function handleAction(path) {
     setFabOpen(false);
@@ -21,7 +23,17 @@ export default function AppLayout() {
       {/* Header */}
       <header className="fixed inset-x-0 top-0 z-30 flex min-h-touch items-center justify-between border-b border-gray-200 bg-white px-4 pt-safe-top dark:border-gray-700 dark:bg-gray-800">
         <span className="text-lg font-bold text-brand-800 dark:text-brand-400">MedRepDesk</span>
-        <NotificationBell />
+        <div className="flex items-center gap-3">
+          {isDashboard && (
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('open-dashboard-settings'))}
+              className="p-1"
+            >
+              <Settings className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+            </button>
+          )}
+          <NotificationBell />
+        </div>
       </header>
 
       <OfflineBanner />

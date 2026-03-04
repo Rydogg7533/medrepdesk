@@ -47,6 +47,7 @@ import JoinReferral from '@/pages/JoinReferral';
 import Landing from '@/pages/Landing';
 import MyDistributor from '@/pages/MyDistributor';
 import BillSheetForm from '@/pages/BillSheetForm';
+import ActionItems from '@/pages/ActionItems';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -162,6 +163,7 @@ function App() {
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/my-distributor" element={<MyDistributor />} />
               <Route path="/bill-sheet" element={<BillSheetForm />} />
+              <Route path="/action-items" element={<ActionItems />} />
             </Route>
           </Routes>
           </ToastProvider>
