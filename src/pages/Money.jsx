@@ -191,7 +191,12 @@ export default function Money() {
         {tabs.map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => {
+              setActiveTab(tab.key);
+              setChaseTarget(null);
+              setRecordTarget(null);
+              setShowSendPrompt(false);
+            }}
             className={clsx(
               'shrink-0 flex-1 rounded-lg py-2.5 text-sm font-medium transition-colors',
               activeTab === tab.key
@@ -372,6 +377,128 @@ export default function Money() {
 
       {activeTab === 'bill_sheets' && (
         <>
+          {/* Chase PO Bottom Sheet */}
+          <BottomSheet
+            isOpen={!!chaseTarget}
+            onClose={() => setChaseTarget(null)}
+            title={chaseTarget ? `Chase PO — ${chaseTarget.caseNumber}` : 'Chase PO'}
+          >
+            <div className="flex flex-col gap-3">
+              {chaseTarget?.facility && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">{chaseTarget.facility}</p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleChaseAction('call')}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-50 py-3 text-sm font-medium text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                >
+                  <Phone className="h-4 w-4" /> Call
+                </button>
+                <button
+                  onClick={() => handleChaseAction('email')}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-50 py-3 text-sm font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                >
+                  <Mail className="h-4 w-4" /> Email
+                </button>
+                <button
+                  onClick={() => handleChaseAction('text')}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-50 py-3 text-sm font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+                >
+                  <MessageSquare className="h-4 w-4" /> Text
+                </button>
+              </div>
+              <Button
+                variant="secondary"
+                fullWidth
+                onClick={() => {
+                  const cid = chaseTarget?.caseId;
+                  setChaseTarget(null);
+                  navigate(`/cases/${cid}`);
+                }}
+              >
+                Open Case Detail
+              </Button>
+            </div>
+          </BottomSheet>
+
+          {/* Record PO Bottom Sheet */}
+          <BottomSheet
+            isOpen={!!recordTarget}
+            onClose={() => setRecordTarget(null)}
+            title={recordTarget ? `Record PO — ${recordTarget.caseNumber}` : 'Record PO Received'}
+          >
+            <form onSubmit={handleRecordPO} className="flex flex-col gap-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">PO Number</label>
+                <input
+                  type="text"
+                  required
+                  value={poForm.po_number}
+                  onChange={(e) => setPOForm((p) => ({ ...p, po_number: e.target.value }))}
+                  placeholder="Enter PO number"
+                  className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Amount</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={poForm.amount}
+                  onChange={(e) => setPOForm((p) => ({ ...p, amount: e.target.value }))}
+                  placeholder="0.00"
+                  className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Received Date</label>
+                <input
+                  type="date"
+                  value={poForm.received_date}
+                  onChange={(e) => setPOForm((p) => ({ ...p, received_date: e.target.value }))}
+                  max={new Date().toISOString().split('T')[0]}
+                  className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              <Button type="submit" fullWidth loading={createPO.isPending || createChase.isPending}>
+                Save PO
+              </Button>
+            </form>
+          </BottomSheet>
+
+          {/* Send to Manufacturer Prompt */}
+          <BottomSheet isOpen={showSendPrompt} onClose={handleSkipSend} title="Send PO to Manufacturer?">
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Send PO details to <span className="font-medium text-gray-900 dark:text-gray-100">{sendManufacturer?.name}</span>?
+              </p>
+              <div className="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-700/50">
+                <p className="text-xs text-gray-500 dark:text-gray-400">To</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{sendManufacturer?.billing_email}</p>
+                {sendManufacturer?.billing_email_cc?.filter(Boolean).length > 0 && (
+                  <>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">CC</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{sendManufacturer.billing_email_cc.filter(Boolean).join(', ')}</p>
+                  </>
+                )}
+              </div>
+              {sendPOEmail.isError && (
+                <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-2 text-sm text-red-600 dark:text-red-400">
+                  {sendPOEmail.error?.message || 'Failed to send email'}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Button variant="secondary" fullWidth onClick={handleSkipSend}>
+                  Skip
+                </Button>
+                <Button fullWidth loading={sendPOEmail.isPending} onClick={handleSendToManufacturer}>
+                  <Send className="h-4 w-4" /> Send
+                </Button>
+              </div>
+            </div>
+          </BottomSheet>
+
           {/* Active / Archived toggle */}
           <div className="mb-3 flex gap-2">
             {['active', 'archived'].map((view) => (
@@ -627,127 +754,6 @@ export default function Money() {
           )}
         </>
       )}
-      {/* Chase PO Bottom Sheet */}
-      <BottomSheet
-        isOpen={!!chaseTarget}
-        onClose={() => setChaseTarget(null)}
-        title={chaseTarget ? `Chase PO — ${chaseTarget.caseNumber}` : 'Chase PO'}
-      >
-        <div className="flex flex-col gap-3">
-          {chaseTarget?.facility && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">{chaseTarget.facility}</p>
-          )}
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleChaseAction('call')}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-50 py-3 text-sm font-medium text-green-700 dark:bg-green-900/30 dark:text-green-300"
-            >
-              <Phone className="h-4 w-4" /> Call
-            </button>
-            <button
-              onClick={() => handleChaseAction('email')}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-50 py-3 text-sm font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-            >
-              <Mail className="h-4 w-4" /> Email
-            </button>
-            <button
-              onClick={() => handleChaseAction('text')}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-50 py-3 text-sm font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
-            >
-              <MessageSquare className="h-4 w-4" /> Text
-            </button>
-          </div>
-          <Button
-            variant="secondary"
-            fullWidth
-            onClick={() => {
-              const cid = chaseTarget?.caseId;
-              setChaseTarget(null);
-              navigate(`/cases/${cid}`);
-            }}
-          >
-            Open Case Detail
-          </Button>
-        </div>
-      </BottomSheet>
-
-      {/* Record PO Bottom Sheet */}
-      <BottomSheet
-        isOpen={!!recordTarget}
-        onClose={() => setRecordTarget(null)}
-        title={recordTarget ? `Record PO — ${recordTarget.caseNumber}` : 'Record PO Received'}
-      >
-        <form onSubmit={handleRecordPO} className="flex flex-col gap-3">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">PO Number</label>
-            <input
-              type="text"
-              required
-              value={poForm.po_number}
-              onChange={(e) => setPOForm((p) => ({ ...p, po_number: e.target.value }))}
-              placeholder="Enter PO number"
-              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Amount</label>
-            <input
-              type="number"
-              step="0.01"
-              required
-              value={poForm.amount}
-              onChange={(e) => setPOForm((p) => ({ ...p, amount: e.target.value }))}
-              placeholder="0.00"
-              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Received Date</label>
-            <input
-              type="date"
-              value={poForm.received_date}
-              onChange={(e) => setPOForm((p) => ({ ...p, received_date: e.target.value }))}
-              max={new Date().toISOString().split('T')[0]}
-              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            />
-          </div>
-          <Button type="submit" fullWidth loading={createPO.isPending || createChase.isPending}>
-            Save PO
-          </Button>
-        </form>
-      </BottomSheet>
-
-      {/* Send to Manufacturer Prompt */}
-      <BottomSheet isOpen={showSendPrompt} onClose={handleSkipSend} title="Send PO to Manufacturer?">
-        <div className="flex flex-col gap-3">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Send PO details to <span className="font-medium text-gray-900 dark:text-gray-100">{sendManufacturer?.name}</span>?
-          </p>
-          <div className="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-700/50">
-            <p className="text-xs text-gray-500 dark:text-gray-400">To</p>
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{sendManufacturer?.billing_email}</p>
-            {sendManufacturer?.billing_email_cc?.filter(Boolean).length > 0 && (
-              <>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">CC</p>
-                <p className="text-sm text-gray-700 dark:text-gray-300">{sendManufacturer.billing_email_cc.filter(Boolean).join(', ')}</p>
-              </>
-            )}
-          </div>
-          {sendPOEmail.isError && (
-            <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-2 text-sm text-red-600 dark:text-red-400">
-              {sendPOEmail.error?.message || 'Failed to send email'}
-            </div>
-          )}
-          <div className="flex gap-2">
-            <Button variant="secondary" fullWidth onClick={handleSkipSend}>
-              Skip
-            </Button>
-            <Button fullWidth loading={sendPOEmail.isPending} onClick={handleSendToManufacturer}>
-              <Send className="h-4 w-4" /> Send
-            </Button>
-          </div>
-        </div>
-      </BottomSheet>
     </div>
   );
 }
