@@ -16,10 +16,10 @@ import InfoTooltip from '@/components/ui/InfoTooltip';
 import { formatCurrency, formatDate, formatRelativeTime } from '@/utils/formatters';
 
 const tabs = [
-  { key: 'pos', label: 'Purchase Orders' },
-  { key: 'commissions', label: 'Commissions' },
-  { key: 'pay_periods', label: 'Pay Periods' },
   { key: 'bill_sheets', label: 'Bill Sheets' },
+  { key: 'pos', label: 'POs' },
+  { key: 'commissions', label: 'Commissions' },
+  { key: 'pay_periods', label: 'Pay' },
 ];
 
 const PO_FILTERS = [
@@ -39,7 +39,7 @@ const COMM_FILTERS = [
 ];
 
 export default function Money() {
-  const [activeTab, setActiveTab] = useState('pos');
+  const [activeTab, setActiveTab] = useState('bill_sheets');
   const [poFilter, setPOFilter] = useState('all');
   const [commFilter, setCommFilter] = useState('all');
   const [billSheetView, setBillSheetView] = useState('active');
@@ -86,13 +86,13 @@ export default function Money() {
     <div className="p-4">
       <h1 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">Money<InfoTooltip text="Purchase orders track the billing lifecycle after a case is completed. Chase POs until received, then track payment." /></h1>
 
-      <div className="mb-4 flex gap-2">
+      <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={clsx(
-              'flex-1 rounded-lg py-2.5 text-sm font-medium transition-colors',
+              'shrink-0 flex-1 rounded-lg py-2.5 text-sm font-medium transition-colors',
               activeTab === tab.key
                 ? 'bg-brand-800 text-white'
                 : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
