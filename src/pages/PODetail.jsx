@@ -32,10 +32,7 @@ export default function PODetail() {
   const [showSendToDistributor, setShowSendToDistributor] = useState(false);
   const [showChase, setShowChase] = useState(false);
   const [showReceived, setShowReceived] = useState(false);
-  const [showPaid, setShowPaid] = useState(false);
   const [receivedDate, setReceivedDate] = useState('');
-  const [paidDate, setPaidDate] = useState('');
-  const [paidAmount, setPaidAmount] = useState('');
 
   async function handleDelete() {
     await deletePO.mutateAsync(id);
@@ -70,17 +67,6 @@ export default function PODetail() {
     await sendPOEmail.mutateAsync({ po, caseData: po.case });
     setShowSendToDistributor(false);
   }
-
-  async function handleMarkPaid() {
-    await updatePO.mutateAsync({
-      id,
-      status: 'paid',
-      paid_date: paidDate || new Date().toISOString().split('T')[0],
-      ...(paidAmount && { amount: Number(paidAmount) }),
-    });
-    setShowPaid(false);
-  }
-
 
   if (isLoading) {
     return (
@@ -137,7 +123,7 @@ export default function PODetail() {
           <InfoRow label="PO Number" value={po.po_number} />
           <InfoRow label="Amount" value={formatCurrency(po.amount)} />
           <InfoRow label="Date of Surgery" value={formatDate(po.case?.scheduled_date)} />
-          <InfoRow label="PO Received Date" value={formatDate(po.received_date)} />
+          {po.received_date && <InfoRow label="PO Received Date" value={formatDate(po.received_date)} />}
         </div>
       </Card>
 
@@ -175,24 +161,19 @@ export default function PODetail() {
 
       {/* Actions */}
       <div className="space-y-2">
-        {po.status !== 'paid' && (
+        {!po.po_number && ['not_requested', 'requested', 'pending'].includes(po.status) && (
           <Button fullWidth onClick={() => setShowChase(true)}>
             Chase PO
           </Button>
         )}
-        {po.status !== 'paid' && po.status !== 'received' && (
+        {po.status !== 'received' && (
           <Button fullWidth variant="secondary" onClick={() => setShowReceived(true)}>
             Mark Received
           </Button>
         )}
         {po.status === 'received' && !po.po_email_sent && (
-          <Button fullWidth variant="secondary" onClick={() => setShowSendToDistributor(true)}>
-            <Send className="h-4 w-4" /> Send to Distributor
-          </Button>
-        )}
-        {po.status === 'received' && (
-          <Button fullWidth onClick={() => setShowPaid(true)}>
-            Mark Paid
+          <Button fullWidth onClick={() => setShowSendToDistributor(true)}>
+            <Send className="h-4 w-4" /> Send to Manufacturer
           </Button>
         )}
 
@@ -242,37 +223,7 @@ export default function PODetail() {
         </div>
       </BottomSheet>
 
-      {/* Mark Paid Sheet */}
-      <BottomSheet isOpen={showPaid} onClose={() => setShowPaid(false)} title="Mark PO Paid">
-        <div className="flex flex-col gap-3">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Paid Date</label>
-            <input
-              type="date"
-              value={paidDate}
-              onChange={(e) => setPaidDate(e.target.value)}
-              max={new Date().toISOString().split('T')[0]}
-              className="min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Amount Paid</label>
-            <input
-              type="number"
-              step="0.01"
-              placeholder={po.amount ? String(po.amount) : '0.00'}
-              value={paidAmount}
-              onChange={(e) => setPaidAmount(e.target.value)}
-              className="min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
-            />
-          </div>
-          <Button fullWidth loading={updatePO.isPending} onClick={handleMarkPaid}>
-            Confirm Paid
-          </Button>
-        </div>
-      </BottomSheet>
-
-      {/* Send to Distributor Sheet */}
+      {/* Send to Manufacturer Sheet */}
       <BottomSheet isOpen={showSendToDistributor} onClose={() => setShowSendToDistributor(false)} title="Send PO to Distributor">
         <div className="flex flex-col gap-3">
           {(() => {

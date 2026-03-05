@@ -31,7 +31,6 @@ const PO_FILTERS = [
   { key: 'all', label: 'All' },
   { key: 'pending', label: 'Pending' },
   { key: 'received', label: 'Received' },
-  { key: 'paid', label: 'Paid' },
   { key: 'disputed', label: 'Disputed' },
 ];
 

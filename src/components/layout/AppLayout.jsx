@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Plus, Briefcase, MessageSquare, UserPlus, FileText, Settings } from 'lucide-react';
 import BottomNav from './BottomNav';
@@ -15,7 +15,14 @@ export default function AppLayout() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const mainRef = useRef(null);
   const isDashboard = location.pathname === '/dashboard';
+
+  // Scroll to top on route change
+  useEffect(() => {
+    mainRef.current?.scrollTo(0, 0);
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   useEffect(() => {
     const handler = () => setSettingsOpen(true);
@@ -49,7 +56,7 @@ export default function AppLayout() {
       <OfflineBanner />
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto pt-[calc(44px+env(safe-area-inset-top))] pb-[calc(68px+env(safe-area-inset-bottom))]">
+      <main ref={mainRef} className="flex-1 overflow-y-auto pt-[calc(44px+env(safe-area-inset-top))] pb-[calc(68px+env(safe-area-inset-bottom))]">
         <PageTransition>
           <Outlet />
         </PageTransition>
