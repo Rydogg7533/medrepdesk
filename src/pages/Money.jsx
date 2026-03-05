@@ -1,18 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DollarSign, FileText, Calendar, ChevronRight, ClipboardList } from 'lucide-react';
+import { DollarSign, FileText, Calendar, ChevronRight, ClipboardList, Phone, Mail, MessageSquare, Send } from 'lucide-react';
 import clsx from 'clsx';
-import { usePOs } from '@/hooks/usePOs';
+import { usePOs, useCreatePO } from '@/hooks/usePOs';
 import { useCommissions } from '@/hooks/useCommissions';
 import { usePayPeriods, useEnsurePayPeriods } from '@/hooks/usePayPeriods';
 import { useBillSheets } from '@/hooks/useBillSheets';
+import { useCreateChaseEntry } from '@/hooks/useChaseLog';
+import { useSendPOEmail } from '@/hooks/usePOEmail';
 import { useAuth } from '@/context/AuthContext';
 import { useDistributor } from '@/hooks/useDistributors';
 import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
 import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
 import Skeleton from '@/components/ui/Skeleton';
+import BottomSheet from '@/components/ui/BottomSheet';
 import InfoTooltip from '@/components/ui/InfoTooltip';
+import { useToast } from '@/components/ui/Toast';
 import { formatCurrency, formatDate, formatRelativeTime } from '@/utils/formatters';
 
 const tabs = [
@@ -43,7 +48,18 @@ export default function Money() {
   const [poFilter, setPOFilter] = useState('all');
   const [commFilter, setCommFilter] = useState('all');
   const [billSheetView, setBillSheetView] = useState('active');
+  const [chaseTarget, setChaseTarget] = useState(null); // bill sheet object for chase bottom sheet
+  const [recordTarget, setRecordTarget] = useState(null); // bill sheet object for record PO bottom sheet
+  const [showSendPrompt, setShowSendPrompt] = useState(false);
+  const [createdPO, setCreatedPO] = useState(null);
+  const [sendDistributor, setSendDistributor] = useState(null);
+  const [poForm, setPOForm] = useState({
+    po_number: '',
+    amount: '',
+    received_date: new Date().toISOString().split('T')[0],
+  });
   const navigate = useNavigate();
+  const toast = useToast();
 
   const { account } = useAuth();
   const distributorId = account?.primary_distributor_id;
@@ -55,6 +71,9 @@ export default function Money() {
   const { data: allCommissions = [], isLoading: commsLoading } = useCommissions();
   const { data: allPayPeriods = [], isLoading: periodsLoading } = usePayPeriods(distributorId);
   const ensurePayPeriods = useEnsurePayPeriods(distributorId, paySchedule);
+  const createPO = useCreatePO();
+  const createChase = useCreateChaseEntry();
+  const sendPOEmail = useSendPOEmail();
 
   // Auto-generate missing pay periods on mount when schedule is configured
   useEffect(() => {
@@ -81,6 +100,88 @@ export default function Money() {
   const receivedYTD = allCommissions
     .filter((c) => c.status === 'received' && c.received_date?.startsWith(thisYear))
     .reduce((sum, c) => sum + (c.received_amount || 0), 0);
+
+  // Chase quick action — call/email/text facility and log chase entry
+  async function handleChaseAction(actionType) {
+    if (!chaseTarget) return;
+    const phone = chaseTarget.facilityPhone;
+    const email = chaseTarget.facilityEmail;
+
+    if (actionType === 'call' && phone) {
+      window.location.href = `tel:${phone}`;
+    } else if (actionType === 'email' && email) {
+      window.location.href = `mailto:${email}`;
+    } else if (actionType === 'text' && phone) {
+      window.location.href = `sms:${phone}`;
+    }
+
+    await createChase.mutateAsync({
+      case_id: chaseTarget.caseId,
+      facility_id: chaseTarget.facilityId,
+      chase_type: actionType === 'call' ? 'follow_up_call' : actionType === 'email' ? 'follow_up_email' : 'follow_up_text',
+      action_taken: actionType,
+    });
+    setChaseTarget(null);
+    toast({ message: 'Follow-up logged', type: 'success' });
+  }
+
+  // Record PO received inline
+  async function handleRecordPO(e) {
+    e.preventDefault();
+    if (!recordTarget || !poForm.po_number.trim() || !poForm.amount) return;
+
+    try {
+      const po = await createPO.mutateAsync({
+        case_id: recordTarget.caseId,
+        po_number: poForm.po_number.trim(),
+        amount: Number(poForm.amount),
+        received_date: poForm.received_date || new Date().toISOString().split('T')[0],
+        status: 'received',
+        facility_id: recordTarget.facilityId || null,
+        distributor_id: recordTarget.distributorId || null,
+      });
+
+      await createChase.mutateAsync({
+        case_id: recordTarget.caseId,
+        po_id: po.id,
+        chase_type: 'po_received',
+        facility_id: recordTarget.facilityId || null,
+      });
+
+      setCreatedPO(po);
+      const dist = recordTarget.distributor;
+      setRecordTarget(null);
+      setPOForm({ po_number: '', amount: '', received_date: new Date().toISOString().split('T')[0] });
+
+      if (dist?.billing_email) {
+        setSendDistributor(dist);
+        setShowSendPrompt(true);
+      } else {
+        toast({ message: 'PO recorded successfully', type: 'success' });
+      }
+    } catch (err) {
+      toast({ message: err.message || 'Failed to record PO', type: 'error' });
+    }
+  }
+
+  async function handleSendToDistributor() {
+    if (!createdPO || !sendDistributor) return;
+    try {
+      await sendPOEmail.mutateAsync({
+        po: { ...createdPO, distributor: sendDistributor },
+        caseData: { case_number: createdPO.case_number },
+      });
+      setShowSendPrompt(false);
+      toast({ message: 'PO sent to distributor', type: 'success' });
+    } catch (err) {
+      toast({ message: err.message || 'Failed to send email', type: 'error' });
+    }
+  }
+
+  function handleSkipSend() {
+    setShowSendPrompt(false);
+    toast({ message: 'PO recorded successfully', type: 'success' });
+  }
 
   return (
     <div className="p-4">
@@ -356,13 +457,13 @@ export default function Money() {
                         {!bs.isArchived && (
                           <div className="mt-3 flex gap-2 border-t border-gray-100 pt-3 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
                             <button
-                              onClick={() => navigate(`/cases/${bs.caseId}`)}
+                              onClick={() => setChaseTarget(bs)}
                               className="flex-1 rounded-lg bg-gray-100 py-2 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300"
                             >
                               Chase PO
                             </button>
                             <button
-                              onClick={() => navigate(`/bill-sheets/${bs.caseId}?record=1`)}
+                              onClick={() => { setRecordTarget(bs); setPOForm({ po_number: '', amount: '', received_date: new Date().toISOString().split('T')[0] }); }}
                               className="flex-1 rounded-lg bg-brand-800 py-2 text-xs font-medium text-white"
                             >
                               Record PO Received
@@ -514,6 +615,127 @@ export default function Money() {
           )}
         </>
       )}
+      {/* Chase PO Bottom Sheet */}
+      <BottomSheet
+        isOpen={!!chaseTarget}
+        onClose={() => setChaseTarget(null)}
+        title={chaseTarget ? `Chase PO — ${chaseTarget.caseNumber}` : 'Chase PO'}
+      >
+        <div className="flex flex-col gap-3">
+          {chaseTarget?.facility && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">{chaseTarget.facility}</p>
+          )}
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleChaseAction('call')}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-50 py-3 text-sm font-medium text-green-700 dark:bg-green-900/30 dark:text-green-300"
+            >
+              <Phone className="h-4 w-4" /> Call
+            </button>
+            <button
+              onClick={() => handleChaseAction('email')}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-50 py-3 text-sm font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+            >
+              <Mail className="h-4 w-4" /> Email
+            </button>
+            <button
+              onClick={() => handleChaseAction('text')}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-50 py-3 text-sm font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+            >
+              <MessageSquare className="h-4 w-4" /> Text
+            </button>
+          </div>
+          <Button
+            variant="secondary"
+            fullWidth
+            onClick={() => {
+              const cid = chaseTarget?.caseId;
+              setChaseTarget(null);
+              navigate(`/cases/${cid}`);
+            }}
+          >
+            Open Case Detail
+          </Button>
+        </div>
+      </BottomSheet>
+
+      {/* Record PO Bottom Sheet */}
+      <BottomSheet
+        isOpen={!!recordTarget}
+        onClose={() => setRecordTarget(null)}
+        title={recordTarget ? `Record PO — ${recordTarget.caseNumber}` : 'Record PO Received'}
+      >
+        <form onSubmit={handleRecordPO} className="flex flex-col gap-3">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">PO Number</label>
+            <input
+              type="text"
+              required
+              value={poForm.po_number}
+              onChange={(e) => setPOForm((p) => ({ ...p, po_number: e.target.value }))}
+              placeholder="Enter PO number"
+              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Amount</label>
+            <input
+              type="number"
+              step="0.01"
+              required
+              value={poForm.amount}
+              onChange={(e) => setPOForm((p) => ({ ...p, amount: e.target.value }))}
+              placeholder="0.00"
+              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Received Date</label>
+            <input
+              type="date"
+              value={poForm.received_date}
+              onChange={(e) => setPOForm((p) => ({ ...p, received_date: e.target.value }))}
+              max={new Date().toISOString().split('T')[0]}
+              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+          <Button type="submit" fullWidth loading={createPO.isPending || createChase.isPending}>
+            Save PO
+          </Button>
+        </form>
+      </BottomSheet>
+
+      {/* Send to Distributor Prompt */}
+      <BottomSheet isOpen={showSendPrompt} onClose={handleSkipSend} title="Send PO to Distributor?">
+        <div className="flex flex-col gap-3">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Send PO details to <span className="font-medium text-gray-900 dark:text-gray-100">{sendDistributor?.name}</span>?
+          </p>
+          <div className="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-700/50">
+            <p className="text-xs text-gray-500 dark:text-gray-400">To</p>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{sendDistributor?.billing_email}</p>
+            {sendDistributor?.billing_email_cc?.filter(Boolean).length > 0 && (
+              <>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">CC</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">{sendDistributor.billing_email_cc.filter(Boolean).join(', ')}</p>
+              </>
+            )}
+          </div>
+          {sendPOEmail.isError && (
+            <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-2 text-sm text-red-600 dark:text-red-400">
+              {sendPOEmail.error?.message || 'Failed to send email'}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Button variant="secondary" fullWidth onClick={handleSkipSend}>
+              Skip
+            </Button>
+            <Button fullWidth loading={sendPOEmail.isPending} onClick={handleSendToDistributor}>
+              <Send className="h-4 w-4" /> Send
+            </Button>
+          </div>
+        </div>
+      </BottomSheet>
     </div>
   );
 }
