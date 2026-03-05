@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Calendar, CheckCircle, FileText, Send, Clock, Receipt, DollarSign, Ban, HelpCircle } from 'lucide-react';
+import { X, Calendar, CheckCircle, FileText, Send, Clock, Receipt, DollarSign, HelpCircle } from 'lucide-react';
 import clsx from 'clsx';
 import { CASE_STATUSES } from '@/utils/constants';
 
@@ -7,16 +7,9 @@ const STAGES = [
   {
     key: 'scheduled',
     icon: Calendar,
-    description: 'Case is on the surgical calendar. Awaiting confirmation from the facility.',
+    description: 'Case is on the surgical calendar. Prepare implants and logistics.',
     trigger: 'Manual — rep creates a new case',
-    action: 'Confirm the case date and details with the facility.',
-  },
-  {
-    key: 'confirmed',
-    icon: CheckCircle,
-    description: 'Facility confirmed the surgery date. Prepare implants and logistics.',
-    trigger: 'Manual — rep confirms the case',
-    action: 'Ensure implants are ready and delivered before the procedure.',
+    action: 'Confirm details with the facility. Mark completed after surgery.',
   },
   {
     key: 'completed',
@@ -59,13 +52,6 @@ const STAGES = [
     description: 'Payment received from the distributor. Case is complete.',
     trigger: 'Manual — rep records payment on the PO',
     action: 'Verify commission amount and close out the case.',
-  },
-  {
-    key: 'cancelled',
-    icon: Ban,
-    description: 'Case was cancelled and removed from the active pipeline.',
-    trigger: 'Manual — rep cancels the case',
-    action: 'No further action required.',
   },
 ];
 
@@ -164,6 +150,9 @@ export default function PipelineGuide({ isOpen, onClose, currentStatus }) {
               })}
             </div>
           </div>
+          <p className="mt-4 text-xs text-gray-400 dark:text-gray-500">
+            Cases can also be cancelled or rescheduled from the case detail page.
+          </p>
         </div>
       </div>
     </>

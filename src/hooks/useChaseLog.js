@@ -41,6 +41,7 @@ export function useCreateChaseEntry() {
       queryClient.invalidateQueries({ queryKey: ['chase_log'] });
       queryClient.invalidateQueries({ queryKey: ['cases'] });
       queryClient.invalidateQueries({ queryKey: ['purchase_orders'] });
+      queryClient.invalidateQueries({ queryKey: ['bill_sheets'] });
     },
   });
 }

@@ -1,6 +1,6 @@
 export const CASE_STATUSES = {
   scheduled: { label: 'Scheduled', color: '#6366F1', bg: 'bg-indigo-100', text: 'text-indigo-700' },
-  confirmed: { label: 'Confirmed', color: '#8B5CF6', bg: 'bg-violet-100', text: 'text-violet-700' },
+  confirmed: { label: 'Scheduled', color: '#6366F1', bg: 'bg-indigo-100', text: 'text-indigo-700' },
   completed: { label: 'Completed', color: '#10B981', bg: 'bg-emerald-100', text: 'text-emerald-700' },
   bill_sheet_submitted: { label: 'Bill Sheet', color: '#F59E0B', bg: 'bg-amber-100', text: 'text-amber-700' },
   po_requested: { label: 'PO Requested', color: '#F97316', bg: 'bg-orange-100', text: 'text-orange-700' },

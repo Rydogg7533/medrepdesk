@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit2, Trash2, CheckCircle, Plus, Phone, Mail, MessageSquare, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Edit2, Trash2, CheckCircle, Plus, Phone, Mail, MessageSquare, HelpCircle, CalendarClock, XCircle, RotateCcw } from 'lucide-react';
 import { useCase, useUpdateCase, useDeleteCase } from '@/hooks/useCases';
 import { useCasePOs } from '@/hooks/usePOs';
 import { useCaseCommission, useCreateCommission } from '@/hooks/useCommissions';
-import { useCaseCommunications } from '@/hooks/useCommunications';
+import { useCaseCommunications, useCreateCommunication } from '@/hooks/useCommunications';
 import { useChaseLog, useCreateChaseEntry } from '@/hooks/useChaseLog';
 import { useAuth } from '@/context/AuthContext';
 import { useDistributors } from '@/hooks/useDistributors';
@@ -22,7 +22,7 @@ import { CASE_STATUSES } from '@/utils/constants';
 import { getProductLabel } from '@/utils/productCatalog';
 
 const STATUS_ORDER = [
-  'scheduled', 'confirmed', 'completed',
+  'scheduled', 'completed',
   'bill_sheet_submitted', 'po_requested',
   'po_received', 'billed', 'paid',
 ];
@@ -50,10 +50,15 @@ export default function CaseDetail() {
   const updateCase = useUpdateCase();
   const deleteCase = useDeleteCase();
   const createCommission = useCreateCommission();
+  const createCommunication = useCreateCommunication();
   const createChase = useCreateChaseEntry();
   const [showDelete, setShowDelete] = useState(false);
   const [showAddCommission, setShowAddCommission] = useState(false);
   const [showPipeline, setShowPipeline] = useState(false);
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [rescheduleForm, setRescheduleForm] = useState({ date: '', time: '' });
+  const [showCancel, setShowCancel] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
 
   const procLabel = (type) => getProductLabel(type);
 
@@ -64,6 +69,35 @@ export default function CaseDetail() {
   async function handleDelete() {
     await deleteCase.mutateAsync(id);
     navigate('/cases', { replace: true });
+  }
+
+  async function handleReschedule() {
+    if (!rescheduleForm.date) return;
+    const oldDate = formatDate(caseData.scheduled_date);
+    const newDate = formatDate(rescheduleForm.date);
+    await updateCase.mutateAsync({
+      id,
+      scheduled_date: rescheduleForm.date,
+      ...(rescheduleForm.time && { scheduled_time: rescheduleForm.time }),
+    });
+    await createCommunication.mutateAsync({
+      case_id: id,
+      comm_type: 'note',
+      notes: `Case rescheduled from ${oldDate} to ${newDate}`,
+    });
+    setShowReschedule(false);
+    setRescheduleForm({ date: '', time: '' });
+  }
+
+  async function handleCancel() {
+    const updatedNotes = [caseData.notes, cancelReason].filter(Boolean).join('\n');
+    await updateCase.mutateAsync({ id, status: 'cancelled', notes: updatedNotes });
+    setShowCancel(false);
+    setCancelReason('');
+  }
+
+  async function handleReactivate() {
+    await updateCase.mutateAsync({ id, status: 'scheduled' });
   }
 
   async function handleAutoCommission() {
@@ -361,16 +395,63 @@ export default function CaseDetail() {
         )}
       </Card>
 
+      {/* Reschedule History */}
+      {(() => {
+        const rescheduleNotes = caseCommunications.filter(
+          (c) => c.comm_type === 'note' && c.notes?.includes('Case rescheduled')
+        );
+        if (rescheduleNotes.length === 0) return null;
+        return (
+          <Card className="mb-4">
+            <h3 className="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">
+              <CalendarClock className="mr-1 inline h-3.5 w-3.5" />
+              Reschedule History
+            </h3>
+            <div className="space-y-1">
+              {rescheduleNotes.map((note) => (
+                <div key={note.id} className="flex items-center justify-between text-xs">
+                  <span className="text-gray-600 dark:text-gray-400">{note.notes}</span>
+                  <span className="shrink-0 text-gray-400 dark:text-gray-500">{formatDate(note.created_at)}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        );
+      })()}
+
       {/* Actions */}
       <div className="space-y-2">
-        {caseData.status === 'scheduled' && (
-          <Button fullWidth loading={updateCase.isPending} onClick={() => advanceStatus('confirmed')}>
-            Confirm Case
-          </Button>
+        {['scheduled', 'confirmed'].includes(caseData.status) && (
+          <>
+            <Button fullWidth loading={updateCase.isPending} onClick={() => advanceStatus('completed')}>
+              Mark Completed
+            </Button>
+            <Button
+              variant="outline"
+              fullWidth
+              onClick={() => {
+                setRescheduleForm({ date: '', time: caseData.scheduled_time || '' });
+                setShowReschedule(true);
+              }}
+            >
+              <CalendarClock className="h-4 w-4" />
+              Reschedule
+            </Button>
+            <Button
+              variant="outline"
+              fullWidth
+              className="text-red-500"
+              onClick={() => setShowCancel(true)}
+            >
+              <XCircle className="h-4 w-4" />
+              Cancel Case
+            </Button>
+          </>
         )}
-        {caseData.status === 'confirmed' && (
-          <Button fullWidth loading={updateCase.isPending} onClick={() => advanceStatus('completed')}>
-            Mark Completed
+        {caseData.status === 'cancelled' && (
+          <Button fullWidth loading={updateCase.isPending} onClick={handleReactivate}>
+            <RotateCcw className="h-4 w-4" />
+            Reactivate Case
           </Button>
         )}
         {caseData.status === 'completed' && (
@@ -384,7 +465,7 @@ export default function CaseDetail() {
           </Button>
         )}
 
-        {user?.role === 'owner' && (
+        {user?.role === 'owner' && !['scheduled', 'confirmed'].includes(caseData.status) && (
           <Button
             variant="outline"
             fullWidth
@@ -429,6 +510,61 @@ export default function CaseDetail() {
       />
 
       <PipelineGuide isOpen={showPipeline} onClose={() => setShowPipeline(false)} currentStatus={caseData.status} />
+
+      {/* Reschedule Sheet */}
+      <BottomSheet isOpen={showReschedule} onClose={() => setShowReschedule(false)} title="Reschedule Case">
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Currently scheduled: {formatDate(caseData.scheduled_date)}
+          </p>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">New Date *</label>
+            <input
+              type="date"
+              required
+              value={rescheduleForm.date}
+              onChange={(e) => setRescheduleForm((f) => ({ ...f, date: e.target.value }))}
+              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Time</label>
+            <input
+              type="time"
+              value={rescheduleForm.time}
+              onChange={(e) => setRescheduleForm((f) => ({ ...f, time: e.target.value }))}
+              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+          <Button fullWidth loading={updateCase.isPending} disabled={!rescheduleForm.date} onClick={handleReschedule}>
+            Reschedule
+          </Button>
+        </div>
+      </BottomSheet>
+
+      {/* Cancel Sheet */}
+      <BottomSheet isOpen={showCancel} onClose={() => setShowCancel(false)} title="Cancel this case?">
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Reason (optional)</label>
+            <textarea
+              rows={3}
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Why is this case being cancelled?"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-500"
+            />
+          </div>
+          <div className="flex gap-3">
+            <Button variant="secondary" fullWidth onClick={() => setShowCancel(false)}>
+              Keep Case
+            </Button>
+            <Button variant="danger" fullWidth loading={updateCase.isPending} onClick={handleCancel}>
+              Cancel Case
+            </Button>
+          </div>
+        </div>
+      </BottomSheet>
     </div>
   );
 }

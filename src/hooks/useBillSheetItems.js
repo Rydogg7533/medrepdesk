@@ -42,6 +42,7 @@ export function useCreateBillSheetItems() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bill_sheet_items'] });
+      queryClient.invalidateQueries({ queryKey: ['bill_sheets'] });
       queryClient.invalidateQueries({ queryKey: ['cases'] });
     },
   });

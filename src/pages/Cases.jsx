@@ -1,31 +1,45 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, Search, HelpCircle } from 'lucide-react';
-import { useCases } from '@/hooks/useCases';
+import { Briefcase, Search, HelpCircle, MoreHorizontal } from 'lucide-react';
+import { useCases, useUpdateCase } from '@/hooks/useCases';
+import { useCreateCommunication } from '@/hooks/useCommunications';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Skeleton from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
+import Button from '@/components/ui/Button';
+import BottomSheet from '@/components/ui/BottomSheet';
+import SwipeableRow from '@/components/ui/SwipeableRow';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 import { getProductLabel } from '@/utils/productCatalog';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import PipelineGuide from '@/components/features/PipelineGuide';
+import { useToast } from '@/components/ui/Toast';
 import clsx from 'clsx';
 
 const FILTER_TABS = [
   { key: 'all', label: 'All', statuses: null },
-  { key: 'scheduled', label: 'Scheduled', statuses: ['scheduled'] },
-  { key: 'in_progress', label: 'In Progress', statuses: ['confirmed', 'completed', 'bill_sheet_submitted'] },
-  { key: 'chasing', label: 'Chasing', statuses: ['po_requested'] },
-  { key: 'money', label: 'Money', statuses: ['po_received', 'billed', 'paid'] },
+  { key: 'scheduled', label: 'Scheduled', statuses: ['scheduled', 'confirmed'] },
+  { key: 'completed', label: 'Completed', statuses: ['completed'] },
+  { key: 'in_progress', label: 'In Progress', statuses: ['bill_sheet_submitted', 'po_requested', 'po_received', 'billed'] },
+  { key: 'paid', label: 'Paid', statuses: ['paid'] },
+  { key: 'cancelled', label: 'Cancelled', statuses: ['cancelled'] },
 ];
 
 export default function Cases() {
   const navigate = useNavigate();
+  const { data: cases, isLoading } = useCases();
+  const updateCase = useUpdateCase();
+  const createCommunication = useCreateCommunication();
+  const toast = useToast();
+
   const [activeTab, setActiveTab] = useState('all');
   const [search, setSearch] = useState('');
   const [showPipeline, setShowPipeline] = useState(false);
-
-  const { data: cases, isLoading } = useCases();
+  const [overflowCase, setOverflowCase] = useState(null);
+  const [cancelCase, setCancelCase] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [rescheduleCase, setRescheduleCase] = useState(null);
+  const [rescheduleForm, setRescheduleForm] = useState({ date: '', time: '' });
 
   const filtered = useMemo(() => {
     if (!cases) return [];
@@ -33,6 +47,9 @@ export default function Cases() {
     let result = cases;
     if (tab?.statuses) {
       result = result.filter((c) => tab.statuses.includes(c.status));
+    } else {
+      // "All" tab excludes cancelled
+      result = result.filter((c) => c.status !== 'cancelled');
     }
     if (search) {
       const q = search.toLowerCase();
@@ -47,6 +64,42 @@ export default function Cases() {
   }, [cases, activeTab, search]);
 
   const procLabel = (type) => getProductLabel(type);
+
+  async function handleComplete(c, e) {
+    e.stopPropagation();
+    await updateCase.mutateAsync({ id: c.id, status: 'completed' });
+    toast.success('Case marked completed');
+  }
+
+  async function handleCancelConfirm() {
+    if (!cancelCase) return;
+    const updatedNotes = [cancelCase.notes, cancelReason].filter(Boolean).join('\n');
+    await updateCase.mutateAsync({ id: cancelCase.id, status: 'cancelled', notes: updatedNotes });
+    setCancelCase(null);
+    setCancelReason('');
+    toast.success('Case cancelled');
+  }
+
+  async function handleRescheduleConfirm() {
+    if (!rescheduleCase || !rescheduleForm.date) return;
+    const oldDate = formatDate(rescheduleCase.scheduled_date);
+    const newDate = formatDate(rescheduleForm.date);
+    await updateCase.mutateAsync({
+      id: rescheduleCase.id,
+      scheduled_date: rescheduleForm.date,
+      ...(rescheduleForm.time && { scheduled_time: rescheduleForm.time }),
+    });
+    await createCommunication.mutateAsync({
+      case_id: rescheduleCase.id,
+      comm_type: 'note',
+      notes: `Case rescheduled from ${oldDate} to ${newDate}`,
+    });
+    setRescheduleCase(null);
+    setRescheduleForm({ date: '', time: '' });
+    toast.success('Case rescheduled');
+  }
+
+  const isScheduled = (status) => ['scheduled', 'confirmed'].includes(status);
 
   if (isLoading) {
     return (
@@ -119,41 +172,156 @@ export default function Cases() {
         />
       ) : (
         <div className="space-y-3">
-          {filtered.map((c) => (
-            <div
-              key={c.id}
-              onClick={() => navigate(`/cases/${c.id}`)}
-              className="cursor-pointer rounded-xl bg-white p-4 shadow-sm active:bg-gray-50 dark:bg-gray-800 dark:active:bg-gray-700"
-            >
-              <div className="flex items-start justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-gray-400 dark:text-gray-500">{c.case_number}<InfoTooltip text="Your unique case number (MRD-XXXX-YYYY-0001) is auto-generated from your account prefix, year, and sequence." /></p>
-                  <p className="mt-0.5 font-medium text-gray-800 dark:text-gray-200">
-                    {c.surgeon?.full_name || 'No surgeon'}
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {c.facility?.name || 'No facility'}
-                  </p>
+          {filtered.map((c) => {
+            const card = (
+              <div
+                key={c.id}
+                onClick={() => navigate(`/cases/${c.id}`)}
+                className="cursor-pointer rounded-xl bg-white p-4 shadow-sm active:bg-gray-50 dark:bg-gray-800 dark:active:bg-gray-700"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-gray-400 dark:text-gray-500">{c.case_number}<InfoTooltip text="Your unique case number (MRD-XXXX-YYYY-0001) is auto-generated from your account prefix, year, and sequence." /></p>
+                    <p className="mt-0.5 font-medium text-gray-800 dark:text-gray-200">
+                      {c.surgeon?.full_name || 'No surgeon'}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {c.facility?.name || 'No facility'}
+                    </p>
+                  </div>
+                  <StatusBadge status={c.status} type="case" />
                 </div>
-                <StatusBadge status={c.status} type="case" />
-              </div>
-              <div className="mt-2 flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
-                <span>{formatDate(c.scheduled_date)}</span>
-                {c.procedure_type && (
-                  <span className="rounded bg-gray-100 px-1.5 py-0.5 text-gray-500 dark:bg-gray-700 dark:text-gray-400">
-                    {procLabel(c.procedure_type)}
+                <div className="mt-2 flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
+                  <span>{formatDate(c.scheduled_date)}</span>
+                  {c.procedure_type && (
+                    <span className="rounded bg-gray-100 px-1.5 py-0.5 text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                      {procLabel(c.procedure_type)}
+                    </span>
+                  )}
+                  <span className="ml-auto font-medium text-gray-600 dark:text-gray-300">
+                    {c.case_value ? formatCurrency(c.case_value) : '—'}
                   </span>
+                </div>
+                {/* Scheduled card actions */}
+                {isScheduled(c.status) && (
+                  <div className="mt-3 flex items-center gap-2 border-t border-gray-100 pt-3 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
+                    <Button size="sm" loading={updateCase.isPending} onClick={(e) => handleComplete(c, e)}>
+                      Complete
+                    </Button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setOverflowCase(c); }}
+                      className="ml-auto rounded-lg border border-gray-200 p-2 text-gray-400 hover:text-gray-600 dark:border-gray-600 dark:hover:text-gray-300"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+                  </div>
                 )}
-                <span className="ml-auto font-medium text-gray-600 dark:text-gray-300">
-                  {c.case_value ? formatCurrency(c.case_value) : '—'}
-                </span>
               </div>
-            </div>
-          ))}
+            );
+
+            if (isScheduled(c.status)) {
+              return (
+                <SwipeableRow
+                  key={c.id}
+                  mode="deactivate"
+                  onSwipe={() => { setCancelCase(c); return false; }}
+                >
+                  {card}
+                </SwipeableRow>
+              );
+            }
+
+            return <div key={c.id}>{card}</div>;
+          })}
         </div>
       )}
 
       <PipelineGuide isOpen={showPipeline} onClose={() => setShowPipeline(false)} />
+
+      {/* Overflow menu for scheduled cards */}
+      <BottomSheet isOpen={!!overflowCase} onClose={() => setOverflowCase(null)} title={overflowCase?.case_number}>
+        <div className="flex flex-col gap-2">
+          <Button
+            variant="outline"
+            fullWidth
+            onClick={() => {
+              const c = overflowCase;
+              setOverflowCase(null);
+              setRescheduleForm({ date: '', time: c?.scheduled_time || '' });
+              setRescheduleCase(c);
+            }}
+          >
+            Reschedule
+          </Button>
+          <Button
+            variant="outline"
+            fullWidth
+            className="text-red-500"
+            onClick={() => {
+              const c = overflowCase;
+              setOverflowCase(null);
+              setCancelCase(c);
+            }}
+          >
+            Cancel Case
+          </Button>
+        </div>
+      </BottomSheet>
+
+      {/* Cancel BottomSheet */}
+      <BottomSheet isOpen={!!cancelCase} onClose={() => { setCancelCase(null); setCancelReason(''); }} title="Cancel this case?">
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Reason (optional)</label>
+            <textarea
+              rows={3}
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Why is this case being cancelled?"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-500"
+            />
+          </div>
+          <div className="flex gap-3">
+            <Button variant="secondary" fullWidth onClick={() => { setCancelCase(null); setCancelReason(''); }}>
+              Keep Case
+            </Button>
+            <Button variant="danger" fullWidth loading={updateCase.isPending} onClick={handleCancelConfirm}>
+              Cancel Case
+            </Button>
+          </div>
+        </div>
+      </BottomSheet>
+
+      {/* Reschedule BottomSheet */}
+      <BottomSheet isOpen={!!rescheduleCase} onClose={() => { setRescheduleCase(null); setRescheduleForm({ date: '', time: '' }); }} title="Reschedule Case">
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Currently scheduled: {rescheduleCase ? formatDate(rescheduleCase.scheduled_date) : ''}
+          </p>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">New Date *</label>
+            <input
+              type="date"
+              required
+              value={rescheduleForm.date}
+              onChange={(e) => setRescheduleForm((f) => ({ ...f, date: e.target.value }))}
+              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Time</label>
+            <input
+              type="time"
+              value={rescheduleForm.time}
+              onChange={(e) => setRescheduleForm((f) => ({ ...f, time: e.target.value }))}
+              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+          <Button fullWidth loading={updateCase.isPending} disabled={!rescheduleForm.date} onClick={handleRescheduleConfirm}>
+            Reschedule
+          </Button>
+        </div>
+      </BottomSheet>
     </div>
   );
 }
