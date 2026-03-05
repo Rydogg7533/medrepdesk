@@ -1,18 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Briefcase, MessageSquare, UserPlus, FileText, Settings } from 'lucide-react';
+import { Plus, Briefcase, MessageSquare, UserPlus, FileText, Settings, Mic, UserRound, Stethoscope, Building2 } from 'lucide-react';
 import BottomNav from './BottomNav';
 import BottomSheet from '@/components/ui/BottomSheet';
 import DashboardSettings from '@/components/dashboard/DashboardSettings';
 import NotificationBell from '@/components/ui/NotificationBell';
 import OfflineBanner from '@/components/ui/OfflineBanner';
 import PageTransition from '@/components/ui/PageTransition';
+import VoiceQuickLog from '@/components/features/VoiceQuickLog';
+import ConversationalVoiceModal from '@/components/features/ConversationalVoiceModal';
 import { useAutoClosePayPeriods } from '@/hooks/useAutoClosePayPeriods';
+import { useSubscription } from '@/hooks/useSubscription';
 
 export default function AppLayout() {
   useAutoClosePayPeriods();
   const [fabOpen, setFabOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [convoVoice, setConvoVoice] = useState(null); // 'add_contact' | 'add_surgeon' | 'add_facility' | null
+  const { canAccessAssistant } = useSubscription();
   const navigate = useNavigate();
   const location = useLocation();
   const mainRef = useRef(null);
@@ -101,8 +107,51 @@ export default function AppLayout() {
             <UserPlus className="h-5 w-5 text-brand-800 dark:text-brand-400" />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Add Contact</span>
           </button>
+          {canAccessAssistant && (
+            <>
+              <div className="my-1 border-t border-gray-100 dark:border-gray-700" />
+              <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Voice</p>
+              <button
+                onClick={() => { setFabOpen(false); setVoiceOpen(true); }}
+                className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <Mic className="h-5 w-5 text-brand-800 dark:text-brand-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Voice Log</span>
+              </button>
+              <button
+                onClick={() => { setFabOpen(false); setConvoVoice('add_contact'); }}
+                className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <UserRound className="h-5 w-5 text-brand-800 dark:text-brand-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Voice: Add Contact</span>
+              </button>
+              <button
+                onClick={() => { setFabOpen(false); setConvoVoice('add_surgeon'); }}
+                className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <Stethoscope className="h-5 w-5 text-brand-800 dark:text-brand-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Voice: Add Surgeon</span>
+              </button>
+              <button
+                onClick={() => { setFabOpen(false); setConvoVoice('add_facility'); }}
+                className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <Building2 className="h-5 w-5 text-brand-800 dark:text-brand-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Voice: Add Facility</span>
+              </button>
+            </>
+          )}
         </div>
       </BottomSheet>
+
+      <VoiceQuickLog isOpen={voiceOpen} onClose={() => setVoiceOpen(false)} />
+      {convoVoice && (
+        <ConversationalVoiceModal
+          isOpen={!!convoVoice}
+          onClose={() => setConvoVoice(null)}
+          scriptType={convoVoice}
+        />
+      )}
 
       <DashboardSettings isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
 

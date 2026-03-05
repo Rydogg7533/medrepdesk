@@ -9,6 +9,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import SearchableSelect from '@/components/ui/SearchableSelect';
 import ContactAutocomplete from '@/components/ui/ContactAutocomplete';
+import VoiceButton from '@/components/ui/VoiceButton';
 
 const COMM_TYPES = [
   { value: 'call', label: 'Call' },
@@ -171,7 +172,15 @@ export default function CommunicationForm() {
           />
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+              <VoiceButton
+                size={28}
+                onTranscript={(text) => {
+                  if (text?.trim()) setForm((p) => ({ ...p, notes: p.notes ? p.notes + ' ' + text : text }));
+                }}
+              />
+            </div>
             <textarea
               name="notes"
               rows={3}

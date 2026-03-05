@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Phone, Mail, MessageSquare, FileText } from 'lucide-react';
 import { useCreateChaseEntry } from '@/hooks/useChaseLog';
 import { useToast } from '@/components/ui/Toast';
 import BottomSheet from '@/components/ui/BottomSheet';
 import Button from '@/components/ui/Button';
+import VoiceButton from '@/components/ui/VoiceButton';
 import { sanitizeText } from '@/utils/sanitize';
 
 /**
@@ -160,7 +161,15 @@ export default function ChaseBottomSheet({
           </p>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Outcome</label>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Outcome</label>
+              <VoiceButton
+                size={28}
+                onTranscript={(text) => {
+                  if (text?.trim()) setLogForm((f) => ({ ...f, outcome: f.outcome ? f.outcome + ' ' + text : text }));
+                }}
+              />
+            </div>
             <textarea
               rows={2}
               value={logForm.outcome}

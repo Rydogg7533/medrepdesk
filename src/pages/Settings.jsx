@@ -23,6 +23,7 @@ import { useUpdateAccount } from '@/hooks/useAccount';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import { PLAN_LIMITS } from '@/utils/constants';
 import { US_STATES } from '@/utils/usStates';
+import VoiceSettings from '@/components/features/VoiceSettings';
 
 const SUB_STATUS_DISPLAY = {
   active: { label: 'Active', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
@@ -309,6 +310,9 @@ export default function Settings() {
           )}
         </div>
       </section>
+
+      {/* Voice Assistant */}
+      <VoiceSettings />
 
       {/* Push Notifications */}
       {pushSupported && (

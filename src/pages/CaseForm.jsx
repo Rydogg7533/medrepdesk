@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Wand2 } from 'lucide-react';
+import { ArrowLeft, Sparkles, Wand2, Mic } from 'lucide-react';
 import { sanitizeText } from '@/utils/sanitize';
 import { caseInsertSchema } from '@/lib/schemas';
 import { useCase, useCreateCase, useUpdateCase } from '@/hooks/useCases';
@@ -15,6 +15,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import TimeWheelPicker from '@/components/ui/TimeWheelPicker';
 import SearchableSelect from '@/components/ui/SearchableSelect';
+import VoiceButton from '@/components/ui/VoiceButton';
 import { useDistributorProducts } from '@/hooks/useDistributorProducts';
 import { groupProductsByCategory, getProductLabel } from '@/utils/productCatalog';
 
@@ -69,6 +70,19 @@ export default function CaseForm() {
   const smartEntry = useSmartCaseEntry();
   const aiLimitReached = !canUseAIExtraction(account);
   const remainingExtractions = getRemainingExtractions(account);
+  const [voiceParsing, setVoiceParsing] = useState(false);
+
+  function handleVoiceTranscript(text) {
+    if (!text?.trim()) return;
+    setQuickText(text);
+    setEntryMode('quick');
+  }
+
+  function handleVoiceNotes(text) {
+    if (text?.trim()) {
+      setForm((prev) => ({ ...prev, notes: prev.notes ? prev.notes + ' ' + text : text }));
+    }
+  }
 
   // Initial labels for edit mode
   const surgeonInitialLabel = existingCase?.surgeon?.full_name || '';
@@ -194,7 +208,7 @@ export default function CaseForm() {
       )}
 
       {!isEdit && (
-        <div className="mb-4 flex gap-2">
+        <div className="mb-4 flex items-center gap-2">
           <button
             type="button"
             onClick={() => setEntryMode('quick')}
@@ -217,6 +231,12 @@ export default function CaseForm() {
           >
             Manual
           </button>
+          <div className="ml-auto">
+            <VoiceButton
+              size={36}
+              onTranscript={handleVoiceTranscript}
+            />
+          </div>
         </div>
       )}
 
@@ -337,7 +357,10 @@ export default function CaseForm() {
           </div>
 
           <div className="w-full">
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+              <VoiceButton size={28} onTranscript={handleVoiceNotes} />
+            </div>
             <textarea
               name="notes"
               rows={3}
