@@ -26,10 +26,7 @@ export default function VoiceButton({ onTranscript, size = 56, className, proces
   }, [isListening, transcript, onTranscript]);
 
   function handleClick() {
-    if (!canAccessAssistant) {
-      navigate('/pricing');
-      return;
-    }
+    // TESTING ONLY — re-gate before launch: if (!canAccessAssistant) { navigate('/pricing'); return; }
     if (isListening) {
       stopListening();
     } else {
@@ -67,15 +64,15 @@ export default function VoiceButton({ onTranscript, size = 56, className, proces
         style={sizeStyle}
         className={clsx(
           'relative flex items-center justify-center rounded-full shadow-md transition-all active:scale-95',
-          !canAccessAssistant && 'bg-gray-300 dark:bg-gray-600',
-          canAccessAssistant && isIdle && 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
-          canAccessAssistant && isListening && 'bg-brand-800 text-white',
-          canAccessAssistant && processing && 'bg-brand-800/70 text-white',
+          // TESTING ONLY — re-gate before launch (was: !canAccessAssistant checks)
+          isIdle && 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+          isListening && 'bg-brand-800 text-white',
+          processing && 'bg-brand-800/70 text-white',
           processing && 'cursor-wait'
         )}
         aria-label={
-          !canAccessAssistant ? 'Voice logging is a Pro feature'
-            : isListening ? 'Stop listening'
+          // TESTING ONLY — re-gate before launch (was: !canAccessAssistant check)
+          isListening ? 'Stop listening'
             : processing ? 'Processing voice input'
             : 'Start voice input'
         }
@@ -85,9 +82,8 @@ export default function VoiceButton({ onTranscript, size = 56, className, proces
           <span className="absolute inset-0 animate-ping rounded-full bg-brand-800/30" />
         )}
 
-        {!canAccessAssistant ? (
-          <Lock className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-        ) : processing ? (
+        {/* TESTING ONLY — re-gate before launch (was: !canAccessAssistant lock icon) */}
+        {processing ? (
           <Loader2 className="h-6 w-6 animate-spin" />
         ) : isListening ? (
           <MicOff className="h-6 w-6" />

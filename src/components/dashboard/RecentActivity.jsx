@@ -19,7 +19,7 @@ export default function RecentActivity({ limit = 5 }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from(TABLES.PO_CHASE_LOG)
-        .select('id, notes, contact_method, created_at, case:cases(case_number)')
+        .select('id, notes, action_taken, created_at, case:cases(case_number)')
         .eq('account_id', account.id)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -34,7 +34,7 @@ export default function RecentActivity({ limit = 5 }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from(TABLES.COMMUNICATIONS)
-        .select('id, type, notes, created_at, case:cases(case_number)')
+        .select('id, comm_type, notes, created_at, case:cases(case_number)')
         .eq('account_id', account.id)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -47,14 +47,14 @@ export default function RecentActivity({ limit = 5 }) {
   const merged = [
     ...chaseEntries.map((e) => ({
       id: `chase-${e.id}`,
-      type: e.contact_method || 'note',
+      type: e.action_taken || 'note',
       text: e.notes || 'Chase log entry',
       caseNumber: e.case?.case_number,
       created_at: e.created_at,
     })),
     ...comms.map((c) => ({
       id: `comm-${c.id}`,
-      type: c.type || 'note',
+      type: c.comm_type || 'note',
       text: c.notes || 'Communication',
       caseNumber: c.case?.case_number,
       created_at: c.created_at,

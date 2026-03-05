@@ -107,7 +107,8 @@ export default function AppLayout() {
             <UserPlus className="h-5 w-5 text-brand-800 dark:text-brand-400" />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Add Contact</span>
           </button>
-          {canAccessAssistant && (
+          {/* TESTING ONLY — re-gate before launch (was: canAccessAssistant) */}
+          {true && (
             <>
               <div className="my-1 border-t border-gray-100 dark:border-gray-700" />
               <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Voice</p>

@@ -90,28 +90,9 @@ serve(async (req: Request) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Missing authorization header" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY")!;
-
-    const supabaseAuth = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY") || serviceRoleKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
     const { transcript, account_id, context } = await req.json();
@@ -123,7 +104,7 @@ serve(async (req: Request) => {
       );
     }
 
-    // Check plan limits
+    // Verify account exists
     const { data: account } = await supabase
       .from("accounts")
       .select("plan, ai_extractions_this_month")
@@ -191,6 +172,7 @@ ${distributorList || "None registered yet"}
 Voice transcript: "${transcript}"`;
 
     // Call Claude
+    console.log("Calling Anthropic with key prefix:", anthropicKey?.substring(0, 10));
     const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -246,7 +228,7 @@ Voice transcript: "${transcript}"`;
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
-    console.error("voice-command error:", err);
+    console.error("Anthropic API error:", err.message, err.stack);
     return new Response(
       JSON.stringify({ error: err.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
