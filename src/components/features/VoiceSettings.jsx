@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Volume2, Play } from 'lucide-react';
+import { Play } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
 import { useVoicePreferences, useUpdateVoicePreferences, VOICE_DEFAULTS } from '@/hooks/useVoicePreferences';
 import { useToast } from '@/components/ui/Toast';
+import { pickBestVoice } from '@/utils/pickBestVoice';
 
 export default function VoiceSettings() {
   const { data: prefs } = useVoicePreferences();
@@ -11,7 +11,6 @@ export default function VoiceSettings() {
   const toast = useToast();
 
   const [form, setForm] = useState(VOICE_DEFAULTS);
-  const [voices, setVoices] = useState([]);
   const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
@@ -20,16 +19,6 @@ export default function VoiceSettings() {
       setDirty(false);
     }
   }, [prefs]);
-
-  useEffect(() => {
-    function loadVoices() {
-      const available = window.speechSynthesis?.getVoices() || [];
-      setVoices(available);
-    }
-    loadVoices();
-    window.speechSynthesis?.addEventListener('voiceschanged', loadVoices);
-    return () => window.speechSynthesis?.removeEventListener('voiceschanged', loadVoices);
-  }, []);
 
   function handleChange(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -51,13 +40,16 @@ export default function VoiceSettings() {
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(
-      `Hi, I'm ${form.assistant_name || 'Max'}. Ready to help.`
+      `Hi, I'm ${form.assistant_name || 'Max'}. I'm ready to help.`
     );
-    utterance.rate = form.speaking_rate || 1.0;
+    utterance.rate = form.speaking_rate || 0.9;
+    utterance.pitch = 1.05;
+    utterance.volume = 1.0;
     utterance.lang = 'en-US';
 
-    if (voices.length > 0 && form.voice_index < voices.length) {
-      utterance.voice = voices[form.voice_index];
+    const bestVoice = pickBestVoice();
+    if (bestVoice) {
+      utterance.voice = bestVoice;
     }
 
     window.speechSynthesis.speak(utterance);
@@ -96,7 +88,7 @@ export default function VoiceSettings() {
           <input
             type="range"
             min="0.5"
-            max="2.0"
+            max="1.5"
             step="0.1"
             value={form.speaking_rate}
             onChange={(e) => handleChange('speaking_rate', parseFloat(e.target.value))}
@@ -105,7 +97,7 @@ export default function VoiceSettings() {
           <div className="flex justify-between text-[10px] text-gray-400">
             <span>0.5x</span>
             <span>1.0x</span>
-            <span>2.0x</span>
+            <span>1.5x</span>
           </div>
         </div>
 
@@ -140,25 +132,25 @@ export default function VoiceSettings() {
           </div>
         </div>
 
-        {/* Voice Selector */}
-        {voices.length > 0 && (
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Voice
-            </label>
-            <select
-              value={form.voice_index}
-              onChange={(e) => handleChange('voice_index', parseInt(e.target.value))}
-              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            >
-              {voices.map((v, i) => (
-                <option key={i} value={i}>
-                  {v.name} ({v.lang})
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        {/* Voice Enabled */}
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Voice Enabled</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={form.enabled}
+            onClick={() => handleChange('enabled', !form.enabled)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              form.enabled ? 'bg-brand-800' : 'bg-gray-300 dark:bg-gray-600'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                form.enabled ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
 
         {/* Test & Save */}
         <div className="flex gap-2">

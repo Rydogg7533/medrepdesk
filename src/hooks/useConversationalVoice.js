@@ -1,24 +1,69 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useReducer, useRef, useCallback, useEffect } from 'react';
 import { useVoice } from '@/hooks/useVoice';
 import { useVoicePreferences, VOICE_DEFAULTS } from '@/hooks/useVoicePreferences';
+import { pickBestVoice } from '@/utils/pickBestVoice';
+
+const CONFIRM_WORDS = ['yes', 'yeah', 'yep', 'yup', 'correct', "that's right", 'thats right', 'save', 'confirm', 'sure', 'do it', 'looks good', 'perfect'];
+const DENY_WORDS = ['no', 'nope', 'wrong', 'incorrect', 'start over', 'redo', 'go back'];
+const CANCEL_WORDS = ['cancel', 'stop', 'nevermind', 'never mind'];
+
+const initialState = {
+  phase: 'idle', // idle | speaking | listening | confirming | done
+  stepIndex: -1,
+  collected: {},
+  conversationLog: [],
+};
+
+function reducer(state, action) {
+  switch (action.type) {
+    case 'START':
+      return { ...initialState, phase: 'speaking', stepIndex: -1, conversationLog: [] };
+    case 'ASK_STEP':
+      return { ...state, phase: 'speaking', stepIndex: action.index };
+    case 'LISTEN':
+      return { ...state, phase: 'listening' };
+    case 'START_CONFIRM':
+      return { ...state, phase: 'confirming' };
+    case 'SPEAK_CONFIRM':
+      return { ...state, phase: 'speaking' };
+    case 'SET_FIELD':
+      return { ...state, collected: { ...state.collected, [action.field]: action.value } };
+    case 'ADD_LOG':
+      return { ...state, conversationLog: [...state.conversationLog, { role: action.role, text: action.text, time: Date.now() }] };
+    case 'CONFIRM_SAVE':
+      return { ...state, phase: 'done' };
+    case 'RESTART':
+      return { ...initialState, phase: 'speaking', conversationLog: [] };
+    case 'CANCEL':
+      return { ...initialState };
+    case 'RESET':
+      return { ...initialState };
+    default:
+      return state;
+  }
+}
 
 export function useConversationalVoice({ script, onComplete, onCancel }) {
   const { data: prefs = VOICE_DEFAULTS } = useVoicePreferences();
   const { isListening, transcript, startListening, stopListening, isSupported, error: voiceError } = useVoice();
 
-  const [stepIndex, setStepIndex] = useState(-1); // -1 = not started
-  const [collected, setCollected] = useState({});
-  const [conversationLog, setConversationLog] = useState([]);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [phase, setPhase] = useState('idle'); // idle | speaking | listening | confirming | done
-  const phaseRef = useRef(phase);
+  const [state, dispatch] = useReducer(reducer, initialState);
+  // isSpeaking needs to trigger re-renders, so keep it as a ref + forceUpdate
+  const isSpeakingRef = useRef(false);
+  const [, forceUpdate] = useReducer((x) => x + 1, 0);
+  const setIsSpeaking = useCallback((val) => {
+    isSpeakingRef.current = val;
+    forceUpdate();
+  }, []);
+
   const utteranceRef = useRef(null);
   const prevListeningRef = useRef(false);
   const mountedRef = useRef(true);
+  const onCompleteRef = useRef(onComplete);
+  const onCancelRef = useRef(onCancel);
 
-  useEffect(() => {
-    phaseRef.current = phase;
-  }, [phase]);
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+  useEffect(() => { onCancelRef.current = onCancel; }, [onCancel]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -30,20 +75,23 @@ export function useConversationalVoice({ script, onComplete, onCancel }) {
 
   const speak = useCallback((text) => {
     return new Promise((resolve) => {
+      dispatch({ type: 'ADD_LOG', role: 'assistant', text });
+
       if (!prefs.enabled || !window.speechSynthesis) {
-        addToLog('assistant', text);
         resolve();
         return;
       }
 
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = prefs.speaking_rate || 1.0;
+      utterance.rate = prefs.speaking_rate || 0.9;
+      utterance.pitch = 1.05;
+      utterance.volume = 1.0;
       utterance.lang = 'en-US';
 
-      const voices = window.speechSynthesis.getVoices();
-      if (voices.length > 0 && prefs.voice_index < voices.length) {
-        utterance.voice = voices[prefs.voice_index];
+      const bestVoice = pickBestVoice();
+      if (bestVoice) {
+        utterance.voice = bestVoice;
       }
 
       utterance.onstart = () => {
@@ -61,45 +109,20 @@ export function useConversationalVoice({ script, onComplete, onCancel }) {
       };
 
       utteranceRef.current = utterance;
-      addToLog('assistant', text);
       window.speechSynthesis.speak(utterance);
     });
-  }, [prefs]);
+  }, [prefs, setIsSpeaking]);
 
-  function addToLog(role, text) {
-    setConversationLog((prev) => [...prev, { role, text, time: Date.now() }]);
+  function formatForSpeech(value) {
+    const digits = String(value).replace(/\D/g, '');
+    if (digits.length === 10) {
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+    return value;
   }
 
-  const askStep = useCallback(async (index) => {
-    if (index >= script.length) {
-      setPhase('confirming');
-      await readBackConfirmation();
-      return;
-    }
-
-    const step = script[index];
-    setStepIndex(index);
-    setPhase('speaking');
-
-    await speak(step.question);
-
-    if (mountedRef.current) {
-      setPhase('listening');
-      startListening();
-    }
-  }, [script, speak, startListening]);
-
-  const readBackConfirmation = useCallback(async () => {
-    const name = prefs.assistant_name || 'Max';
+  const doReadBackAndConfirm = useCallback(async (collected) => {
     const style = prefs.confirmation_style || 'brief';
-
-    function formatForSpeech(value) {
-      const digits = String(value).replace(/\D/g, '');
-      if (digits.length === 10) {
-        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-      }
-      return value;
-    }
 
     let summary;
     if (style === 'brief') {
@@ -114,75 +137,82 @@ export function useConversationalVoice({ script, onComplete, onCancel }) {
       summary = `Here's what I have. ${entries.join('. ')}. Should I save this?`;
     }
 
-    setPhase('speaking');
+    dispatch({ type: 'SPEAK_CONFIRM' });
     await speak(summary);
 
     if (mountedRef.current) {
-      setPhase('listening');
+      dispatch({ type: 'START_CONFIRM' });
       startListening();
     }
-  }, [script, collected, prefs, speak, startListening]);
+  }, [script, prefs, speak, startListening]);
 
-  // Handle transcript when listening finishes
-  useEffect(() => {
-    if (prevListeningRef.current && !isListening && transcript) {
-      handleResponse(transcript);
-    }
-    prevListeningRef.current = isListening;
-  }, [isListening]);
-
-  function handleResponse(text) {
-    if (!text?.trim()) return;
-
-    const lower = text.toLowerCase().trim();
-    addToLog('user', text);
-
-    // Navigation commands
-    if (lower === 'cancel' || lower === 'stop' || lower === 'nevermind' || lower === 'never mind') {
-      setPhase('idle');
-      setStepIndex(-1);
-      if (onCancel) onCancel();
+  const askStep = useCallback(async (index, currentCollected) => {
+    if (index >= script.length) {
+      await doReadBackAndConfirm(currentCollected);
       return;
     }
 
-    if (phaseRef.current === 'confirming') {
-      const DENY_WORDS = ['no', 'nope', 'wrong', 'incorrect', 'start over', 'redo', 'go back'];
+    const step = script[index];
+    dispatch({ type: 'ASK_STEP', index });
+
+    await speak(step.question);
+
+    if (mountedRef.current) {
+      dispatch({ type: 'LISTEN' });
+      startListening();
+    }
+  }, [script, speak, startListening, doReadBackAndConfirm]);
+
+  // Handle transcript when listening finishes — uses dispatch so no stale closures
+  const handleResponse = useCallback((text, currentState) => {
+    if (!text?.trim()) return;
+
+    const lower = text.toLowerCase().trim();
+    dispatch({ type: 'ADD_LOG', role: 'user', text });
+
+    // Cancel commands
+    if (CANCEL_WORDS.some((w) => lower === w)) {
+      dispatch({ type: 'CANCEL' });
+      if (onCancelRef.current) onCancelRef.current();
+      return;
+    }
+
+    // Confirmation phase
+    if (currentState.phase === 'confirming') {
       const isDeny = DENY_WORDS.some((w) => lower.includes(w));
-
       if (isDeny) {
-        setCollected({});
-        setConversationLog([]);
-        askStep(0);
+        dispatch({ type: 'RESTART' });
+        askStep(0, {});
         return;
       }
 
-      const CONFIRM_WORDS = ['yes', 'yeah', 'yep', 'yup', 'correct', "that's right", 'thats right', 'save', 'confirm', 'sure', 'do it', 'looks good', 'perfect'];
       const isConfirm = CONFIRM_WORDS.some((w) => lower.includes(w));
-
       if (isConfirm) {
-        setPhase('done');
-        if (onComplete) onComplete(collected);
+        dispatch({ type: 'CONFIRM_SAVE' });
+        console.log('VOICE COMPLETE - calling onComplete with:', currentState.collected);
+        if (onCompleteRef.current) onCompleteRef.current(currentState.collected);
         return;
       }
 
-      // Didn't understand, re-ask
+      // Didn't understand
       speak('Sorry, should I save this? Say yes or no.').then(() => {
         if (mountedRef.current) {
-          setPhase('confirming');
+          dispatch({ type: 'START_CONFIRM' });
           startListening();
         }
       });
       return;
     }
 
+    // Skip / next
     if (lower === 'skip' || lower === 'next') {
-      const step = script[stepIndex];
+      const step = script[currentState.stepIndex];
       if (step && !step.required) {
-        askStep(stepIndex + 1);
+        askStep(currentState.stepIndex + 1, currentState.collected);
       } else {
         speak('This field is required. Please provide a value.').then(() => {
           if (mountedRef.current) {
-            setPhase('listening');
+            dispatch({ type: 'LISTEN' });
             startListening();
           }
         });
@@ -190,13 +220,14 @@ export function useConversationalVoice({ script, onComplete, onCancel }) {
       return;
     }
 
+    // Go back
     if (lower === 'go back' || lower === 'back' || lower === 'previous') {
-      if (stepIndex > 0) {
-        askStep(stepIndex - 1);
+      if (currentState.stepIndex > 0) {
+        askStep(currentState.stepIndex - 1, currentState.collected);
       } else {
         speak("We're already on the first question.").then(() => {
           if (mountedRef.current) {
-            setPhase('listening');
+            dispatch({ type: 'LISTEN' });
             startListening();
           }
         });
@@ -204,61 +235,72 @@ export function useConversationalVoice({ script, onComplete, onCancel }) {
       return;
     }
 
-    // Validate and store
-    const step = script[stepIndex];
+    // Validate and store field
+    const step = script[currentState.stepIndex];
     if (!step) return;
 
+    let fieldValue = text;
     if (step.validator) {
       const result = step.validator(text);
       if (result.error) {
         speak(result.error).then(() => {
           if (mountedRef.current) {
-            setPhase('listening');
+            dispatch({ type: 'LISTEN' });
             startListening();
           }
         });
         return;
       }
-      setCollected((prev) => ({ ...prev, [step.field]: result.value ?? text }));
-    } else {
-      setCollected((prev) => ({ ...prev, [step.field]: text }));
+      fieldValue = result.value ?? text;
     }
 
-    askStep(stepIndex + 1);
-  }
+    dispatch({ type: 'SET_FIELD', field: step.field, value: fieldValue });
+    const updatedCollected = { ...currentState.collected, [step.field]: fieldValue };
+    askStep(currentState.stepIndex + 1, updatedCollected);
+  }, [script, speak, startListening, askStep]);
 
-  function start() {
-    setCollected({});
-    setConversationLog([]);
+  // Use a ref to hold latest state for the listening effect
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  // When listening stops and we have a transcript, handle it
+  useEffect(() => {
+    if (prevListeningRef.current && !isListening && transcript) {
+      handleResponse(transcript, stateRef.current);
+    }
+    prevListeningRef.current = isListening;
+  }, [isListening, handleResponse]);
+
+  const start = useCallback(() => {
+    dispatch({ type: 'START' });
     const name = prefs.assistant_name || 'Max';
     speak(`Hi, I'm ${name}. Let's get started.`).then(() => {
-      if (mountedRef.current) askStep(0);
+      if (mountedRef.current) askStep(0, {});
     });
-  }
+  }, [prefs, speak, askStep]);
 
-  function reset() {
+  const reset = useCallback(() => {
     window.speechSynthesis.cancel();
-    setStepIndex(-1);
-    setCollected({});
-    setConversationLog([]);
-    setPhase('idle');
+    dispatch({ type: 'RESET' });
     if (isListening) stopListening();
-  }
+  }, [isListening, stopListening]);
 
-  const currentStep = stepIndex >= 0 && stepIndex < script.length ? script[stepIndex] : null;
-  const progress = script.length > 0 ? Math.min((stepIndex + 1) / script.length, 1) : 0;
+  const currentStep = state.stepIndex >= 0 && state.stepIndex < script.length ? script[state.stepIndex] : null;
+  const progress = script.length > 0 ? Math.min((state.stepIndex + 1) / script.length, 1) : 0;
 
   return {
     start,
     reset,
-    phase,
-    isSpeaking,
+    phase: state.phase,
+    isSpeaking: isSpeakingRef.current,
     isListening,
     transcript,
     currentStep,
-    stepIndex,
-    collected,
-    conversationLog,
+    stepIndex: state.stepIndex,
+    collected: state.collected,
+    conversationLog: state.conversationLog,
     progress,
     isSupported,
     voiceError,
