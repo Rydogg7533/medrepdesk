@@ -104,13 +104,6 @@ export default function BillSheetDetail() {
         distributor_id: caseInfo?.distributor_id || null,
       });
 
-      await createChase.mutateAsync({
-        case_id: caseId,
-        po_id: po.id,
-        chase_type: 'po_received',
-        facility_id: caseInfo?.facility_id || null,
-      });
-
       if (sendEmail) {
         await sendPOEmail.mutateAsync({
           po: { ...po, facility: caseInfo?.facility, manufacturer },
@@ -412,7 +405,7 @@ export default function BillSheetDetail() {
               className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
           </div>
-          <Button type="submit" fullWidth loading={createPO.isPending || createChase.isPending}>
+          <Button type="submit" fullWidth loading={createPO.isPending}>
             Save PO
           </Button>
         </form>
