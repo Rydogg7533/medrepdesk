@@ -202,7 +202,7 @@ export default function CaseDetail() {
           <InfoRow label="Facility" value={caseData.facility?.name} />
           <InfoRow label="Distributor" value={caseData.distributor?.name} />
           <InfoRow label="Procedure" value={caseData.procedure_type ? procLabel(caseData.procedure_type) : null} />
-          <InfoRow label="Date" value={formatDate(caseData.scheduled_date)} />
+          <InfoRow label="Date of Surgery" value={formatDate(caseData.scheduled_date)} />
           <InfoRow label="Time" value={formatTime(caseData.scheduled_time)} />
           <InfoRow label="Case Value" value={caseData.case_value ? formatCurrency(caseData.case_value) : 'Pending'} />
         </div>

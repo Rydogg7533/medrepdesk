@@ -19,6 +19,7 @@ export default function SearchableSelect({
   isSearching = false,
   minChars = 0,
   initialLabel,
+  initialOptions = [],
 }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
@@ -82,10 +83,23 @@ export default function SearchableSelect({
     }
   }
 
-  const showMinCharsPrompt = isAsync && open && query.length < minChars && query.length > 0;
-  const showEmptyPrompt = isAsync && open && query.length === 0 && minChars > 0;
+  // Filter initialOptions by query when user has typed but hasn't hit minChars yet
+  const filteredInitialOptions = useMemo(() => {
+    if (!isAsync || !initialOptions.length) return [];
+    if (query.length === 0) return initialOptions;
+    if (query.length < minChars) {
+      const q = query.toLowerCase();
+      return initialOptions.filter((o) => o[displayKey].toLowerCase().includes(q));
+    }
+    return [];
+  }, [isAsync, initialOptions, query, minChars, displayKey]);
+
+  const hasInitialOptions = filteredInitialOptions.length > 0;
+  const showMinCharsPrompt = isAsync && open && query.length < minChars && query.length > 0 && !hasInitialOptions;
+  const showEmptyPrompt = isAsync && open && query.length === 0 && minChars > 0 && !hasInitialOptions;
   const showSpinner = isAsync && isSearching && query.length >= minChars;
   const showResults = isAsync ? query.length >= minChars && !isSearching : true;
+  const showInitialOptions = isAsync && open && query.length < minChars && hasInitialOptions;
 
   return (
     <div ref={wrapperRef} className="relative w-full">
@@ -118,6 +132,30 @@ export default function SearchableSelect({
           {(showMinCharsPrompt || showEmptyPrompt) && (
             <div className="px-3 py-2.5 text-sm text-gray-400 dark:text-gray-500">
               Type at least {minChars} characters to search...
+            </div>
+          )}
+
+          {/* Initial options (private records shown before minChars) */}
+          {showInitialOptions && filteredInitialOptions.map((opt) => (
+            <button
+              key={opt[valueKey]}
+              type="button"
+              className="min-h-touch w-full px-3 py-2.5 text-left text-sm hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-600"
+              onClick={() => handleSelect(opt)}
+            >
+              <div className="flex items-center gap-2">
+                <span>{opt[displayKey]}</span>
+              </div>
+              {opt.subtitle && (
+                <p className="text-xs text-gray-400 dark:text-gray-500">{opt.subtitle}</p>
+              )}
+            </button>
+          ))}
+
+          {/* Hint to type more for global search when initial options are shown */}
+          {showInitialOptions && minChars > 0 && (
+            <div className="border-t border-gray-100 dark:border-gray-600 px-3 py-2 text-xs text-gray-400 dark:text-gray-500">
+              Type {minChars}+ characters to search all records
             </div>
           )}
 

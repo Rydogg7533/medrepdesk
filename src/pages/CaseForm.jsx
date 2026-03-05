@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Sparkles, Wand2 } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { caseInsertSchema } from '@/lib/schemas';
 import { useCase, useCreateCase, useUpdateCase } from '@/hooks/useCases';
-import { useSearchSurgeons } from '@/hooks/useSurgeons';
-import { useSearchFacilities } from '@/hooks/useFacilities';
+import { useSurgeons, useSearchSurgeons } from '@/hooks/useSurgeons';
+import { useFacilities, useSearchFacilities } from '@/hooks/useFacilities';
 import { useSmartCaseEntry } from '@/hooks/useAI';
 import { useAuth } from '@/context/AuthContext';
 import { useRepStates } from '@/hooks/useRepStates';
@@ -26,6 +26,8 @@ export default function CaseForm() {
   const createCase = useCreateCase();
   const updateCase = useUpdateCase();
   const { data: repStates = [] } = useRepStates();
+  const { data: privateSurgeons = [] } = useSurgeons({ activeOnly: true });
+  const { data: privateFacilities = [] } = useFacilities({ activeOnly: true });
   const surgeonSearch = useSearchSurgeons({ filterStates: repStates });
   const facilitySearch = useSearchFacilities({ filterStates: repStates });
   const [form, setForm] = useState({
@@ -47,6 +49,22 @@ export default function CaseForm() {
   const { account } = useAuth();
   const { data: distProducts = [] } = useDistributorProducts(account?.primary_distributor_id);
   const groupedProcedureTypes = groupProductsByCategory(distProducts);
+  const surgeonInitialOptions = useMemo(() =>
+    privateSurgeons.map((s) => ({
+      value: s.id,
+      label: s.full_name,
+      subtitle: s.primary_facility?.name || null,
+    })),
+    [privateSurgeons]
+  );
+  const facilityInitialOptions = useMemo(() =>
+    privateFacilities.map((f) => ({
+      value: f.id,
+      label: f.name,
+      subtitle: [f.city, f.state].filter(Boolean).join(', ') || null,
+    })),
+    [privateFacilities]
+  );
   const smartEntry = useSmartCaseEntry();
   const aiLimitReached = !canUseAIExtraction(account);
   const remainingExtractions = getRemainingExtractions(account);
@@ -253,6 +271,7 @@ export default function CaseForm() {
             isSearching={surgeonSearch.isSearching}
             minChars={3}
             initialLabel={surgeonInitialLabel}
+            initialOptions={surgeonInitialOptions}
             onAddNew={() => navigate('/surgeons/new')}
           />
           <SearchableSelect
@@ -265,6 +284,7 @@ export default function CaseForm() {
             isSearching={facilitySearch.isSearching}
             minChars={3}
             initialLabel={facilityInitialLabel}
+            initialOptions={facilityInitialOptions}
             onAddNew={() => navigate('/facilities/new')}
           />
           <div>
@@ -295,7 +315,7 @@ export default function CaseForm() {
           </div>
 
           <Input
-            label="Date"
+            label="Date of Surgery"
             name="scheduled_date"
             type="date"
             value={form.scheduled_date}
