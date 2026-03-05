@@ -173,15 +173,6 @@ export default function PODetail() {
         </Card>
       )}
 
-      {/* Chase PO */}
-      {po.status !== 'paid' && (
-        <div className="mb-4">
-          <Button fullWidth onClick={() => setShowChase(true)}>
-            Chase PO
-          </Button>
-        </div>
-      )}
-
       {/* Chase Timeline */}
       <Card className="mb-4">
         <h3 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Chase Timeline<InfoTooltip text="The chase log tracks every follow-up attempt for a purchase order. Log calls, emails, and texts to build a complete timeline." /></h3>
@@ -195,9 +186,9 @@ export default function PODetail() {
             Start Chasing
           </Button>
         )}
-        {['requested', 'pending'].includes(po.status) && (
+        {po.status !== 'paid' && po.status !== 'not_requested' && (
           <Button fullWidth onClick={() => setShowChase(true)}>
-            Log Follow-Up
+            Chase PO
           </Button>
         )}
         {po.status !== 'paid' && po.status !== 'received' && (
