@@ -9,16 +9,17 @@ export function useSendPOEmail() {
 
   return useMutation({
     mutationFn: async ({ po, caseData }) => {
-      const distributor = po.distributor || caseData?.distributor;
+      // Support sending to manufacturer (bill sheet flow) or distributor (PO flow)
+      const recipient = po.manufacturer || caseData?.manufacturer || po.distributor || caseData?.distributor;
       const facility = po.facility || caseData?.facility;
       const caseInfo = po.case || caseData;
 
-      if (!distributor?.billing_email) {
-        throw new Error('Distributor has no billing email configured');
+      if (!recipient?.billing_email) {
+        throw new Error('No billing email configured');
       }
 
-      const sentTo = [distributor.billing_email];
-      const sentCc = distributor.billing_email_cc?.filter(Boolean) || [];
+      const sentTo = [recipient.billing_email];
+      const sentCc = recipient.billing_email_cc?.filter(Boolean) || [];
 
       const subject = `Purchase Order — ${caseInfo?.case_number || 'N/A'} — INV: ${po.invoice_number}`;
       const body = [

@@ -80,9 +80,9 @@ export default function BillSheetDetail() {
       setCreatedPO(po);
       setShowRecordPO(false);
 
-      // Check if distributor has billing email for send prompt
-      const distributor = caseInfo?.distributor;
-      if (distributor?.billing_email) {
+      // Check if manufacturer has billing email for send prompt
+      const mfr = items[0]?.manufacturer;
+      if (mfr?.billing_email) {
         setShowSendPrompt(true);
       } else {
         toast({ message: 'PO recorded successfully', type: 'success' });
@@ -92,19 +92,20 @@ export default function BillSheetDetail() {
     }
   }
 
-  async function handleSendToDistributor() {
+  async function handleSendToManufacturer() {
     if (!createdPO) return;
     try {
+      const mfr = items[0]?.manufacturer;
       await sendPOEmail.mutateAsync({
         po: {
           ...createdPO,
           facility: caseInfo?.facility,
-          distributor: caseInfo?.distributor,
+          manufacturer: mfr,
         },
         caseData: caseInfo,
       });
       setShowSendPrompt(false);
-      toast({ message: 'PO sent to distributor', type: 'success' });
+      toast({ message: 'PO sent to manufacturer', type: 'success' });
     } catch (err) {
       toast({ message: err.message || 'Failed to send email', type: 'error' });
     }
@@ -129,7 +130,7 @@ export default function BillSheetDetail() {
     return <div className="p-4 text-center text-gray-500 dark:text-gray-400">Bill sheet not found</div>;
   }
 
-  const distributor = caseInfo?.distributor;
+  const manufacturer = items[0]?.manufacturer;
 
   return (
     <div className="p-4">
@@ -290,19 +291,19 @@ export default function BillSheetDetail() {
         </form>
       </BottomSheet>
 
-      {/* Send to Distributor Prompt */}
-      <BottomSheet isOpen={showSendPrompt} onClose={handleSkipSend} title="Send PO to Distributor?">
+      {/* Send to Manufacturer Prompt */}
+      <BottomSheet isOpen={showSendPrompt} onClose={handleSkipSend} title="Send PO to Manufacturer?">
         <div className="flex flex-col gap-3">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Send PO details to <span className="font-medium text-gray-900 dark:text-gray-100">{distributor?.name}</span>?
+            Send PO details to <span className="font-medium text-gray-900 dark:text-gray-100">{manufacturer?.name}</span>?
           </p>
           <div className="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-700/50">
             <p className="text-xs text-gray-500 dark:text-gray-400">To</p>
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{distributor?.billing_email}</p>
-            {distributor?.billing_email_cc?.filter(Boolean).length > 0 && (
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{manufacturer?.billing_email}</p>
+            {manufacturer?.billing_email_cc?.filter(Boolean).length > 0 && (
               <>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">CC</p>
-                <p className="text-sm text-gray-700 dark:text-gray-300">{distributor.billing_email_cc.filter(Boolean).join(', ')}</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">{manufacturer.billing_email_cc.filter(Boolean).join(', ')}</p>
               </>
             )}
           </div>
@@ -315,7 +316,7 @@ export default function BillSheetDetail() {
             <Button variant="secondary" fullWidth onClick={handleSkipSend}>
               Skip
             </Button>
-            <Button fullWidth loading={sendPOEmail.isPending} onClick={handleSendToDistributor}>
+            <Button fullWidth loading={sendPOEmail.isPending} onClick={handleSendToManufacturer}>
               <Send className="h-4 w-4" /> Send
             </Button>
           </div>

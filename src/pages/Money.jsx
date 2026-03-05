@@ -52,7 +52,7 @@ export default function Money() {
   const [recordTarget, setRecordTarget] = useState(null); // bill sheet object for record PO bottom sheet
   const [showSendPrompt, setShowSendPrompt] = useState(false);
   const [createdPO, setCreatedPO] = useState(null);
-  const [sendDistributor, setSendDistributor] = useState(null);
+  const [sendManufacturer, setSendManufacturer] = useState(null);
   const [poForm, setPOForm] = useState({
     po_number: '',
     amount: '',
@@ -149,12 +149,12 @@ export default function Money() {
       });
 
       setCreatedPO(po);
-      const dist = recordTarget.distributor;
+      const mfr = recordTarget.manufacturer;
       setRecordTarget(null);
       setPOForm({ po_number: '', amount: '', received_date: new Date().toISOString().split('T')[0] });
 
-      if (dist?.billing_email) {
-        setSendDistributor(dist);
+      if (mfr?.billing_email) {
+        setSendManufacturer(mfr);
         setShowSendPrompt(true);
       } else {
         toast({ message: 'PO recorded successfully', type: 'success' });
@@ -164,15 +164,15 @@ export default function Money() {
     }
   }
 
-  async function handleSendToDistributor() {
-    if (!createdPO || !sendDistributor) return;
+  async function handleSendToManufacturer() {
+    if (!createdPO || !sendManufacturer) return;
     try {
       await sendPOEmail.mutateAsync({
-        po: { ...createdPO, distributor: sendDistributor },
+        po: { ...createdPO, manufacturer: sendManufacturer },
         caseData: { case_number: createdPO.case_number },
       });
       setShowSendPrompt(false);
-      toast({ message: 'PO sent to distributor', type: 'success' });
+      toast({ message: 'PO sent to manufacturer', type: 'success' });
     } catch (err) {
       toast({ message: err.message || 'Failed to send email', type: 'error' });
     }
@@ -705,19 +705,19 @@ export default function Money() {
         </form>
       </BottomSheet>
 
-      {/* Send to Distributor Prompt */}
-      <BottomSheet isOpen={showSendPrompt} onClose={handleSkipSend} title="Send PO to Distributor?">
+      {/* Send to Manufacturer Prompt */}
+      <BottomSheet isOpen={showSendPrompt} onClose={handleSkipSend} title="Send PO to Manufacturer?">
         <div className="flex flex-col gap-3">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Send PO details to <span className="font-medium text-gray-900 dark:text-gray-100">{sendDistributor?.name}</span>?
+            Send PO details to <span className="font-medium text-gray-900 dark:text-gray-100">{sendManufacturer?.name}</span>?
           </p>
           <div className="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-700/50">
             <p className="text-xs text-gray-500 dark:text-gray-400">To</p>
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{sendDistributor?.billing_email}</p>
-            {sendDistributor?.billing_email_cc?.filter(Boolean).length > 0 && (
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{sendManufacturer?.billing_email}</p>
+            {sendManufacturer?.billing_email_cc?.filter(Boolean).length > 0 && (
               <>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">CC</p>
-                <p className="text-sm text-gray-700 dark:text-gray-300">{sendDistributor.billing_email_cc.filter(Boolean).join(', ')}</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">{sendManufacturer.billing_email_cc.filter(Boolean).join(', ')}</p>
               </>
             )}
           </div>
@@ -730,7 +730,7 @@ export default function Money() {
             <Button variant="secondary" fullWidth onClick={handleSkipSend}>
               Skip
             </Button>
-            <Button fullWidth loading={sendPOEmail.isPending} onClick={handleSendToDistributor}>
+            <Button fullWidth loading={sendPOEmail.isPending} onClick={handleSendToManufacturer}>
               <Send className="h-4 w-4" /> Send
             </Button>
           </div>

@@ -11,7 +11,7 @@ export function useBillSheetItems(caseId) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('bill_sheet_items')
-        .select('*, distributor_product:distributor_products(*), manufacturer:manufacturers(name), case:cases(id, case_number, status, scheduled_date, facility_id, distributor_id, surgeon:surgeons(full_name), facility:facilities(name), distributor:distributors(id, name, billing_email, billing_email_cc))')
+        .select('*, distributor_product:distributor_products(*), manufacturer:manufacturers(id, name, billing_email, billing_email_cc), case:cases(id, case_number, status, scheduled_date, facility_id, distributor_id, surgeon:surgeons(full_name), facility:facilities(name), distributor:distributors(id, name, billing_email, billing_email_cc))')
         .eq('case_id', caseId)
         .eq('account_id', accountId)
         .order('created_at');
