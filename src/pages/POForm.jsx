@@ -34,15 +34,11 @@ export default function POForm() {
 
   const [form, setForm] = useState({
     case_id: preselectedCaseId || '',
-    invoice_number: '',
     po_number: '',
     amount: '',
-    invoice_date: '',
-    issue_date: '',
-    expected_payment_date: '',
+    surgery_date: '',
     notes: '',
   });
-  const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [extractedFields, setExtractedFields] = useState({});
   const [storagePath, setStoragePath] = useState(null);
@@ -52,12 +48,9 @@ export default function POForm() {
     if (existingPO && isEdit) {
       setForm({
         case_id: existingPO.case_id || '',
-        invoice_number: existingPO.invoice_number || '',
         po_number: existingPO.po_number || '',
         amount: existingPO.amount ?? '',
-        invoice_date: existingPO.invoice_date || '',
-        issue_date: existingPO.issue_date || '',
-        expected_payment_date: existingPO.expected_payment_date || '',
+        surgery_date: existingPO.case?.scheduled_date || '',
         notes: existingPO.notes || '',
       });
     }
@@ -66,17 +59,20 @@ export default function POForm() {
   function onChange(e) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: undefined }));
   }
 
   const selectedCase = cases.find((c) => c.id === form.case_id) || selectedCaseData;
 
-  // Auto-populate amount from case value when creating a new PO
+  // Auto-populate amount and surgery date from case when creating a new PO
   useEffect(() => {
-    if (!isEdit && selectedCase?.case_value && !form.amount && !Object.keys(extractedFields).length) {
-      setForm((prev) => ({ ...prev, amount: String(selectedCase.case_value) }));
+    if (!isEdit && selectedCase && !Object.keys(extractedFields).length) {
+      setForm((prev) => ({
+        ...prev,
+        ...(selectedCase.case_value && !prev.amount ? { amount: String(selectedCase.case_value) } : {}),
+        ...(selectedCase.scheduled_date && !prev.surgery_date ? { surgery_date: selectedCase.scheduled_date } : {}),
+      }));
     }
-  }, [selectedCase?.case_value, isEdit]);
+  }, [selectedCase?.case_value, selectedCase?.scheduled_date, isEdit]);
 
   async function handleScanPO(e) {
     const file = e.target.files?.[0];
@@ -92,7 +88,7 @@ export default function POForm() {
       });
 
       const extracted = {};
-      const fieldsToExtract = ['po_number', 'amount', 'invoice_number', 'issue_date'];
+      const fieldsToExtract = ['po_number', 'amount'];
 
       fieldsToExtract.forEach((field) => {
         if (data[field] != null && data[field] !== '') {
@@ -126,19 +122,10 @@ export default function POForm() {
     e.preventDefault();
     setServerError('');
 
-    if (!form.invoice_number.trim()) {
-      setErrors({ invoice_number: 'Invoice number is required' });
-      return;
-    }
-
     const payload = {
       case_id: form.case_id || null,
-      invoice_number: form.invoice_number.trim(),
       po_number: form.po_number.trim() || null,
       amount: form.amount ? Number(form.amount) : null,
-      invoice_date: form.invoice_date || null,
-      issue_date: form.issue_date || null,
-      expected_payment_date: form.expected_payment_date || null,
       facility_id: selectedCase?.facility_id || null,
       distributor_id: selectedCase?.distributor_id || null,
       notes: form.notes ? DOMPurify.sanitize(form.notes) : null,
@@ -279,20 +266,6 @@ export default function POForm() {
 
           <div>
             <div className="flex items-center">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Invoice Number *</span>
-              <FieldIndicator field="invoice_number" />
-            </div>
-            <Input
-              name="invoice_number"
-              value={form.invoice_number}
-              onChange={onChange}
-              error={errors.invoice_number}
-              placeholder="INV-001"
-            />
-          </div>
-
-          <div>
-            <div className="flex items-center">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">PO Number</span>
               <FieldIndicator field="po_number" />
             </div>
@@ -300,7 +273,7 @@ export default function POForm() {
               name="po_number"
               value={form.po_number}
               onChange={onChange}
-              placeholder="Optional"
+              placeholder="PO-001"
             />
           </div>
 
@@ -320,33 +293,10 @@ export default function POForm() {
           </div>
 
           <Input
-            label="Invoice Date"
-            name="invoice_date"
+            label="Date of Surgery"
+            name="surgery_date"
             type="date"
-            value={form.invoice_date}
-            onChange={onChange}
-            max={new Date().toISOString().split('T')[0]}
-          />
-
-          <div>
-            <div className="flex items-center">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Issue Date</span>
-              <FieldIndicator field="issue_date" />
-            </div>
-            <Input
-              name="issue_date"
-              type="date"
-              value={form.issue_date}
-              onChange={onChange}
-              max={new Date().toISOString().split('T')[0]}
-            />
-          </div>
-
-          <Input
-            label="Expected Payment Date"
-            name="expected_payment_date"
-            type="date"
-            value={form.expected_payment_date}
+            value={form.surgery_date}
             onChange={onChange}
           />
 
