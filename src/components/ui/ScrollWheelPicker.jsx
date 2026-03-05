@@ -24,8 +24,11 @@ export default function ScrollWheelPicker({ items, value, onChange, className = 
     const idx = items.findIndex((item) => String(item.value) === String(value));
     if (idx >= 0) {
       scrollToIndex(idx);
+    } else if (items.length > 0 && (value === '' || value == null)) {
+      // Value doesn't match any item — sync form state with visible first item
+      onChange(items[0].value);
     }
-  }, [value, items, scrollToIndex]);
+  }, [value, items, scrollToIndex, onChange]);
 
   const handleScroll = useCallback(() => {
     if (!isUserScroll.current) return;

@@ -66,12 +66,18 @@ export function useCreateCase() {
   return useMutation({
     mutationFn: async (values) => {
       const caseNumber = await generateCaseNumber(supabase, accountId);
+      const insertPayload = { ...values, account_id: accountId, case_number: caseNumber, status: 'scheduled' };
+      console.log('[useCreateCase] insert payload:', JSON.stringify(insertPayload, null, 2));
       const { data, error } = await supabase
         .from('cases')
-        .insert({ ...values, account_id: accountId, case_number: caseNumber, status: 'scheduled' })
+        .insert(insertPayload)
         .select()
         .single();
-      if (error) throw error;
+      if (error) {
+        console.error('[useCreateCase] insert error:', error);
+        throw error;
+      }
+      console.log('[useCreateCase] created case:', data?.id, 'scheduled_date:', data?.scheduled_date, 'scheduled_time:', data?.scheduled_time);
       return data;
     },
     onSuccess: () => {

@@ -36,8 +36,8 @@ export default function CaseForm() {
     facility_id: '',
     procedure_type: '',
     scheduled_date: '',
-    time_hour: '',
-    time_minute: '',
+    time_hour: '7',
+    time_minute: '00',
     time_period: 'AM',
     notes: '',
   });
@@ -144,7 +144,7 @@ export default function CaseForm() {
       let h = parseInt(form.time_hour);
       if (form.time_period === 'PM' && h !== 12) h += 12;
       if (form.time_period === 'AM' && h === 12) h = 0;
-      scheduled_time = `${String(h).padStart(2, '0')}:${form.time_minute}`;
+      scheduled_time = `${String(h).padStart(2, '0')}:${form.time_minute}:00`;
     }
 
     const payload = {
@@ -156,6 +156,8 @@ export default function CaseForm() {
       scheduled_time,
       notes: form.notes ? DOMPurify.sanitize(form.notes) : null,
     };
+
+    console.log('[CaseForm] handleSubmit payload:', JSON.stringify(payload, null, 2));
 
     try {
       if (isEdit) {

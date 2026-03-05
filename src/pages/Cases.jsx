@@ -9,7 +9,8 @@ import EmptyState from '@/components/ui/EmptyState';
 import Button from '@/components/ui/Button';
 import BottomSheet from '@/components/ui/BottomSheet';
 import SwipeableRow from '@/components/ui/SwipeableRow';
-import { formatDate, formatCurrency } from '@/utils/formatters';
+import { formatDate, formatTime, formatCurrency } from '@/utils/formatters';
+import TimeWheelPicker from '@/components/ui/TimeWheelPicker';
 import { getProductLabel } from '@/utils/productCatalog';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import PipelineGuide from '@/components/features/PipelineGuide';
@@ -39,7 +40,7 @@ export default function Cases() {
   const [cancelCase, setCancelCase] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
   const [rescheduleCase, setRescheduleCase] = useState(null);
-  const [rescheduleForm, setRescheduleForm] = useState({ date: '', time: '' });
+  const [rescheduleForm, setRescheduleForm] = useState({ date: '', time_hour: '7', time_minute: '00', time_period: 'AM' });
 
   const filtered = useMemo(() => {
     if (!cases) return [];
@@ -82,20 +83,35 @@ export default function Cases() {
 
   async function handleRescheduleConfirm() {
     if (!rescheduleCase || !rescheduleForm.date) return;
+
+    let scheduled_time = null;
+    if (rescheduleForm.time_hour && rescheduleForm.time_minute) {
+      let h = parseInt(rescheduleForm.time_hour);
+      if (rescheduleForm.time_period === 'PM' && h !== 12) h += 12;
+      if (rescheduleForm.time_period === 'AM' && h === 12) h = 0;
+      scheduled_time = `${String(h).padStart(2, '0')}:${rescheduleForm.time_minute}:00`;
+    }
+
     const oldDate = formatDate(rescheduleCase.scheduled_date);
+    const oldTime = formatTime(rescheduleCase.scheduled_time);
     const newDate = formatDate(rescheduleForm.date);
+    const newTime = scheduled_time ? formatTime(scheduled_time) : null;
+
     await updateCase.mutateAsync({
       id: rescheduleCase.id,
       scheduled_date: rescheduleForm.date,
-      ...(rescheduleForm.time && { scheduled_time: rescheduleForm.time }),
+      scheduled_time,
     });
+
+    const oldLabel = rescheduleCase.scheduled_time ? `${oldDate} ${oldTime}` : oldDate;
+    const newLabel = newTime ? `${newDate} ${newTime}` : newDate;
     await createCommunication.mutateAsync({
       case_id: rescheduleCase.id,
       comm_type: 'note',
-      notes: `Case rescheduled from ${oldDate} to ${newDate}`,
+      notes: `Case rescheduled from ${oldLabel} to ${newLabel}`,
     });
     setRescheduleCase(null);
-    setRescheduleForm({ date: '', time: '' });
+    setRescheduleForm({ date: '', time_hour: '7', time_minute: '00', time_period: 'AM' });
     toast.success('Case rescheduled');
   }
 
@@ -247,8 +263,18 @@ export default function Cases() {
             onClick={() => {
               const c = overflowCase;
               setOverflowCase(null);
-              setRescheduleForm({ date: '', time: c?.scheduled_time || '' });
-              setRescheduleCase(c);
+              {
+                let th = '7', tm = '00', tp = 'AM';
+                if (c?.scheduled_time) {
+                  const [hh, mm] = c.scheduled_time.split(':');
+                  const h24 = parseInt(hh);
+                  tp = h24 >= 12 ? 'PM' : 'AM';
+                  th = String(h24 % 12 || 12);
+                  tm = mm?.slice(0, 2) || '00';
+                }
+                setRescheduleForm({ date: '', time_hour: th, time_minute: tm, time_period: tp });
+                setRescheduleCase(c);
+              }
             }}
           >
             Reschedule
@@ -293,7 +319,7 @@ export default function Cases() {
       </BottomSheet>
 
       {/* Reschedule BottomSheet */}
-      <BottomSheet isOpen={!!rescheduleCase} onClose={() => { setRescheduleCase(null); setRescheduleForm({ date: '', time: '' }); }} title="Reschedule Case">
+      <BottomSheet isOpen={!!rescheduleCase} onClose={() => { setRescheduleCase(null); setRescheduleForm({ date: '', time_hour: '7', time_minute: '00', time_period: 'AM' }); }} title="Reschedule Case">
         <div className="flex flex-col gap-4">
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Currently scheduled: {rescheduleCase ? formatDate(rescheduleCase.scheduled_date) : ''}
@@ -310,11 +336,13 @@ export default function Cases() {
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Time</label>
-            <input
-              type="time"
-              value={rescheduleForm.time}
-              onChange={(e) => setRescheduleForm((f) => ({ ...f, time: e.target.value }))}
-              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            <TimeWheelPicker
+              hour={rescheduleForm.time_hour}
+              minute={rescheduleForm.time_minute}
+              period={rescheduleForm.time_period}
+              onChangeHour={(v) => setRescheduleForm((f) => ({ ...f, time_hour: v }))}
+              onChangeMinute={(v) => setRescheduleForm((f) => ({ ...f, time_minute: v }))}
+              onChangePeriod={(v) => setRescheduleForm((f) => ({ ...f, time_period: v }))}
             />
           </div>
           <Button fullWidth loading={updateCase.isPending} disabled={!rescheduleForm.date} onClick={handleRescheduleConfirm}>
