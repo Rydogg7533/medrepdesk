@@ -11,7 +11,6 @@ import { useCreateCommunication } from '@/hooks/useCommunications';
 import { useAuth } from '@/context/AuthContext';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import StatusBadge from '@/components/ui/StatusBadge';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import BottomSheet from '@/components/ui/BottomSheet';
 import Skeleton from '@/components/ui/Skeleton';
@@ -217,8 +216,7 @@ export default function PODetail() {
           <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </button>
         <div className="flex-1">
-          <p className="text-xs text-gray-400 dark:text-gray-500">Invoice #{po.invoice_number}<InfoTooltip text="Invoice number is what you submitted. PO number is what the facility issues back. Both are tracked separately." /></p>
-          <span className="inline-flex items-center gap-1"><StatusBadge status={po.status} type="po" /><InfoTooltip text="PO Status: Not Requested → Requested → Pending → Received → Billed → Paid. Upload a PO photo to auto-extract details with AI." /></span>
+          <p className="text-lg font-bold text-gray-900 dark:text-gray-100">Purchase Order</p>
         </div>
         <button
           onClick={() => navigate(`/po/${id}/edit`)}
@@ -233,23 +231,24 @@ export default function PODetail() {
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-gray-400 dark:text-gray-500">Case</span>
-            <button
-              className="font-medium text-brand-800 dark:text-brand-400"
-              onClick={() => navigate(`/cases/${po.case_id}`)}
-            >
-              {po.case?.case_number || '—'}
-            </button>
+            {po.case_id ? (
+              <button
+                className="font-medium text-brand-800 dark:text-brand-400"
+                onClick={() => navigate(`/cases/${po.case_id}`)}
+              >
+                {po.case?.case_number || '—'}
+              </button>
+            ) : (
+              <span className="font-medium text-gray-700 dark:text-gray-300">—</span>
+            )}
           </div>
-          <InfoRow label="Facility" value={po.facility?.name} />
-          <InfoRow label="Distributor" value={po.distributor?.name} />
+          <InfoRow label="Facility" value={po.case?.facility?.name || po.facility?.name} />
+          <InfoRow label="Distributor" value={po.case?.distributor?.name || po.distributor?.name} />
           <InfoRow label="PO Number" value={po.po_number} />
           <InfoRow label="Amount" value={formatCurrency(po.amount)} />
-          <InfoRow label="Invoice Date" value={formatDate(po.invoice_date)} />
-          <InfoRow label="Issue Date" value={formatDate(po.issue_date)} />
-          <InfoRow label="Expected Payment" value={formatDate(po.expected_payment_date)} />
-          <InfoRow label="Received" value={formatDate(po.received_date)} />
-          <InfoRow label="Sent to Distributor" value={po.po_email_sent ? 'Yes' : '—'} />
-          <InfoRow label="Paid" value={formatDate(po.paid_date)} />
+          <InfoRow label="Date of Surgery" value={formatDate(po.case?.scheduled_date)} />
+          <InfoRow label="PO Received Date" value={formatDate(po.received_date)} />
+          <InfoRow label="Sent to Manufacturer" value={po.po_email_sent ? (po.po_email_sent === true ? 'Yes' : formatDate(po.po_email_sent)) : '—'} />
         </div>
       </Card>
 
@@ -593,7 +592,7 @@ export default function PODetail() {
         onClose={() => setShowDelete(false)}
         onConfirm={handleDelete}
         title="Delete PO"
-        message={`Permanently delete invoice #${po.invoice_number}? This cannot be undone.`}
+        message={`Permanently delete this purchase order${po.po_number ? ` (PO #${po.po_number})` : ''}? This cannot be undone.`}
         confirmLabel="Delete"
       />
     </div>

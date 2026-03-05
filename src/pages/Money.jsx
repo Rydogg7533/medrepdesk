@@ -36,11 +36,6 @@ const COMM_FILTERS = [
   { key: 'disputed', label: 'Disputed' },
 ];
 
-function isOverdue(dateStr) {
-  if (!dateStr) return false;
-  return dateStr < new Date().toISOString().split('T')[0];
-}
-
 export default function Money() {
   const [activeTab, setActiveTab] = useState('pos');
   const [poFilter, setPOFilter] = useState('all');
@@ -150,22 +145,17 @@ export default function Money() {
             />
           ) : (
             <div className="space-y-2">
-              {filteredPOs.map((po) => {
-                const overdue = isOverdue(po.expected_payment_date) && po.status !== 'paid';
-                return (
+              {filteredPOs.map((po) => (
                   <Card
                     key={po.id}
-                    className={clsx('cursor-pointer active:bg-gray-50 dark:active:bg-gray-700', overdue && 'border-l-4 border-l-red-400')}
+                    className="cursor-pointer active:bg-gray-50 dark:active:bg-gray-700"
                     onClick={() => navigate(`/po/${po.id}`)}
                   >
                     <div className="flex items-center justify-between">
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
                           {po.case?.case_number || 'No case'}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          INV: {po.invoice_number}
-                          {po.po_number && ` · PO: ${po.po_number}`}
+                          {po.po_number && <span className="ml-1 text-xs text-gray-400 dark:text-gray-500">· PO: {po.po_number}</span>}
                         </p>
                         <div className="mt-1 flex items-center gap-2">
                           <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
@@ -175,20 +165,13 @@ export default function Money() {
                             <span className="text-xs text-gray-400 dark:text-gray-500">{po.facility.name}</span>
                           )}
                         </div>
-                        {po.expected_payment_date && (
-                          <p className={clsx('text-xs', overdue ? 'text-red-500 font-medium' : 'text-gray-400 dark:text-gray-500')}>
-                            {overdue ? 'Overdue: ' : 'Expected: '}{formatDate(po.expected_payment_date)}
-                          </p>
-                        )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <StatusBadge status={po.status} type="po" />
                         <ChevronRight className="h-4 w-4 text-gray-300 dark:text-gray-600" />
                       </div>
                     </div>
                   </Card>
-                );
-              })}
+              ))}
             </div>
           )}
         </>
