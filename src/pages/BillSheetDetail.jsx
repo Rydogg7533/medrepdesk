@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ChevronRight, Send } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Send, Phone, Mail, MessageSquare } from 'lucide-react';
 import { useBillSheetItems } from '@/hooks/useBillSheetItems';
 import { useChaseLog, useCreateChaseEntry } from '@/hooks/useChaseLog';
 import { useCasePOs, useCreatePO } from '@/hooks/usePOs';
@@ -31,6 +31,7 @@ export default function BillSheetDetail() {
   const [showRecordPO, setShowRecordPO] = useState(false);
   const [showSendPrompt, setShowSendPrompt] = useState(false);
   const [pendingPOData, setPendingPOData] = useState(null);
+  const [showChase, setShowChase] = useState(false);
   const [poForm, setPOForm] = useState({
     po_number: '',
     amount: '',
@@ -68,6 +69,29 @@ export default function BillSheetDetail() {
   const chaseCount = chaseEntries.filter((e) => e.chase_type !== 'bill_sheet_submitted').length;
   const lastChase = chaseEntries.find((e) => e.chase_type !== 'bill_sheet_submitted');
   const promisedEntry = chaseEntries.find((e) => e.promised_date && !e.follow_up_done);
+
+  async function handleChaseAction(actionType) {
+    const facility = caseInfo?.facility;
+    const phone = facility?.billing_phone || facility?.phone;
+    const email = caseInfo?.distributor?.billing_email;
+
+    if (actionType === 'call' && phone) {
+      window.location.href = `tel:${phone}`;
+    } else if (actionType === 'email' && email) {
+      window.location.href = `mailto:${email}`;
+    } else if (actionType === 'text' && phone) {
+      window.location.href = `sms:${phone}`;
+    }
+
+    await createChase.mutateAsync({
+      case_id: caseId,
+      facility_id: caseInfo?.facility_id,
+      chase_type: actionType === 'call' ? 'follow_up_call' : actionType === 'email' ? 'follow_up_email' : 'follow_up_text',
+      action_taken: actionType,
+    });
+    setShowChase(false);
+    toast({ message: 'Follow-up logged', type: 'success' });
+  }
 
   function handleRecordPO(e) {
     e.preventDefault();
@@ -345,7 +369,7 @@ export default function BillSheetDetail() {
       {/* State 1: No PO yet → Chase PO + Record PO Received */}
       {!hasPO && (
         <div className="flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={() => navigate(`/cases/${caseId}`)}>
+          <Button variant="outline" className="flex-1" onClick={() => setShowChase(true)}>
             Chase PO
           </Button>
           <Button className="flex-1" onClick={() => setShowRecordPO(true)}>
@@ -362,6 +386,49 @@ export default function BillSheetDetail() {
       )}
 
       {/* State 3: Archived (PO sent) → no action buttons, view-only */}
+
+      {/* Chase PO Bottom Sheet */}
+      <BottomSheet
+        isOpen={showChase}
+        onClose={() => setShowChase(false)}
+        title={`Chase PO — ${caseInfo?.case_number || ''}`}
+      >
+        <div className="flex flex-col gap-3">
+          {caseInfo?.facility && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">{caseInfo.facility.name}</p>
+          )}
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleChaseAction('call')}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-50 py-3 text-sm font-medium text-green-700 dark:bg-green-900/30 dark:text-green-300"
+            >
+              <Phone className="h-4 w-4" /> Call
+            </button>
+            <button
+              onClick={() => handleChaseAction('email')}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-50 py-3 text-sm font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+            >
+              <Mail className="h-4 w-4" /> Email
+            </button>
+            <button
+              onClick={() => handleChaseAction('text')}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-50 py-3 text-sm font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+            >
+              <MessageSquare className="h-4 w-4" /> Text
+            </button>
+          </div>
+          <Button
+            variant="secondary"
+            fullWidth
+            onClick={() => {
+              setShowChase(false);
+              navigate(`/cases/${caseId}`);
+            }}
+          >
+            Open Case Detail
+          </Button>
+        </div>
+      </BottomSheet>
 
       {/* Record PO Bottom Sheet */}
       <BottomSheet isOpen={showRecordPO} onClose={() => setShowRecordPO(false)} title="Record PO Received">
