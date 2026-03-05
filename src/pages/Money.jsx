@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { DollarSign, FileText, Calendar, ChevronRight, ClipboardList, Send } from 'lucide-react';
 import clsx from 'clsx';
 import { usePOs, useCreatePO } from '@/hooks/usePOs';
@@ -44,7 +44,9 @@ const COMM_FILTERS = [
 ];
 
 export default function Money() {
-  const [activeTab, setActiveTab] = useState('bill_sheets');
+  const [searchParams] = useSearchParams();
+  const initialTab = tabs.some((t) => t.key === searchParams.get('tab')) ? searchParams.get('tab') : 'bill_sheets';
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [poFilter, setPOFilter] = useState('all');
   const [commFilter, setCommFilter] = useState('all');
   const [billSheetView, setBillSheetView] = useState('active');

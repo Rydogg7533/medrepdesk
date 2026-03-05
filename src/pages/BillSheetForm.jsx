@@ -143,7 +143,7 @@ export default function BillSheetForm() {
 
       // 5. Done — back to dashboard
       toast({ message: 'Bill sheet submitted', type: 'success' });
-      navigate('/', { replace: true });
+      navigate('/money?tab=bill_sheets', { replace: true });
     } catch (err) {
       setServerError(err.message);
       setSubmitting(false);
