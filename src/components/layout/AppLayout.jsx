@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Plus, Briefcase, MessageSquare, UserPlus, FileText, Settings } from 'lucide-react';
 import BottomNav from './BottomNav';
 import BottomSheet from '@/components/ui/BottomSheet';
+import DashboardSettings from '@/components/dashboard/DashboardSettings';
 import NotificationBell from '@/components/ui/NotificationBell';
 import OfflineBanner from '@/components/ui/OfflineBanner';
 import PageTransition from '@/components/ui/PageTransition';
@@ -11,9 +12,16 @@ import { useAutoClosePayPeriods } from '@/hooks/useAutoClosePayPeriods';
 export default function AppLayout() {
   useAutoClosePayPeriods();
   const [fabOpen, setFabOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const isDashboard = location.pathname === '/dashboard';
+
+  useEffect(() => {
+    const handler = () => setSettingsOpen(true);
+    window.addEventListener('open-dashboard-settings', handler);
+    return () => window.removeEventListener('open-dashboard-settings', handler);
+  }, []);
 
   function handleAction(path) {
     setFabOpen(false);
@@ -88,6 +96,8 @@ export default function AppLayout() {
           </button>
         </div>
       </BottomSheet>
+
+      <DashboardSettings isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
       <BottomNav />
     </div>

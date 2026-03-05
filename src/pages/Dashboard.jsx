@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Briefcase, AlertTriangle, TrendingUp, ChevronRight, Clock,
@@ -19,7 +19,6 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import Skeleton from '@/components/ui/Skeleton';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import POPipelineStrip from '@/components/dashboard/POPipelineStrip';
-import DashboardSettings from '@/components/dashboard/DashboardSettings';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import { DollarSign } from 'lucide-react';
 import { formatDate, formatTime, formatCurrency, getGreeting } from '@/utils/formatters';
@@ -56,13 +55,6 @@ export default function Dashboard() {
   const { data: overdueComms = [] } = useOverdueCommunications();
   const { data: billSheetCaseIds = new Set() } = useCaseIdsWithBillSheet();
 
-  // Settings bottom sheet
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  useEffect(() => {
-    const handler = () => setSettingsOpen(true);
-    window.addEventListener('open-dashboard-settings', handler);
-    return () => window.removeEventListener('open-dashboard-settings', handler);
-  }, []);
 
   // Banner state
   const [statesBannerDismissed, setStatesBannerDismissed] = useState(
@@ -363,8 +355,6 @@ export default function Dashboard() {
         </Card>
       )}
 
-      {/* Dashboard Settings BottomSheet */}
-      <DashboardSettings isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }
