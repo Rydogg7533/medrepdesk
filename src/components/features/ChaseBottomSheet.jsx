@@ -28,6 +28,8 @@ export default function ChaseBottomSheet({
   facilityEmail,
   facilityId,
   poId,
+  chaseTypeOverride,
+  onAfterSave,
 }) {
   const createChase = useCreateChaseEntry();
   const toast = useToast();
@@ -68,10 +70,11 @@ export default function ChaseBottomSheet({
   }
 
   async function handleSave() {
-    const chaseType = actionType === 'call' ? 'follow_up_call'
-      : actionType === 'email' ? 'follow_up_email'
-      : actionType === 'text' ? 'follow_up_text'
-      : 'note';
+    const chaseType = chaseTypeOverride
+      || (actionType === 'call' ? 'follow_up_call'
+        : actionType === 'email' ? 'follow_up_email'
+        : actionType === 'text' ? 'follow_up_text'
+        : 'note');
 
     await createChase.mutateAsync({
       case_id: caseId,
@@ -83,6 +86,7 @@ export default function ChaseBottomSheet({
       promised_date: logForm.promised_date || null,
       next_follow_up: logForm.next_follow_up || null,
     });
+    if (onAfterSave) await onAfterSave();
     toast({ message: 'Follow-up logged', type: 'success' });
     handleClose();
   }

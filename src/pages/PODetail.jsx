@@ -42,13 +42,7 @@ export default function PODetail() {
     navigate('/money', { replace: true });
   }
 
-  async function handleStartChasing() {
-    await createChase.mutateAsync({
-      case_id: po.case_id,
-      po_id: po.id,
-      chase_type: 'po_requested',
-      facility_id: po.facility_id,
-    });
+  async function handleFirstChaseComplete() {
     await updatePO.mutateAsync({ id, status: 'requested' });
   }
 
@@ -181,12 +175,7 @@ export default function PODetail() {
 
       {/* Actions */}
       <div className="space-y-2">
-        {po.status === 'not_requested' && (
-          <Button fullWidth loading={createChase.isPending || updatePO.isPending} onClick={handleStartChasing}>
-            Start Chasing
-          </Button>
-        )}
-        {po.status !== 'paid' && po.status !== 'not_requested' && (
+        {po.status !== 'paid' && (
           <Button fullWidth onClick={() => setShowChase(true)}>
             Chase PO
           </Button>
@@ -230,6 +219,8 @@ export default function PODetail() {
         facilityEmail={po.case?.distributor?.billing_email || po.distributor?.billing_email}
         facilityId={po.facility_id}
         poId={po.id}
+        chaseTypeOverride={po.status === 'not_requested' ? 'po_requested' : undefined}
+        onAfterSave={po.status === 'not_requested' ? handleFirstChaseComplete : undefined}
       />
 
       {/* Mark Received Sheet */}
