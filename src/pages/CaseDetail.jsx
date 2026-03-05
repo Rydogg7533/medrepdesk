@@ -21,6 +21,7 @@ import PipelineGuide from '@/components/features/PipelineGuide';
 import TimeWheelPicker from '@/components/ui/TimeWheelPicker';
 import { useToast } from '@/components/ui/Toast';
 import POSentConfirmation from '@/components/features/POSentConfirmation';
+import ChaseBottomSheet from '@/components/features/ChaseBottomSheet';
 import { formatDate, formatTime, formatCurrency } from '@/utils/formatters';
 import { CASE_STATUSES } from '@/utils/constants';
 import { getProductLabel } from '@/utils/productCatalog';
@@ -66,6 +67,7 @@ export default function CaseDetail() {
   const [rescheduleForm, setRescheduleForm] = useState({ date: '', time_hour: '7', time_minute: '00', time_period: 'AM' });
   const [showCancel, setShowCancel] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+  const [showChase, setShowChase] = useState(false);
 
   const procLabel = (type) => getProductLabel(type);
 
@@ -506,8 +508,8 @@ export default function CaseDetail() {
             Log Bill Sheet
           </Button>
         )}
-        {['bill_sheet_submitted', 'po_requested'].includes(caseData.status) && casePOs.length > 0 && (
-          <Button fullWidth onClick={() => navigate(`/po/${casePOs[0].id}`)}>
+        {['bill_sheet_submitted', 'po_requested'].includes(caseData.status) && (
+          <Button fullWidth onClick={() => setShowChase(true)}>
             Chase PO
           </Button>
         )}
@@ -557,6 +559,19 @@ export default function CaseDetail() {
       />
 
       <PipelineGuide isOpen={showPipeline} onClose={() => setShowPipeline(false)} currentStatus={caseData.status} />
+
+      {/* Chase PO Bottom Sheet */}
+      <ChaseBottomSheet
+        isOpen={showChase}
+        onClose={() => setShowChase(false)}
+        caseId={id}
+        caseNumber={caseData.case_number}
+        facilityName={caseData.facility?.name}
+        facilityPhone={caseData.facility?.billing_phone || caseData.facility?.phone}
+        facilityEmail={caseData.distributor?.billing_email}
+        facilityId={caseData.facility_id}
+        poId={casePOs[0]?.id}
+      />
 
       {/* Reschedule Sheet */}
       <BottomSheet isOpen={showReschedule} onClose={() => setShowReschedule(false)} title="Reschedule Case">

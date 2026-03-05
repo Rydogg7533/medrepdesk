@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DollarSign, FileText, Calendar, ChevronRight, ClipboardList, Phone, Mail, MessageSquare, Send } from 'lucide-react';
+import { DollarSign, FileText, Calendar, ChevronRight, ClipboardList, Send } from 'lucide-react';
 import clsx from 'clsx';
 import { usePOs, useCreatePO } from '@/hooks/usePOs';
 import { useCommissions } from '@/hooks/useCommissions';
 import { usePayPeriods, useEnsurePayPeriods } from '@/hooks/usePayPeriods';
 import { useBillSheets } from '@/hooks/useBillSheets';
-import { useCreateChaseEntry } from '@/hooks/useChaseLog';
+import ChaseBottomSheet from '@/components/features/ChaseBottomSheet';
 import { useSendPOEmail } from '@/hooks/usePOEmail';
 import { useAuth } from '@/context/AuthContext';
 import { useDistributor } from '@/hooks/useDistributors';
@@ -74,7 +74,6 @@ export default function Money() {
   const { data: allPayPeriods = [], isLoading: periodsLoading } = usePayPeriods(distributorId);
   const ensurePayPeriods = useEnsurePayPeriods(distributorId, paySchedule);
   const createPO = useCreatePO();
-  const createChase = useCreateChaseEntry();
   const sendPOEmail = useSendPOEmail();
 
   // Auto-generate missing pay periods on mount when schedule is configured
@@ -102,30 +101,6 @@ export default function Money() {
   const receivedYTD = allCommissions
     .filter((c) => c.status === 'received' && c.received_date?.startsWith(thisYear))
     .reduce((sum, c) => sum + (c.received_amount || 0), 0);
-
-  // Chase quick action — call/email/text facility and log chase entry
-  async function handleChaseAction(actionType) {
-    if (!chaseTarget) return;
-    const phone = chaseTarget.facilityPhone;
-    const email = chaseTarget.facilityEmail;
-
-    if (actionType === 'call' && phone) {
-      window.location.href = `tel:${phone}`;
-    } else if (actionType === 'email' && email) {
-      window.location.href = `mailto:${email}`;
-    } else if (actionType === 'text' && phone) {
-      window.location.href = `sms:${phone}`;
-    }
-
-    await createChase.mutateAsync({
-      case_id: chaseTarget.caseId,
-      facility_id: chaseTarget.facilityId,
-      chase_type: actionType === 'call' ? 'follow_up_call' : actionType === 'email' ? 'follow_up_email' : 'follow_up_text',
-      action_taken: actionType,
-    });
-    setChaseTarget(null);
-    toast({ message: 'Follow-up logged', type: 'success' });
-  }
 
   // Record PO received inline — defers actual creation until Send/Skip
   function handleRecordPO(e) {
@@ -421,48 +396,16 @@ export default function Money() {
       {activeTab === 'bill_sheets' && (
         <>
           {/* Chase PO Bottom Sheet */}
-          <BottomSheet
+          <ChaseBottomSheet
             isOpen={!!chaseTarget}
             onClose={() => setChaseTarget(null)}
-            title={chaseTarget ? `Chase PO — ${chaseTarget.caseNumber}` : 'Chase PO'}
-          >
-            <div className="flex flex-col gap-3">
-              {chaseTarget?.facility && (
-                <p className="text-sm text-gray-500 dark:text-gray-400">{chaseTarget.facility}</p>
-              )}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleChaseAction('call')}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-50 py-3 text-sm font-medium text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                >
-                  <Phone className="h-4 w-4" /> Call
-                </button>
-                <button
-                  onClick={() => handleChaseAction('email')}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-50 py-3 text-sm font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                >
-                  <Mail className="h-4 w-4" /> Email
-                </button>
-                <button
-                  onClick={() => handleChaseAction('text')}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-50 py-3 text-sm font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
-                >
-                  <MessageSquare className="h-4 w-4" /> Text
-                </button>
-              </div>
-              <Button
-                variant="secondary"
-                fullWidth
-                onClick={() => {
-                  const cid = chaseTarget?.caseId;
-                  setChaseTarget(null);
-                  navigate(`/cases/${cid}`);
-                }}
-              >
-                Open Case Detail
-              </Button>
-            </div>
-          </BottomSheet>
+            caseId={chaseTarget?.caseId}
+            caseNumber={chaseTarget?.caseNumber}
+            facilityName={chaseTarget?.facility}
+            facilityPhone={chaseTarget?.facilityPhone}
+            facilityEmail={chaseTarget?.facilityEmail}
+            facilityId={chaseTarget?.facilityId}
+          />
 
           {/* Record PO Bottom Sheet */}
           <BottomSheet

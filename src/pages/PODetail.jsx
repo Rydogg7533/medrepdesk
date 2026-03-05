@@ -1,14 +1,10 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit2, Trash2, Phone, Mail, MessageSquare, Wand2, Copy, ExternalLink, Save, Send } from 'lucide-react';
-import DOMPurify from 'dompurify';
+import { ArrowLeft, Edit2, Trash2, Send } from 'lucide-react';
 import { usePO, useUpdatePO, useDeletePO } from '@/hooks/usePOs';
 import { useChaseLog, useCreateChaseEntry } from '@/hooks/useChaseLog';
-import ContactAutocomplete from '@/components/ui/ContactAutocomplete';
-import { useDraftChaseEmail } from '@/hooks/useAI';
 import { useSendPOEmail } from '@/hooks/usePOEmail';
 import { usePoEmailLog } from '@/hooks/usePoEmailLog';
-import { useCreateCommunication } from '@/hooks/useCommunications';
 import { useAuth } from '@/context/AuthContext';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -16,6 +12,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import BottomSheet from '@/components/ui/BottomSheet';
 import Skeleton from '@/components/ui/Skeleton';
 import ChaseTimeline from '@/components/features/ChaseTimeline';
+import ChaseBottomSheet from '@/components/features/ChaseBottomSheet';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import POSentConfirmation from '@/components/features/POSentConfirmation';
 import { formatDate, formatCurrency } from '@/utils/formatters';
@@ -29,35 +26,16 @@ export default function PODetail() {
   const updatePO = useUpdatePO();
   const deletePO = useDeletePO();
   const createChase = useCreateChaseEntry();
-  const draftEmail = useDraftChaseEmail();
   const sendPOEmail = useSendPOEmail();
   const { data: emailLog } = usePoEmailLog(id);
-  const createComm = useCreateCommunication();
   const [showDelete, setShowDelete] = useState(false);
   const [showSendToDistributor, setShowSendToDistributor] = useState(false);
-  const [showChaseForm, setShowChaseForm] = useState(false);
-  const [showEmailDraft, setShowEmailDraft] = useState(false);
-  const [emailTone, setEmailTone] = useState('polite');
-  const [emailSubject, setEmailSubject] = useState('');
-  const [emailBody, setEmailBody] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [showChase, setShowChase] = useState(false);
   const [showReceived, setShowReceived] = useState(false);
   const [showPaid, setShowPaid] = useState(false);
   const [receivedDate, setReceivedDate] = useState('');
   const [paidDate, setPaidDate] = useState('');
   const [paidAmount, setPaidAmount] = useState('');
-
-  const [chaseForm, setChaseForm] = useState({
-    chase_type: 'follow_up_call',
-    contact_name: '',
-    contact_role: '',
-    contact_phone: '',
-    contact_email: '',
-    outcome: '',
-    promised_date: '',
-    next_follow_up: '',
-    action_taken: 'call',
-  });
 
   async function handleDelete() {
     await deletePO.mutateAsync(id);
@@ -109,91 +87,6 @@ export default function PODetail() {
     setShowPaid(false);
   }
 
-  async function handleSubmitChase(e) {
-    e.preventDefault();
-    await createChase.mutateAsync({
-      case_id: po.case_id,
-      po_id: po.id,
-      facility_id: po.facility_id,
-      chase_type: chaseForm.chase_type,
-      contact_name: chaseForm.contact_name || null,
-      contact_role: chaseForm.contact_role || null,
-      contact_phone: chaseForm.contact_phone || null,
-      contact_email: chaseForm.contact_email || null,
-      outcome: chaseForm.outcome ? DOMPurify.sanitize(chaseForm.outcome) : null,
-      promised_date: chaseForm.promised_date || null,
-      next_follow_up: chaseForm.next_follow_up || null,
-      action_taken: chaseForm.action_taken || null,
-    });
-    setShowChaseForm(false);
-    setChaseForm({
-      chase_type: 'follow_up_call',
-      contact_name: '',
-      contact_role: '',
-      contact_phone: '',
-      contact_email: '',
-      outcome: '',
-      promised_date: '',
-      next_follow_up: '',
-      action_taken: 'call',
-    });
-  }
-
-  async function handleGenerateEmail() {
-    const result = await draftEmail.mutateAsync({
-      caseId: po.case_id,
-      poId: po.id,
-      tone: emailTone,
-    });
-    setEmailSubject(result.subject || '');
-    setEmailBody(result.body || '');
-  }
-
-  async function handleCopyEmail() {
-    await navigator.clipboard.writeText(`Subject: ${emailSubject}\n\n${emailBody}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  function handleSendViaEmail() {
-    const mailto = `mailto:${po?.facility?.billing_email || ''}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-    window.location.href = mailto;
-  }
-
-  async function handleSaveAsNote() {
-    await createComm.mutateAsync({
-      case_id: po.case_id,
-      comm_type: 'email',
-      direction: 'outbound',
-      subject: emailSubject,
-      notes: emailBody,
-      outcome: 'AI-drafted chase email',
-    });
-    setShowEmailDraft(false);
-    setEmailSubject('');
-    setEmailBody('');
-  }
-
-  async function handleQuickAction(actionType) {
-    let phone = po?.facility?.billing_contact_phone || po?.facility?.phone;
-    let email = po?.facility?.billing_email;
-
-    if (actionType === 'call' && phone) {
-      window.location.href = `tel:${phone}`;
-    } else if (actionType === 'email' && email) {
-      window.location.href = `mailto:${email}`;
-    } else if (actionType === 'text' && phone) {
-      window.location.href = `sms:${phone}`;
-    }
-
-    await createChase.mutateAsync({
-      case_id: po.case_id,
-      po_id: po.id,
-      facility_id: po.facility_id,
-      chase_type: actionType === 'call' ? 'follow_up_call' : actionType === 'email' ? 'follow_up_email' : 'follow_up_text',
-      action_taken: actionType,
-    });
-  }
 
   if (isLoading) {
     return (
@@ -280,37 +173,13 @@ export default function PODetail() {
         </Card>
       )}
 
-      {/* Quick Actions */}
+      {/* Chase PO */}
       {po.status !== 'paid' && (
-        <Card className="mb-4">
-          <h3 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Quick Actions</h3>
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleQuickAction('call')}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-50 py-3 text-sm font-medium text-green-700"
-            >
-              <Phone className="h-4 w-4" /> Call
-            </button>
-            <button
-              onClick={() => handleQuickAction('email')}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-50 py-3 text-sm font-medium text-blue-700"
-            >
-              <Mail className="h-4 w-4" /> Email
-            </button>
-            <button
-              onClick={() => handleQuickAction('text')}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-50 py-3 text-sm font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
-            >
-              <MessageSquare className="h-4 w-4" /> Text
-            </button>
-            <button
-              onClick={() => setShowEmailDraft(true)}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-amber-50 py-3 text-sm font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
-            >
-              <Wand2 className="h-4 w-4" /> Draft Email
-            </button>
-          </div>
-        </Card>
+        <div className="mb-4">
+          <Button fullWidth onClick={() => setShowChase(true)}>
+            Chase PO
+          </Button>
+        </div>
       )}
 
       {/* Chase Timeline */}
@@ -327,7 +196,7 @@ export default function PODetail() {
           </Button>
         )}
         {['requested', 'pending'].includes(po.status) && (
-          <Button fullWidth onClick={() => setShowChaseForm(true)}>
+          <Button fullWidth onClick={() => setShowChase(true)}>
             Log Follow-Up
           </Button>
         )}
@@ -359,100 +228,18 @@ export default function PODetail() {
         )}
       </div>
 
-      {/* Chase Entry Bottom Sheet */}
-      <BottomSheet isOpen={showChaseForm} onClose={() => setShowChaseForm(false)} title="Log Follow-Up">
-        <form onSubmit={handleSubmitChase} className="flex flex-col gap-3">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Chase Type</label>
-            <select
-              value={chaseForm.chase_type}
-              onChange={(e) => setChaseForm((p) => ({ ...p, chase_type: e.target.value }))}
-              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            >
-              <option value="follow_up_call">Follow-Up Call</option>
-              <option value="follow_up_email">Follow-Up Email</option>
-              <option value="follow_up_text">Follow-Up Text</option>
-              <option value="escalation">Escalation</option>
-              <option value="note">Note</option>
-            </select>
-          </div>
-
-          <ContactAutocomplete
-            label="Contact"
-            value={chaseForm.contact_name}
-            facilityId={po.facility_id}
-            placeholder="Search or type contact name"
-            onSelect={(contact) =>
-              setChaseForm((p) => ({
-                ...p,
-                contact_name: contact.full_name,
-                contact_role: contact.role || '',
-                contact_phone: contact.phone || '',
-                contact_email: contact.email || '',
-              }))
-            }
-            onTextChange={(text) =>
-              setChaseForm((p) => ({ ...p, contact_name: text }))
-            }
-          />
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Outcome</label>
-            <textarea
-              rows={2}
-              value={chaseForm.outcome}
-              onChange={(e) => setChaseForm((p) => ({ ...p, outcome: e.target.value }))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              placeholder="What happened?"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Promised Date<InfoTooltip text="Record when the facility promises the PO will be ready. If this date passes without a PO, you'll get an automatic notification." /></label>
-              <input
-                type="date"
-                value={chaseForm.promised_date}
-                onChange={(e) => setChaseForm((p) => ({ ...p, promised_date: e.target.value }))}
-                className="min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Next Follow-Up</label>
-              <input
-                type="date"
-                value={chaseForm.next_follow_up}
-                onChange={(e) => setChaseForm((p) => ({ ...p, next_follow_up: e.target.value }))}
-                className="min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Action Taken</label>
-            <div className="flex gap-2">
-              {['call', 'email', 'text', 'in_person', 'note'].map((a) => (
-                <button
-                  key={a}
-                  type="button"
-                  onClick={() => setChaseForm((p) => ({ ...p, action_taken: a }))}
-                  className={`rounded-lg px-3 py-2 text-xs font-medium ${
-                    chaseForm.action_taken === a
-                      ? 'bg-brand-800 text-white'
-                      : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  {a.replace('_', ' ')}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <Button type="submit" fullWidth loading={createChase.isPending}>
-            Save Entry
-          </Button>
-        </form>
-      </BottomSheet>
+      {/* Chase PO Bottom Sheet */}
+      <ChaseBottomSheet
+        isOpen={showChase}
+        onClose={() => setShowChase(false)}
+        caseId={po.case_id}
+        caseNumber={po.case?.case_number}
+        facilityName={po.case?.facility?.name || po.facility?.name}
+        facilityPhone={po.facility?.billing_phone || po.facility?.phone || po.case?.facility?.billing_phone || po.case?.facility?.phone}
+        facilityEmail={po.case?.distributor?.billing_email || po.distributor?.billing_email}
+        facilityId={po.facility_id}
+        poId={po.id}
+      />
 
       {/* Mark Received Sheet */}
       <BottomSheet isOpen={showReceived} onClose={() => setShowReceived(false)} title="Mark PO Received">
@@ -500,68 +287,6 @@ export default function PODetail() {
           <Button fullWidth loading={updatePO.isPending} onClick={handleMarkPaid}>
             Confirm Paid
           </Button>
-        </div>
-      </BottomSheet>
-
-      {/* Draft Email Sheet */}
-      <BottomSheet isOpen={showEmailDraft} onClose={() => setShowEmailDraft(false)} title="Draft Chase Email">
-        <div className="flex flex-col gap-3">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Tone</label>
-            <div className="flex gap-2">
-              {['polite', 'firm', 'urgent'].map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setEmailTone(t)}
-                  className={`rounded-lg px-3 py-2 text-xs font-medium capitalize ${
-                    emailTone === t
-                      ? 'bg-brand-800 text-white'
-                      : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <Button fullWidth loading={draftEmail.isPending} onClick={handleGenerateEmail}>
-            <Wand2 className="h-4 w-4" /> Generate
-          </Button>
-
-          {(emailSubject || emailBody) && (
-            <>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Subject</label>
-                <input
-                  value={emailSubject}
-                  onChange={(e) => setEmailSubject(e.target.value)}
-                  className="min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Body</label>
-                <textarea
-                  rows={8}
-                  value={emailBody}
-                  onChange={(e) => setEmailBody(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button variant="secondary" fullWidth onClick={handleCopyEmail}>
-                  <Copy className="h-4 w-4" /> {copied ? 'Copied!' : 'Copy'}
-                </Button>
-                <Button variant="secondary" fullWidth onClick={handleSendViaEmail}>
-                  <ExternalLink className="h-4 w-4" /> Send via Email
-                </Button>
-                <Button fullWidth loading={createComm.isPending} onClick={handleSaveAsNote}>
-                  <Save className="h-4 w-4" /> Save as Note
-                </Button>
-              </div>
-            </>
-          )}
         </div>
       </BottomSheet>
 

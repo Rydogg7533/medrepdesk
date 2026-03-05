@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ChevronRight, Send, Phone, Mail, MessageSquare } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Send } from 'lucide-react';
 import { useBillSheetItems } from '@/hooks/useBillSheetItems';
-import { useChaseLog, useCreateChaseEntry } from '@/hooks/useChaseLog';
+import { useChaseLog } from '@/hooks/useChaseLog';
 import { useCasePOs, useCreatePO } from '@/hooks/usePOs';
 import { useSendPOEmail } from '@/hooks/usePOEmail';
 import { usePoEmailLog } from '@/hooks/usePoEmailLog';
@@ -13,6 +13,7 @@ import Button from '@/components/ui/Button';
 import Skeleton from '@/components/ui/Skeleton';
 import BottomSheet from '@/components/ui/BottomSheet';
 import POSentConfirmation from '@/components/features/POSentConfirmation';
+import ChaseBottomSheet from '@/components/features/ChaseBottomSheet';
 import { formatCurrency, formatDate, formatRelativeTime } from '@/utils/formatters';
 
 export default function BillSheetDetail() {
@@ -25,7 +26,6 @@ export default function BillSheetDetail() {
   const { data: chaseEntries = [] } = useChaseLog(caseId);
   const { data: casePOs = [], isLoading: posLoading } = useCasePOs(caseId);
   const createPO = useCreatePO();
-  const createChase = useCreateChaseEntry();
   const sendPOEmail = useSendPOEmail();
 
   const [showRecordPO, setShowRecordPO] = useState(false);
@@ -69,29 +69,6 @@ export default function BillSheetDetail() {
   const chaseCount = chaseEntries.filter((e) => e.chase_type !== 'bill_sheet_submitted').length;
   const lastChase = chaseEntries.find((e) => e.chase_type !== 'bill_sheet_submitted');
   const promisedEntry = chaseEntries.find((e) => e.promised_date && !e.follow_up_done);
-
-  async function handleChaseAction(actionType) {
-    const facility = caseInfo?.facility;
-    const phone = facility?.billing_phone || facility?.phone;
-    const email = caseInfo?.distributor?.billing_email;
-
-    if (actionType === 'call' && phone) {
-      window.location.href = `tel:${phone}`;
-    } else if (actionType === 'email' && email) {
-      window.location.href = `mailto:${email}`;
-    } else if (actionType === 'text' && phone) {
-      window.location.href = `sms:${phone}`;
-    }
-
-    await createChase.mutateAsync({
-      case_id: caseId,
-      facility_id: caseInfo?.facility_id,
-      chase_type: actionType === 'call' ? 'follow_up_call' : actionType === 'email' ? 'follow_up_email' : 'follow_up_text',
-      action_taken: actionType,
-    });
-    setShowChase(false);
-    toast({ message: 'Follow-up logged', type: 'success' });
-  }
 
   function handleRecordPO(e) {
     e.preventDefault();
@@ -388,47 +365,16 @@ export default function BillSheetDetail() {
       {/* State 3: Archived (PO sent) → no action buttons, view-only */}
 
       {/* Chase PO Bottom Sheet */}
-      <BottomSheet
+      <ChaseBottomSheet
         isOpen={showChase}
         onClose={() => setShowChase(false)}
-        title={`Chase PO — ${caseInfo?.case_number || ''}`}
-      >
-        <div className="flex flex-col gap-3">
-          {caseInfo?.facility && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">{caseInfo.facility.name}</p>
-          )}
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleChaseAction('call')}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-50 py-3 text-sm font-medium text-green-700 dark:bg-green-900/30 dark:text-green-300"
-            >
-              <Phone className="h-4 w-4" /> Call
-            </button>
-            <button
-              onClick={() => handleChaseAction('email')}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-50 py-3 text-sm font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-            >
-              <Mail className="h-4 w-4" /> Email
-            </button>
-            <button
-              onClick={() => handleChaseAction('text')}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-50 py-3 text-sm font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
-            >
-              <MessageSquare className="h-4 w-4" /> Text
-            </button>
-          </div>
-          <Button
-            variant="secondary"
-            fullWidth
-            onClick={() => {
-              setShowChase(false);
-              navigate(`/cases/${caseId}`);
-            }}
-          >
-            Open Case Detail
-          </Button>
-        </div>
-      </BottomSheet>
+        caseId={caseId}
+        caseNumber={caseInfo?.case_number}
+        facilityName={caseInfo?.facility?.name}
+        facilityPhone={caseInfo?.facility?.billing_phone || caseInfo?.facility?.phone}
+        facilityEmail={caseInfo?.distributor?.billing_email}
+        facilityId={caseInfo?.facility_id}
+      />
 
       {/* Record PO Bottom Sheet */}
       <BottomSheet isOpen={showRecordPO} onClose={() => setShowRecordPO(false)} title="Record PO Received">
