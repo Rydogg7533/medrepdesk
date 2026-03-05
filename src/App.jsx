@@ -47,6 +47,7 @@ import JoinReferral from '@/pages/JoinReferral';
 import Landing from '@/pages/Landing';
 import MyDistributor from '@/pages/MyDistributor';
 import BillSheetForm from '@/pages/BillSheetForm';
+import BillSheetDetail from '@/pages/BillSheetDetail';
 import ActionItems from '@/pages/ActionItems';
 import PayPeriodSummary from '@/pages/PayPeriodSummary';
 import Onboarding from '@/pages/Onboarding';
@@ -169,6 +170,7 @@ function App() {
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/my-distributor" element={<MyDistributor />} />
               <Route path="/bill-sheet" element={<BillSheetForm />} />
+              <Route path="/bill-sheets/:caseId" element={<BillSheetDetail />} />
               <Route path="/action-items" element={<ActionItems />} />
             </Route>
           </Routes>

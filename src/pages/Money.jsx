@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DollarSign, FileText, Calendar, ChevronRight } from 'lucide-react';
+import { DollarSign, FileText, Calendar, ChevronRight, ClipboardList } from 'lucide-react';
 import clsx from 'clsx';
 import { usePOs } from '@/hooks/usePOs';
 import { useCommissions } from '@/hooks/useCommissions';
 import { usePayPeriods, useEnsurePayPeriods } from '@/hooks/usePayPeriods';
+import { useBillSheets } from '@/hooks/useBillSheets';
 import { useAuth } from '@/context/AuthContext';
 import { useDistributor } from '@/hooks/useDistributors';
 import Card from '@/components/ui/Card';
@@ -12,12 +13,13 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
 import Skeleton from '@/components/ui/Skeleton';
 import InfoTooltip from '@/components/ui/InfoTooltip';
-import { formatCurrency, formatDate } from '@/utils/formatters';
+import { formatCurrency, formatDate, formatRelativeTime } from '@/utils/formatters';
 
 const tabs = [
   { key: 'pos', label: 'Purchase Orders' },
   { key: 'commissions', label: 'Commissions' },
   { key: 'pay_periods', label: 'Pay Periods' },
+  { key: 'bill_sheets', label: 'Bill Sheets' },
 ];
 
 const PO_FILTERS = [
@@ -40,6 +42,7 @@ export default function Money() {
   const [activeTab, setActiveTab] = useState('pos');
   const [poFilter, setPOFilter] = useState('all');
   const [commFilter, setCommFilter] = useState('all');
+  const [billSheetView, setBillSheetView] = useState('active');
   const navigate = useNavigate();
 
   const { account } = useAuth();
@@ -47,6 +50,7 @@ export default function Money() {
   const { data: distributor } = useDistributor(distributorId);
   const paySchedule = distributor?.pay_schedule;
 
+  const { data: allBillSheets = [], isLoading: billSheetsLoading } = useBillSheets();
   const { data: allPOs = [], isLoading: posLoading } = usePOs();
   const { data: allCommissions = [], isLoading: commsLoading } = useCommissions();
   const { data: allPayPeriods = [], isLoading: periodsLoading } = usePayPeriods(distributorId);
@@ -262,6 +266,100 @@ export default function Money() {
               ))}
             </div>
           )}
+        </>
+      )}
+
+      {activeTab === 'bill_sheets' && (
+        <>
+          {/* Active / Archived toggle */}
+          <div className="mb-3 flex gap-2">
+            {['active', 'archived'].map((view) => (
+              <button
+                key={view}
+                onClick={() => setBillSheetView(view)}
+                className={clsx(
+                  'shrink-0 rounded-full px-3 py-1.5 text-xs font-medium capitalize',
+                  billSheetView === view ? 'bg-brand-800 text-white' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                )}
+              >
+                {view}
+              </button>
+            ))}
+          </div>
+
+          {(() => {
+            const filtered = allBillSheets.filter((bs) =>
+              billSheetView === 'active' ? !bs.isArchived : bs.isArchived
+            );
+            const totalValue = filtered.reduce((sum, bs) => sum + bs.totalValue, 0);
+
+            return (
+              <>
+                {/* Summary */}
+                <Card className="mb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {billSheetView === 'active' ? 'Active' : 'Archived'} Bill Sheets
+                      </p>
+                      <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{formatCurrency(totalValue)}</p>
+                    </div>
+                    <div className="text-right text-xs text-gray-500 dark:text-gray-400">
+                      {filtered.length} sheet{filtered.length !== 1 ? 's' : ''}
+                    </div>
+                  </div>
+                </Card>
+
+                {billSheetsLoading ? (
+                  <div className="space-y-3">
+                    <Skeleton variant="card" />
+                    <Skeleton variant="card" />
+                  </div>
+                ) : filtered.length === 0 ? (
+                  <EmptyState
+                    icon={ClipboardList}
+                    title={`No ${billSheetView === 'active' ? 'Active' : 'Archived'} Bill Sheets`}
+                    description="Bill sheets will appear here after you create them for cases"
+                  />
+                ) : (
+                  <div className="space-y-2">
+                    {filtered.map((bs) => (
+                      <Card
+                        key={bs.caseId}
+                        className="cursor-pointer active:bg-gray-50 dark:active:bg-gray-700"
+                        onClick={() => navigate(`/bill-sheets/${bs.caseId}`)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                              {bs.caseNumber || 'No case number'}
+                              {bs.surgeon && <span className="ml-1 text-xs text-gray-400 dark:text-gray-500">· {bs.surgeon}</span>}
+                            </p>
+                            {bs.facility && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400">{bs.facility}</p>
+                            )}
+                            <div className="mt-1 flex items-center gap-3">
+                              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                {formatCurrency(bs.totalValue)}
+                              </span>
+                              <span className="text-xs text-gray-400 dark:text-gray-500">
+                                {formatDate(bs.scheduledDate)}
+                              </span>
+                            </div>
+                            <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+                              <span>{bs.items.length} item{bs.items.length !== 1 ? 's' : ''}</span>
+                              <span>· submitted {formatRelativeTime(bs.submittedAt)}</span>
+                            </div>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-gray-300 dark:text-gray-600" />
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </>
       )}
 
