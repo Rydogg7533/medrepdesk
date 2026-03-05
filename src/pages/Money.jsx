@@ -353,6 +353,22 @@ export default function Money() {
                           </div>
                           <ChevronRight className="h-4 w-4 text-gray-300 dark:text-gray-600" />
                         </div>
+                        {!bs.isArchived && (
+                          <div className="mt-3 flex gap-2 border-t border-gray-100 pt-3 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => navigate(`/cases/${bs.caseId}`)}
+                              className="flex-1 rounded-lg bg-gray-100 py-2 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+                            >
+                              Chase PO
+                            </button>
+                            <button
+                              onClick={() => navigate(`/bill-sheets/${bs.caseId}?record=1`)}
+                              className="flex-1 rounded-lg bg-brand-800 py-2 text-xs font-medium text-white"
+                            >
+                              Record PO Received
+                            </button>
+                          </div>
+                        )}
                       </Card>
                     ))}
                   </div>
