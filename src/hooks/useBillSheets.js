@@ -34,18 +34,27 @@ export function useBillSheets() {
         }
       }
 
-      // Fetch PO statuses for active/archived determination
+      // Fetch POs for active/archived determination and hasPO state
       const { data: pos, error: poError } = await supabase
         .from('purchase_orders')
-        .select('case_id, status')
+        .select('id, case_id, status, po_number, amount, received_date, po_email_sent')
         .eq('account_id', accountId);
       if (poError) throw poError;
 
-      // Build a set of case IDs that have a PO with received/processing/paid
+      // Archived = PO received AND sent to manufacturer (po_email_sent = true)
+      // hasPO = PO exists with received/processing/paid but NOT yet sent
       const archivedCaseIds = new Set();
+      const hasPOCaseIds = new Set();
+      const casePoMap = {};
       for (const po of pos) {
         if (['received', 'processing', 'paid'].includes(po.status)) {
-          archivedCaseIds.add(po.case_id);
+          if (po.po_email_sent) {
+            archivedCaseIds.add(po.case_id);
+          }
+          hasPOCaseIds.add(po.case_id);
+          if (!casePoMap[po.case_id]) {
+            casePoMap[po.case_id] = po;
+          }
         }
       }
 
@@ -70,6 +79,9 @@ export function useBillSheets() {
             items: [],
             totalValue: 0,
             totalCommission: 0,
+            hasPO: hasPOCaseIds.has(cid),
+            po: casePoMap[cid] || null,
+            poSentToMfr: archivedCaseIds.has(cid),
             isArchived: archivedCaseIds.has(cid),
           };
         }

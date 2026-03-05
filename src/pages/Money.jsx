@@ -454,7 +454,8 @@ export default function Money() {
                           </div>
                           <ChevronRight className="h-4 w-4 text-gray-300 dark:text-gray-600" />
                         </div>
-                        {!bs.isArchived && (
+                        {/* State 1: No PO → Chase + Record */}
+                        {!bs.hasPO && !bs.isArchived && (
                           <div className="mt-3 flex gap-2 border-t border-gray-100 pt-3 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => setChaseTarget(bs)}
@@ -467,6 +468,17 @@ export default function Money() {
                               className="flex-1 rounded-lg bg-brand-800 py-2 text-xs font-medium text-white"
                             >
                               Record PO Received
+                            </button>
+                          </div>
+                        )}
+                        {/* State 2: PO received but not sent to mfr → Send to Manufacturer */}
+                        {bs.hasPO && !bs.poSentToMfr && bs.manufacturer?.billing_email && (
+                          <div className="mt-3 flex border-t border-gray-100 pt-3 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => { setSendManufacturer(bs.manufacturer); setCreatedPO(bs.po); setShowSendPrompt(true); }}
+                              className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-brand-800 py-2 text-xs font-medium text-white"
+                            >
+                              <Send className="h-3.5 w-3.5" /> Send to Manufacturer
                             </button>
                           </div>
                         )}

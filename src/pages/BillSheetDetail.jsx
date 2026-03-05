@@ -11,7 +11,7 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Skeleton from '@/components/ui/Skeleton';
 import BottomSheet from '@/components/ui/BottomSheet';
-import { formatCurrency, formatDate } from '@/utils/formatters';
+import { formatCurrency, formatDate, formatRelativeTime } from '@/utils/formatters';
 
 export default function BillSheetDetail() {
   const { caseId } = useParams();
@@ -38,6 +38,7 @@ export default function BillSheetDetail() {
   const submissionEntry = chaseEntries.find((e) => e.chase_type === 'bill_sheet_submitted');
   const receivedPO = casePOs.find((po) => ['received', 'processing', 'paid'].includes(po.status));
   const hasPO = !!receivedPO;
+  const poSentToMfr = !!receivedPO?.po_email_sent;
 
   // Auto-open Record PO sheet when navigated with ?record=1
   useEffect(() => {
@@ -47,12 +48,23 @@ export default function BillSheetDetail() {
   }, [searchParams, posLoading, hasPO]);
 
   const caseInfo = items[0]?.case;
+  const manufacturer = items[0]?.manufacturer;
 
   const totalValue = items.reduce((sum, item) => sum + (item.quantity || 0) * (item.unit_price || 0), 0);
   const totalCommission = items.reduce((sum, item) => {
     const lineTotal = (item.quantity || 0) * (item.unit_price || 0);
     return sum + lineTotal * ((item.commission_rate || 0) / 100);
   }, 0);
+
+  // Days since bill sheet submitted
+  const daysSinceSubmitted = submissionEntry
+    ? Math.floor((Date.now() - new Date(submissionEntry.created_at).getTime()) / 86400000)
+    : null;
+
+  // Chase log summary
+  const chaseCount = chaseEntries.filter((e) => e.chase_type !== 'bill_sheet_submitted').length;
+  const lastChase = chaseEntries.find((e) => e.chase_type !== 'bill_sheet_submitted');
+  const promisedEntry = chaseEntries.find((e) => e.promised_date && !e.follow_up_done);
 
   async function handleRecordPO(e) {
     e.preventDefault();
@@ -69,7 +81,6 @@ export default function BillSheetDetail() {
         distributor_id: caseInfo?.distributor_id || null,
       });
 
-      // Log chase entry for PO received
       await createChase.mutateAsync({
         case_id: caseId,
         po_id: po.id,
@@ -80,9 +91,7 @@ export default function BillSheetDetail() {
       setCreatedPO(po);
       setShowRecordPO(false);
 
-      // Check if manufacturer has billing email for send prompt
-      const mfr = items[0]?.manufacturer;
-      if (mfr?.billing_email) {
+      if (manufacturer?.billing_email) {
         setShowSendPrompt(true);
       } else {
         toast({ message: 'PO recorded successfully', type: 'success' });
@@ -93,14 +102,14 @@ export default function BillSheetDetail() {
   }
 
   async function handleSendToManufacturer() {
-    if (!createdPO) return;
+    const poToSend = createdPO || receivedPO;
+    if (!poToSend) return;
     try {
-      const mfr = items[0]?.manufacturer;
       await sendPOEmail.mutateAsync({
         po: {
-          ...createdPO,
+          ...poToSend,
           facility: caseInfo?.facility,
-          manufacturer: mfr,
+          manufacturer,
         },
         caseData: caseInfo,
       });
@@ -118,7 +127,7 @@ export default function BillSheetDetail() {
 
   if (itemsLoading) {
     return (
-      <div className="space-y-4 p-4">
+      <div className="space-y-4 p-4 pb-28">
         <Skeleton className="h-8 w-48" />
         <Skeleton variant="card" />
         <Skeleton variant="card" />
@@ -127,38 +136,73 @@ export default function BillSheetDetail() {
   }
 
   if (items.length === 0) {
-    return <div className="p-4 text-center text-gray-500 dark:text-gray-400">Bill sheet not found</div>;
+    return <div className="p-4 pb-28 text-center text-gray-500 dark:text-gray-400">Bill sheet not found</div>;
   }
 
-  const manufacturer = items[0]?.manufacturer;
-
   return (
-    <div className="p-4">
-      {/* Header */}
+    <div className="p-4 pb-28">
+      {/* Header — back arrow + case number */}
       <div className="mb-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="min-h-touch p-1">
           <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </button>
-        <p className="text-lg font-bold text-gray-900 dark:text-gray-100">Bill Sheet</p>
+        <div>
+          <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
+            {caseInfo?.case_number || 'Bill Sheet'}
+          </p>
+        </div>
       </div>
 
       {/* Case Info */}
       <Card className="mb-4">
         <div className="space-y-3">
-          <InfoRow label="Case" value={caseInfo?.case_number} />
           <InfoRow label="Surgeon" value={caseInfo?.surgeon?.full_name} />
           <InfoRow label="Facility" value={caseInfo?.facility?.name} />
           <InfoRow label="Surgery Date" value={formatDate(caseInfo?.scheduled_date)} />
-          <InfoRow label="Submitted" value={submissionEntry ? formatDate(submissionEntry.created_at) : '—'} />
         </div>
       </Card>
 
-      {/* Status */}
+      {/* Submission info */}
       <Card className="mb-4">
-        {hasPO ? (
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Bill Sheet Submitted</p>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              {submissionEntry ? formatDate(submissionEntry.created_at) : '—'}
+            </p>
+          </div>
+          {daysSinceSubmitted != null && daysSinceSubmitted > 0 && (
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              {daysSinceSubmitted} day{daysSinceSubmitted !== 1 ? 's' : ''} ago
+            </span>
+          )}
+        </div>
+      </Card>
+
+      {/* Status indicator */}
+      <Card className="mb-4">
+        {poSentToMfr ? (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                Sent to Manufacturer
+              </span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {formatDate(receivedPO.received_date)}
+              </span>
+            </div>
+            <button
+              onClick={() => navigate(`/po/${receivedPO.id}`)}
+              className="flex items-center gap-1 text-sm font-medium text-brand-800 dark:text-brand-400"
+            >
+              PO #{receivedPO.po_number || '—'}
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        ) : hasPO ? (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
                 PO Received
               </span>
               <span className="text-sm text-gray-500 dark:text-gray-400">
@@ -169,12 +213,12 @@ export default function BillSheetDetail() {
               onClick={() => navigate(`/po/${receivedPO.id}`)}
               className="flex items-center gap-1 text-sm font-medium text-brand-800 dark:text-brand-400"
             >
-              {receivedPO.po_number ? `PO #${receivedPO.po_number}` : 'View PO'}
+              PO #{receivedPO.po_number || '—'}
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
         ) : (
-          <div className="flex items-center justify-between">
+          <div className="flex items-center">
             <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
               Awaiting PO
             </span>
@@ -210,12 +254,8 @@ export default function BillSheetDetail() {
                   </p>
                 </div>
                 <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
-                  <span>
-                    {item.quantity} × {formatCurrency(item.unit_price)}
-                  </span>
-                  <span>
-                    {item.commission_rate}% comm → {formatCurrency(commAmount)}
-                  </span>
+                  <span>{item.quantity} × {formatCurrency(item.unit_price)}</span>
+                  <span>{item.commission_rate}% comm → {formatCurrency(commAmount)}</span>
                 </div>
               </div>
             </Card>
@@ -237,7 +277,33 @@ export default function BillSheetDetail() {
         </div>
       </Card>
 
-      {/* Actions */}
+      {/* Chase Log Summary */}
+      {chaseCount > 0 && (
+        <Card className="mb-4">
+          <h3 className="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Chase Activity</h3>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500 dark:text-gray-400">Follow-ups</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">{chaseCount}</span>
+            </div>
+            {lastChase && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Last activity</span>
+                <span className="text-gray-700 dark:text-gray-300">{formatRelativeTime(lastChase.created_at)}</span>
+              </div>
+            )}
+            {promisedEntry && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Promised date</span>
+                <span className="font-medium text-amber-600 dark:text-amber-400">{formatDate(promisedEntry.promised_date)}</span>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+
+      {/* Action Buttons — contextual based on state */}
+      {/* State 1: No PO yet → Chase PO + Record PO Received */}
       {!hasPO && (
         <div className="flex gap-2">
           <Button variant="outline" className="flex-1" onClick={() => navigate(`/cases/${caseId}`)}>
@@ -248,6 +314,15 @@ export default function BillSheetDetail() {
           </Button>
         </div>
       )}
+
+      {/* State 2: PO received but not sent to manufacturer → Send to Manufacturer */}
+      {hasPO && !poSentToMfr && manufacturer?.billing_email && (
+        <Button fullWidth onClick={() => setShowSendPrompt(true)}>
+          <Send className="h-4 w-4" /> Send to Manufacturer
+        </Button>
+      )}
+
+      {/* State 3: Archived (PO sent) → no action buttons, view-only */}
 
       {/* Record PO Bottom Sheet */}
       <BottomSheet isOpen={showRecordPO} onClose={() => setShowRecordPO(false)} title="Record PO Received">
