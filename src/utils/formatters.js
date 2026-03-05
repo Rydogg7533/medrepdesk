@@ -5,6 +5,12 @@ export function formatCurrency(amount) {
 
 export function formatDate(date) {
   if (!date) return '—';
+  // For date-only strings (YYYY-MM-DD), parse parts directly to avoid UTC timezone shift.
+  // new Date("2026-03-10") parses as UTC midnight, which rolls back a day in US timezones.
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [y, m, d] = date.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
