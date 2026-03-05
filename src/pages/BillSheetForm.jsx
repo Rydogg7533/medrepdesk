@@ -8,6 +8,7 @@ import { useManufacturers } from '@/hooks/useManufacturers';
 import { useCreateBillSheetItems } from '@/hooks/useBillSheetItems';
 import { useCreateCommission } from '@/hooks/useCommissions';
 import { useCreateChaseEntry } from '@/hooks/useChaseLog';
+import { useToast } from '@/components/ui/Toast';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import SearchableSelect from '@/components/ui/SearchableSelect';
@@ -39,6 +40,7 @@ export default function BillSheetForm() {
   const updateCase = useUpdateCase();
   const createCommission = useCreateCommission();
   const createChase = useCreateChaseEntry();
+  const toast = useToast();
 
   const [items, setItems] = useState([emptyItem()]);
   const [serverError, setServerError] = useState('');
@@ -139,8 +141,9 @@ export default function BillSheetForm() {
         facility_id: caseData?.facility_id,
       });
 
-      // 5. Navigate to PO form
-      navigate(`/po/new?caseId=${caseId}`, { replace: true });
+      // 5. Done — back to dashboard
+      toast({ message: 'Bill sheet submitted', type: 'success' });
+      navigate('/', { replace: true });
     } catch (err) {
       setServerError(err.message);
       setSubmitting(false);
