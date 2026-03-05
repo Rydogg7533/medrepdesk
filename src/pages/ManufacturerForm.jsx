@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import DOMPurify from 'dompurify';
+import { sanitizeText } from '@/utils/sanitize';
 import { useManufacturer, useManufacturers, useCreateManufacturer, useUpdateManufacturer } from '@/hooks/useManufacturers';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -86,18 +86,16 @@ export default function ManufacturerForm() {
 
     if (duplicateMatch?.isActive) return;
 
-    const sanitize = (v) => v ? DOMPurify.sanitize(v.trim()) : null;
-
     const payload = {
-      name: DOMPurify.sanitize(form.name.trim()),
-      phone: sanitize(form.phone),
-      address: sanitize(form.address),
-      billing_email: sanitize(form.billing_email),
-      billing_email_cc: sanitize(form.billing_email_cc),
-      billing_contact_name: sanitize(form.billing_contact_name),
-      billing_contact_phone: sanitize(form.billing_contact_phone),
+      name: sanitizeText(form.name.trim()),
+      phone: sanitizeText(form.phone),
+      address: sanitizeText(form.address),
+      billing_email: sanitizeText(form.billing_email),
+      billing_email_cc: sanitizeText(form.billing_email_cc),
+      billing_contact_name: sanitizeText(form.billing_contact_name),
+      billing_contact_phone: sanitizeText(form.billing_contact_phone),
       is_active: form.is_active,
-      notes: sanitize(form.notes),
+      notes: sanitizeText(form.notes),
     };
 
     try {

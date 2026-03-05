@@ -1,5 +1,5 @@
 -- NOTIFICATIONS
-CREATE TABLE notifications (
+CREATE TABLE IF NOT EXISTS notifications (
   id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id                  uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   user_id                     uuid REFERENCES users(id) ON DELETE CASCADE,
@@ -18,7 +18,7 @@ CREATE TABLE notifications (
 );
 
 -- PO EMAIL LOGS
-CREATE TABLE po_email_logs (
+CREATE TABLE IF NOT EXISTS po_email_logs (
   id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id                  uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   po_id                       uuid REFERENCES purchase_orders(id),
@@ -35,7 +35,7 @@ CREATE TABLE po_email_logs (
 );
 
 -- CASE DOCUMENTS
-CREATE TABLE case_documents (
+CREATE TABLE IF NOT EXISTS case_documents (
   id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id                  uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   case_id                     uuid NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
@@ -52,7 +52,7 @@ CREATE TABLE case_documents (
 );
 
 -- AI EXTRACTIONS
-CREATE TABLE ai_extractions (
+CREATE TABLE IF NOT EXISTS ai_extractions (
   id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id                  uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   extraction_type             text NOT NULL CHECK (extraction_type IN (
@@ -68,7 +68,7 @@ CREATE TABLE ai_extractions (
 );
 
 -- PUSH SUBSCRIPTIONS
-CREATE TABLE push_subscriptions (
+CREATE TABLE IF NOT EXISTS push_subscriptions (
   id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id                     uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   subscription                jsonb NOT NULL,
@@ -77,7 +77,7 @@ CREATE TABLE push_subscriptions (
 );
 
 -- AUDIT LOGS
-CREATE TABLE audit_logs (
+CREATE TABLE IF NOT EXISTS audit_logs (
   id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id                  uuid REFERENCES accounts(id),
   user_id                     uuid REFERENCES users(id),

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { TABLES } from '@/lib/tables';
 
 /** Fetches only active distributor products (for dropdowns) */
 export function useDistributorProducts(distributorId) {
@@ -11,7 +12,7 @@ export function useDistributorProducts(distributorId) {
     queryKey: ['distributor_products', distributorId, 'active'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('distributor_products')
+        .from(TABLES.DISTRIBUTOR_PRODUCTS)
         .select('*')
         .eq('distributor_id', distributorId)
         .eq('account_id', accountId)
@@ -33,7 +34,7 @@ export function useAllDistributorProducts(distributorId) {
     queryKey: ['distributor_products', distributorId, 'all'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('distributor_products')
+        .from(TABLES.DISTRIBUTOR_PRODUCTS)
         .select('*')
         .eq('distributor_id', distributorId)
         .eq('account_id', accountId)
@@ -54,7 +55,7 @@ export function useUpsertDistributorProducts() {
     mutationFn: async ({ distributorId, products }) => {
       // 1. Delete all existing products for this distributor (clean slate)
       const { error: deleteError } = await supabase
-        .from('distributor_products')
+        .from(TABLES.DISTRIBUTOR_PRODUCTS)
         .delete()
         .eq('distributor_id', distributorId)
         .eq('account_id', accountId);
@@ -90,7 +91,7 @@ export function useUpsertDistributorProducts() {
       // 3. Insert all checked products
       if (toInsert.length > 0) {
         const { error } = await supabase
-          .from('distributor_products')
+          .from(TABLES.DISTRIBUTOR_PRODUCTS)
           .insert(toInsert)
           .select();
         if (error) throw error;

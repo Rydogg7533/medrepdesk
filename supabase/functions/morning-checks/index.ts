@@ -81,7 +81,23 @@ serve(async (req: Request) => {
 
         if (!users) continue;
 
+        // Dedup: find cases that already have an escalation notification in the last 7 days
+        const stuckCaseIds = stuckCases.map((c: { id: string }) => c.id);
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const { data: existingNotifs } = await supabase
+          .from("notifications")
+          .select("related_id")
+          .eq("account_id", account.id)
+          .eq("type", "escalation_recommended")
+          .in("related_id", stuckCaseIds)
+          .gte("created_at", sevenDaysAgo.toISOString());
+
+        const alreadyNotified = new Set((existingNotifs || []).map((n: { related_id: string }) => n.related_id));
+
         for (const c of stuckCases) {
+          if (alreadyNotified.has(c.id)) continue;
+
           const targetUsers = c.assigned_to
             ? users.filter((u: { id: string }) => u.id === c.assigned_to)
             : users;

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { TABLES } from '@/lib/tables';
 
 export function useCommunications(filters = {}) {
   const { account } = useAuth();
@@ -10,7 +11,7 @@ export function useCommunications(filters = {}) {
     queryKey: ['communications', accountId, filters],
     queryFn: async () => {
       let query = supabase
-        .from('communications')
+        .from(TABLES.COMMUNICATIONS)
         .select('*, case:cases(case_number)')
         .eq('account_id', accountId)
         .order('created_at', { ascending: false });
@@ -35,7 +36,7 @@ export function useCaseCommunications(caseId) {
     queryKey: ['communications', 'case', caseId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('communications')
+        .from(TABLES.COMMUNICATIONS)
         .select('*')
         .eq('case_id', caseId)
         .eq('account_id', accountId)
@@ -55,7 +56,7 @@ export function useCreateCommunication() {
   return useMutation({
     mutationFn: async (values) => {
       const { data, error } = await supabase
-        .from('communications')
+        .from(TABLES.COMMUNICATIONS)
         .insert({ ...values, account_id: accountId, created_by: user?.id })
         .select()
         .single();
@@ -75,7 +76,7 @@ export function useUpdateCommunication() {
   return useMutation({
     mutationFn: async ({ id, ...values }) => {
       const { data, error } = await supabase
-        .from('communications')
+        .from(TABLES.COMMUNICATIONS)
         .update({ ...values, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
@@ -98,7 +99,7 @@ export function useOverdueCommunications() {
     queryKey: ['communications', 'overdue', accountId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('communications')
+        .from(TABLES.COMMUNICATIONS)
         .select('*, case:cases(case_number)')
         .eq('account_id', accountId)
         .eq('follow_up_done', false)

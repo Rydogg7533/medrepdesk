@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import clsx from 'clsx';
 import { supabase } from '@/lib/supabase';
+import { TABLES } from '@/lib/tables';
 import { useAuth } from '@/context/AuthContext';
 
 export default function ContactAutocomplete({
@@ -48,7 +49,7 @@ export default function ContactAutocomplete({
       setLoading(true);
       try {
         let q = supabase
-          .from('contacts')
+          .from(TABLES.CONTACTS)
           .select('*, facility:facilities(name), distributor:distributors(name), manufacturer:manufacturers(name)')
           .eq('account_id', account.id)
           .ilike('full_name', `%${searchQuery}%`)

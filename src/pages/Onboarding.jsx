@@ -745,7 +745,7 @@ export default function Onboarding() {
                         {isExpanded ? <ChevronDown className="h-4 w-4 text-gray-400" /> : <ChevronRight className="h-4 w-4 text-gray-400" />}
                         <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{cat.label}</span>
                       </button>
-                      <button type="button" onClick={() => removeGroup(catKey)} className="p-1 text-gray-400 hover:text-red-500"><X className="h-4 w-4" /></button>
+                      <button type="button" onClick={() => removeGroup(catKey)} className="min-h-touch p-2 text-gray-400 hover:text-red-500"><X className="h-4 w-4" /></button>
                     </div>
                     {isExpanded && (
                       <div className="mt-3 space-y-1 border-t border-gray-100 dark:border-gray-700 pt-3">

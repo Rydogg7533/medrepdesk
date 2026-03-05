@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { TABLES } from '@/lib/tables';
 import { useAuth } from '@/context/AuthContext';
 
 export function useReferrals() {
@@ -10,7 +11,7 @@ export function useReferrals() {
     queryKey: ['referrals', accountId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('referrals')
+        .from(TABLES.REFERRALS)
         .select('*, referred:accounts!referred_account_id(name, plan, sub_status, created_at)')
         .eq('referrer_account_id', accountId)
         .order('created_at', { ascending: false });
@@ -29,7 +30,7 @@ export function useReferralPayouts() {
     queryKey: ['referral-payouts', accountId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('referral_payouts')
+        .from(TABLES.REFERRAL_PAYOUTS)
         .select('*')
         .eq('referrer_account_id', accountId)
         .order('period_year', { ascending: false })

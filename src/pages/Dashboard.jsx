@@ -95,10 +95,11 @@ export default function Dashboard() {
     (c) => c.pay_period_id && allPayPeriods.some((p) => p.id === c.pay_period_id && ['open', 'closed'].includes(p.status))
   );
   const awaitingTotal = awaitingCommission.reduce((sum, c) => sum + (c.expected_amount || 0), 0);
-  const paidThisMonthPeriods = allPayPeriods.filter(
-    (p) => p.status === 'paid' && p.paid_at?.startsWith(thisMonth)
+  const monthStart = thisMonth + '-01';
+  const earnedPOs = allPOs.filter(
+    (p) => ['received', 'processing', 'disputed', 'paid'].includes(p.status) && p.received_date >= monthStart
   );
-  const paidThisMonth = paidThisMonthPeriods.reduce((sum, p) => sum + (p.actual_amount || 0), 0);
+  const earnedThisMonth = earnedPOs.reduce((sum, p) => sum + (p.amount || 0), 0);
 
   // Action items
   const actionItems = buildActionItems({
@@ -238,10 +239,12 @@ export default function Dashboard() {
         <Card>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">PO Pipeline</h2>
-            <ChevronRight
-              className="h-4 w-4 cursor-pointer text-gray-400 dark:text-gray-500"
+            <button
+              className="min-h-touch p-2 text-gray-400 dark:text-gray-500"
               onClick={() => navigate('/money')}
-            />
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
           <POPipelineStrip pos={allPOs} />
         </Card>
@@ -285,10 +288,10 @@ export default function Dashboard() {
               >
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4 text-green-500" />
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Paid This Month<InfoTooltip text="Total from pay periods marked as paid this month." /></span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Earned This Month<InfoTooltip text="Total value of POs received this month." /></span>
                 </div>
-                <p className="mt-1 text-2xl font-bold text-green-600">{formatCurrency(paidThisMonth)}</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">{paidThisMonthPeriods.length} period{paidThisMonthPeriods.length !== 1 ? 's' : ''}</p>
+                <p className="mt-1 text-2xl font-bold text-green-600">{formatCurrency(earnedThisMonth)}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{earnedPOs.length} PO{earnedPOs.length !== 1 ? 's' : ''} this month</p>
               </Card>
             </>
           )}

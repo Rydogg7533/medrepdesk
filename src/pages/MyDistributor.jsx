@@ -559,7 +559,7 @@ export default function MyDistributor() {
                 <button
                   type="button"
                   onClick={() => setCustomProducts((prev) => prev.filter((_, idx) => idx !== i))}
-                  className="p-1 text-gray-400 hover:text-red-500"
+                  className="min-h-touch p-2 text-gray-400 hover:text-red-500"
                 >
                   <X className="h-4 w-4" />
                 </button>

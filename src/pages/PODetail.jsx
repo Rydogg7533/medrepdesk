@@ -6,6 +6,7 @@ import { useChaseLog, useCreateChaseEntry } from '@/hooks/useChaseLog';
 import { useSendPOEmail } from '@/hooks/usePOEmail';
 import { usePoEmailLog } from '@/hooks/usePoEmailLog';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/components/ui/Toast';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -28,11 +29,15 @@ export default function PODetail() {
   const createChase = useCreateChaseEntry();
   const sendPOEmail = useSendPOEmail();
   const { data: emailLog } = usePoEmailLog(id);
+  const toast = useToast();
   const [showDelete, setShowDelete] = useState(false);
   const [showSendToDistributor, setShowSendToDistributor] = useState(false);
   const [showChase, setShowChase] = useState(false);
   const [showReceived, setShowReceived] = useState(false);
   const [receivedDate, setReceivedDate] = useState('');
+  const [showPaid, setShowPaid] = useState(false);
+  const [showDisputed, setShowDisputed] = useState(false);
+  const [disputeNotes, setDisputeNotes] = useState('');
 
   async function handleDelete() {
     await deletePO.mutateAsync(id);
@@ -66,6 +71,30 @@ export default function PODetail() {
   async function handleSendToDistributor() {
     await sendPOEmail.mutateAsync({ po, caseData: po.case });
     setShowSendToDistributor(false);
+  }
+
+  async function handleMarkPaid() {
+    await updatePO.mutateAsync({ id, status: 'paid', paid_date: new Date().toISOString().split('T')[0] });
+    setShowPaid(false);
+    toast({ message: 'PO marked as paid', type: 'success' });
+  }
+
+  async function handleMarkDisputed() {
+    const existing = po.notes ? po.notes + '\n' : '';
+    await updatePO.mutateAsync({ id, status: 'disputed', notes: existing + disputeNotes });
+    setShowDisputed(false);
+    setDisputeNotes('');
+    toast({ message: 'PO marked as disputed', type: 'success' });
+  }
+
+  async function handleMarkProcessing() {
+    await updatePO.mutateAsync({ id, status: 'processing' });
+    toast({ message: 'PO marked as processing', type: 'success' });
+  }
+
+  async function handleResolveDispute() {
+    await updatePO.mutateAsync({ id, status: 'received' });
+    toast({ message: 'Dispute resolved — PO moved back to received', type: 'success' });
   }
 
   if (isLoading) {
@@ -161,20 +190,72 @@ export default function PODetail() {
 
       {/* Actions */}
       <div className="space-y-2">
-        {!po.po_number && ['not_requested', 'requested', 'pending'].includes(po.status) && (
-          <Button fullWidth onClick={() => setShowChase(true)}>
-            Chase PO
+        {/* not_requested / requested / pending */}
+        {['not_requested', 'requested', 'pending'].includes(po.status) && (
+          <>
+            {!po.po_number && (
+              <Button fullWidth onClick={() => setShowChase(true)}>
+                Chase PO
+              </Button>
+            )}
+            <Button fullWidth variant="secondary" onClick={() => setShowReceived(true)}>
+              Mark Received
+            </Button>
+          </>
+        )}
+
+        {/* received */}
+        {po.status === 'received' && (
+          <>
+            {!po.po_email_sent && (
+              <Button fullWidth onClick={() => setShowSendToDistributor(true)}>
+                <Send className="h-4 w-4" /> Send to Manufacturer
+              </Button>
+            )}
+            <Button fullWidth onClick={() => setShowPaid(true)}>
+              Mark as Paid
+            </Button>
+            <Button fullWidth variant="secondary" onClick={() => setShowDisputed(true)}>
+              Mark as Disputed
+            </Button>
+            <Button fullWidth variant="outline" onClick={handleMarkProcessing} loading={updatePO.isPending}>
+              Mark as Processing
+            </Button>
+          </>
+        )}
+
+        {/* processing */}
+        {po.status === 'processing' && (
+          <>
+            <Button fullWidth onClick={() => setShowPaid(true)}>
+              Mark as Paid
+            </Button>
+            <Button fullWidth variant="secondary" onClick={() => setShowDisputed(true)}>
+              Mark as Disputed
+            </Button>
+            <Button fullWidth variant="outline" onClick={() => updatePO.mutateAsync({ id, status: 'received' }).then(() => toast({ message: 'Moved back to received', type: 'success' }))} loading={updatePO.isPending}>
+              Back to Received
+            </Button>
+          </>
+        )}
+
+        {/* paid */}
+        {po.status === 'paid' && (
+          <Button fullWidth variant="outline" onClick={() => setShowDisputed(true)}>
+            Mark as Disputed
           </Button>
         )}
-        {po.status !== 'received' && (
-          <Button fullWidth variant="secondary" onClick={() => setShowReceived(true)}>
-            Mark Received
-          </Button>
-        )}
-        {po.status === 'received' && !po.po_email_sent && (
-          <Button fullWidth onClick={() => setShowSendToDistributor(true)}>
-            <Send className="h-4 w-4" /> Send to Manufacturer
-          </Button>
+
+        {/* disputed */}
+        {po.status === 'disputed' && (
+          <>
+            <Button fullWidth onClick={handleResolveDispute} loading={updatePO.isPending}>
+              Resolve Dispute → Received
+            </Button>
+            <Button fullWidth variant="secondary" onClick={() => setShowPaid(true)}>
+              Mark as Paid
+            </Button>
+          </>
         )}
 
         {user?.role === 'owner' && (
@@ -270,6 +351,42 @@ export default function PODetail() {
               </>
             );
           })()}
+        </div>
+      </BottomSheet>
+
+      {/* Mark as Paid Sheet */}
+      <BottomSheet isOpen={showPaid} onClose={() => setShowPaid(false)} title="Mark PO as Paid?">
+        <div className="flex flex-col gap-3">
+          <p className="text-sm text-gray-600 dark:text-gray-400">This will record today as the payment date.</p>
+          <div className="flex gap-2">
+            <Button variant="secondary" fullWidth onClick={() => setShowPaid(false)}>
+              Cancel
+            </Button>
+            <Button fullWidth loading={updatePO.isPending} onClick={handleMarkPaid}>
+              Confirm Paid
+            </Button>
+          </div>
+        </div>
+      </BottomSheet>
+
+      {/* Mark as Disputed Sheet */}
+      <BottomSheet isOpen={showDisputed} onClose={() => { setShowDisputed(false); setDisputeNotes(''); }} title="Mark PO as Disputed">
+        <div className="flex flex-col gap-3">
+          <textarea
+            value={disputeNotes}
+            onChange={(e) => setDisputeNotes(e.target.value)}
+            placeholder="Describe the dispute..."
+            rows={3}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+          />
+          <div className="flex gap-2">
+            <Button variant="secondary" fullWidth onClick={() => { setShowDisputed(false); setDisputeNotes(''); }}>
+              Cancel
+            </Button>
+            <Button variant="danger" fullWidth loading={updatePO.isPending} disabled={!disputeNotes.trim()} onClick={handleMarkDisputed}>
+              Mark Disputed
+            </Button>
+          </div>
         </div>
       </BottomSheet>
 

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Phone, Mail, StickyNote } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { TABLES } from '@/lib/tables';
 import { useAuth } from '@/context/AuthContext';
 import { formatRelativeTime } from '@/utils/formatters';
 
@@ -17,7 +18,7 @@ export default function RecentActivity({ limit = 5 }) {
     queryKey: ['recent_chase_log', account?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('po_chase_log')
+        .from(TABLES.PO_CHASE_LOG)
         .select('id, notes, contact_method, created_at, case:cases(case_number)')
         .eq('account_id', account.id)
         .order('created_at', { ascending: false })
@@ -32,7 +33,7 @@ export default function RecentActivity({ limit = 5 }) {
     queryKey: ['recent_communications', account?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('communications')
+        .from(TABLES.COMMUNICATIONS)
         .select('id, type, notes, created_at, case:cases(case_number)')
         .eq('account_id', account.id)
         .order('created_at', { ascending: false })

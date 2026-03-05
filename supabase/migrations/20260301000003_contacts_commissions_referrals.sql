@@ -1,5 +1,5 @@
 -- COMMUNICATIONS
-CREATE TABLE communications (
+CREATE TABLE IF NOT EXISTS communications (
   id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id                  uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   case_id                     uuid REFERENCES cases(id) ON DELETE SET NULL,
@@ -22,7 +22,7 @@ CREATE TABLE communications (
 );
 
 -- CONTACTS
-CREATE TABLE contacts (
+CREATE TABLE IF NOT EXISTS contacts (
   id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id                  uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   full_name                   text NOT NULL,
@@ -38,7 +38,7 @@ CREATE TABLE contacts (
 );
 
 -- COMMISSIONS
-CREATE TABLE commissions (
+CREATE TABLE IF NOT EXISTS commissions (
   id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id                  uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   case_id                     uuid NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
@@ -60,7 +60,7 @@ CREATE TABLE commissions (
 );
 
 -- REFERRALS
-CREATE TABLE referrals (
+CREATE TABLE IF NOT EXISTS referrals (
   id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   referrer_account_id         uuid NOT NULL REFERENCES accounts(id),
   referred_account_id         uuid REFERENCES accounts(id),
@@ -76,7 +76,7 @@ CREATE TABLE referrals (
 );
 
 -- REFERRAL PAYOUTS
-CREATE TABLE referral_payouts (
+CREATE TABLE IF NOT EXISTS referral_payouts (
   id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   referral_id                 uuid NOT NULL REFERENCES referrals(id),
   referrer_account_id         uuid NOT NULL REFERENCES accounts(id),

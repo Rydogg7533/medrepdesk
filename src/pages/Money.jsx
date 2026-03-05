@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { DollarSign, FileText, Calendar, ChevronRight, ClipboardList, Send } from 'lucide-react';
 import clsx from 'clsx';
+import { supabase } from '@/lib/supabase';
+import { TABLES } from '@/lib/tables';
 import { usePOs, useCreatePO } from '@/hooks/usePOs';
-import { useCommissions } from '@/hooks/useCommissions';
+import { useCommissions, useUpdateCommission } from '@/hooks/useCommissions';
 import { usePayPeriods, useEnsurePayPeriods } from '@/hooks/usePayPeriods';
 import { useBillSheets } from '@/hooks/useBillSheets';
 import ChaseBottomSheet from '@/components/features/ChaseBottomSheet';
@@ -32,6 +35,7 @@ const PO_FILTERS = [
   { key: 'pending', label: 'Pending' },
   { key: 'received', label: 'Received' },
   { key: 'disputed', label: 'Disputed' },
+  { key: 'archive', label: 'Archive' },
 ];
 
 const COMM_FILTERS = [
@@ -40,6 +44,7 @@ const COMM_FILTERS = [
   { key: 'confirmed', label: 'Confirmed' },
   { key: 'received', label: 'Received' },
   { key: 'disputed', label: 'Disputed' },
+  { key: 'written_off', label: 'Written Off' },
 ];
 
 export default function Money() {
@@ -61,8 +66,30 @@ export default function Money() {
     amount: '',
     received_date: new Date().toISOString().split('T')[0],
   });
+  // Commission confirm/dispute state
+  const [commActionTarget, setCommActionTarget] = useState(null); // commission object
+  const [showCommConfirm, setShowCommConfirm] = useState(false);
+  const [commConfirmAmount, setCommConfirmAmount] = useState('');
+  const [showCommDispute, setShowCommDispute] = useState(false);
+  const [commDisputeAmount, setCommDisputeAmount] = useState('');
+  const [commDisputeNote, setCommDisputeNote] = useState('');
+
+  // Unified dispute resolve/write-off state — works from PO or Commission entry
+  const [resolveTarget, setResolveTarget] = useState(null); // { type: 'po'|'commission', po?, commission?, case_id }
+  const [showResolve, setShowResolve] = useState(false);
+  const [resolveStep, setResolveStep] = useState('choose'); // 'choose' | 'po_wrong' | 'commission_short'
+  const [resolveCorrectPOAmount, setResolveCorrectPOAmount] = useState('');
+  const [resolveReceivedAmount, setResolveReceivedAmount] = useState('');
+  const [resolveNote, setResolveNote] = useState('');
+  const [showWriteOff, setShowWriteOff] = useState(false);
+  const [writeOffTarget, setWriteOffTarget] = useState(null); // same shape as resolveTarget
+  const [writeOffNote, setWriteOffNote] = useState('');
+  const [actionSubmitting, setActionSubmitting] = useState(false);
+
   const navigate = useNavigate();
   const toast = useToast();
+  const queryClient = useQueryClient();
+  const updateCommission = useUpdateCommission();
 
   const { account } = useAuth();
   const distributorId = account?.primary_distributor_id;
@@ -84,7 +111,11 @@ export default function Money() {
     }
   }, [paySchedule?.frequency, paySchedule?.first_pay_date, distributorId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const filteredPOs = poFilter === 'all' ? allPOs : allPOs.filter((p) => p.status === poFilter);
+  const filteredPOs = poFilter === 'all'
+    ? allPOs
+    : poFilter === 'archive'
+      ? allPOs.filter((p) => p.status === 'paid')
+      : allPOs.filter((p) => p.status === poFilter);
   const filteredComms = commFilter === 'all' ? allCommissions : allCommissions.filter((c) => c.status === commFilter);
 
   // PO summary
@@ -195,6 +226,273 @@ export default function Money() {
     setShowSendPrompt(false);
   }
 
+  function invalidateAll() {
+    queryClient.invalidateQueries({ queryKey: ['commissions'] });
+    queryClient.invalidateQueries({ queryKey: ['purchase_orders'] });
+    queryClient.invalidateQueries({ queryKey: ['cases'] });
+  }
+
+  // Commission Confirm: pending → confirmed, PO → paid, case → paid
+  async function handleCommConfirm() {
+    if (!commActionTarget) return;
+    setActionSubmitting(true);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const amount = commConfirmAmount ? Number(commConfirmAmount) : commActionTarget.expected_amount;
+
+      await updateCommission.mutateAsync({
+        id: commActionTarget.id,
+        status: 'confirmed',
+        received_amount: amount,
+        received_date: today,
+      });
+
+      const { data: pos } = await supabase
+        .from(TABLES.PURCHASE_ORDERS)
+        .select('id')
+        .eq('case_id', commActionTarget.case_id);
+      if (pos?.length) {
+        await supabase
+          .from(TABLES.PURCHASE_ORDERS)
+          .update({ status: 'paid', paid_date: today, updated_at: new Date().toISOString() })
+          .in('id', pos.map((p) => p.id));
+      }
+
+      await supabase
+        .from(TABLES.CASES)
+        .update({ status: 'paid', updated_at: new Date().toISOString() })
+        .eq('id', commActionTarget.case_id);
+
+      invalidateAll();
+      setShowCommConfirm(false);
+      setCommActionTarget(null);
+      toast({ message: 'Commission confirmed — PO and case marked paid', type: 'success' });
+    } catch (err) {
+      toast({ message: err.message || 'Failed to confirm commission', type: 'error' });
+    } finally {
+      setActionSubmitting(false);
+    }
+  }
+
+  // Commission Dispute: pending → disputed, PO(received) → disputed
+  async function handleCommDispute() {
+    if (!commActionTarget) return;
+    setActionSubmitting(true);
+    try {
+      const amount = commDisputeAmount ? Number(commDisputeAmount) : null;
+      const notes = [commActionTarget.notes, commDisputeNote].filter(Boolean).join('\n---\n');
+
+      await updateCommission.mutateAsync({
+        id: commActionTarget.id,
+        status: 'disputed',
+        ...(amount != null && { received_amount: amount }),
+        ...(notes && { notes }),
+      });
+
+      const { data: pos } = await supabase
+        .from(TABLES.PURCHASE_ORDERS)
+        .select('id, status')
+        .eq('case_id', commActionTarget.case_id);
+      const receivedPOs = pos?.filter((p) => p.status === 'received') || [];
+      if (receivedPOs.length) {
+        await supabase
+          .from(TABLES.PURCHASE_ORDERS)
+          .update({ status: 'disputed', updated_at: new Date().toISOString() })
+          .in('id', receivedPOs.map((p) => p.id));
+      }
+
+      invalidateAll();
+      setShowCommDispute(false);
+      setCommActionTarget(null);
+      toast({ message: 'Commission disputed — PO moved to Disputed', type: 'success' });
+    } catch (err) {
+      toast({ message: err.message || 'Failed to dispute commission', type: 'error' });
+    } finally {
+      setActionSubmitting(false);
+    }
+  }
+
+  // Open resolve flow — from PO card or commission card
+  function openResolveFlow(target) {
+    setResolveTarget(target);
+    setResolveStep('choose');
+    setResolveCorrectPOAmount('');
+    setResolveReceivedAmount('');
+    setResolveNote('');
+    setShowResolve(true);
+  }
+
+  // Open write-off flow — from PO card or commission card
+  function openWriteOffFlow(target) {
+    setWriteOffTarget(target);
+    setWriteOffNote('');
+    setShowWriteOff(true);
+  }
+
+  // Unified Dispute Resolved: two-step flow, updates both commission + PO + case
+  async function handleDisputeResolve() {
+    if (!resolveTarget) return;
+    setActionSubmitting(true);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const now = new Date().toISOString();
+      const caseId = resolveTarget.case_id;
+
+      // Find linked commission
+      let comm = resolveTarget.commission;
+      if (!comm) {
+        const { data: comms } = await supabase
+          .from(TABLES.COMMISSIONS)
+          .select('id, notes, received_amount, expected_amount, commission_type, rate')
+          .eq('case_id', caseId)
+          .eq('status', 'disputed');
+        comm = comms?.[0];
+      }
+
+      // Find linked POs
+      let poIds = resolveTarget.po ? [resolveTarget.po.id] : [];
+      if (!poIds.length) {
+        const { data: pos } = await supabase
+          .from(TABLES.PURCHASE_ORDERS)
+          .select('id')
+          .eq('case_id', caseId);
+        poIds = pos?.map((p) => p.id) || [];
+      }
+
+      const receivedAmount = resolveReceivedAmount ? Number(resolveReceivedAmount) : comm?.received_amount || comm?.expected_amount;
+
+      // Build audit trail
+      let auditNote = '';
+      const commType = comm?.commission_type;
+      const commRate = comm?.rate;
+
+      if (resolveStep === 'po_wrong') {
+        const correctedPO = Number(resolveCorrectPOAmount);
+        auditNote = `Dispute resolved: PO amount was entered incorrectly. PO corrected to ${correctedPO}.`;
+        if (commType === 'percentage' && commRate) {
+          const recalculated = correctedPO * (commRate / 100);
+          auditNote += ` Expected commission recalculated to ${recalculated.toFixed(2)} (${commRate}% of ${correctedPO}).`;
+        }
+        auditNote += ` Received: ${receivedAmount}.`;
+      } else {
+        auditNote = `Dispute resolved: Commission received was less than expected. Expected: ${comm?.expected_amount}, Received: ${receivedAmount}.`;
+      }
+      if (resolveNote) auditNote += ` Note: ${resolveNote}`;
+
+      // Step 2A: PO amount was wrong — update PO amount + recalculate expected
+      let newExpectedAmount = comm?.expected_amount;
+      if (resolveStep === 'po_wrong' && resolveCorrectPOAmount) {
+        const correctedPO = Number(resolveCorrectPOAmount);
+        if (poIds.length) {
+          await supabase
+            .from(TABLES.PURCHASE_ORDERS)
+            .update({ amount: correctedPO, status: 'paid', paid_date: today, updated_at: now })
+            .in('id', poIds);
+        }
+        if (commType === 'percentage' && commRate) {
+          newExpectedAmount = correctedPO * (commRate / 100);
+        }
+      } else {
+        // Step 2B: Commission short — just mark POs paid
+        if (poIds.length) {
+          await supabase
+            .from(TABLES.PURCHASE_ORDERS)
+            .update({ status: 'paid', paid_date: today, updated_at: now })
+            .in('id', poIds);
+        }
+      }
+
+      // Update commission
+      if (comm) {
+        await updateCommission.mutateAsync({
+          id: comm.id,
+          status: 'received',
+          received_amount: receivedAmount,
+          received_date: today,
+          expected_amount: newExpectedAmount,
+          dispute_resolution_note: auditNote,
+        });
+      }
+
+      // Mark case paid
+      await supabase
+        .from(TABLES.CASES)
+        .update({ status: 'paid', updated_at: now })
+        .eq('id', caseId);
+
+      invalidateAll();
+      setShowResolve(false);
+      setResolveTarget(null);
+      toast({ message: 'Dispute resolved — PO and case marked paid', type: 'success' });
+    } catch (err) {
+      toast({ message: err.message || 'Failed to resolve dispute', type: 'error' });
+    } finally {
+      setActionSubmitting(false);
+    }
+  }
+
+  // Unified Write Off: commission → written_off, PO → paid, case → paid
+  async function handleWriteOff() {
+    if (!writeOffTarget) return;
+    setActionSubmitting(true);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const now = new Date().toISOString();
+      const caseId = writeOffTarget.case_id;
+
+      // Find linked commission
+      let comm = writeOffTarget.commission;
+      if (!comm) {
+        const { data: comms } = await supabase
+          .from(TABLES.COMMISSIONS)
+          .select('id, notes')
+          .eq('case_id', caseId)
+          .eq('status', 'disputed');
+        comm = comms?.[0];
+      }
+
+      // Find linked POs
+      let poIds = writeOffTarget.po ? [writeOffTarget.po.id] : [];
+      if (!poIds.length) {
+        const { data: pos } = await supabase
+          .from(TABLES.PURCHASE_ORDERS)
+          .select('id')
+          .eq('case_id', caseId);
+        poIds = pos?.map((p) => p.id) || [];
+      }
+
+      if (comm) {
+        const auditNote = `Written off.${writeOffNote ? ` Note: ${writeOffNote}` : ''}`;
+        await updateCommission.mutateAsync({
+          id: comm.id,
+          status: 'written_off',
+          dispute_resolution_note: auditNote,
+        });
+      }
+
+      if (poIds.length) {
+        await supabase
+          .from(TABLES.PURCHASE_ORDERS)
+          .update({ status: 'paid', paid_date: today, updated_at: now })
+          .in('id', poIds);
+      }
+
+      await supabase
+        .from(TABLES.CASES)
+        .update({ status: 'paid', updated_at: now })
+        .eq('id', caseId);
+
+      invalidateAll();
+      setShowWriteOff(false);
+      setWriteOffTarget(null);
+      toast({ message: 'Commission written off — PO and case marked paid', type: 'success' });
+    } catch (err) {
+      toast({ message: err.message || 'Failed to write off', type: 'error' });
+    } finally {
+      setActionSubmitting(false);
+    }
+  }
+
   return (
     <div className="p-4">
       <h1 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">Money<InfoTooltip text="Purchase orders track the billing lifecycle after a case is completed. Chase POs until received, then track payment." /></h1>
@@ -292,6 +590,22 @@ export default function Money() {
                         <ChevronRight className="h-4 w-4 text-gray-300 dark:text-gray-600" />
                       </div>
                     </div>
+                    {po.status === 'disputed' && (
+                      <div className="mt-3 flex gap-2 border-t border-gray-100 pt-3 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => openResolveFlow({ type: 'po', po, case_id: po.case_id })}
+                          className="flex-1 rounded-lg bg-green-600 py-2 text-xs font-medium text-white"
+                        >
+                          Dispute Resolved
+                        </button>
+                        <button
+                          onClick={() => openWriteOffFlow({ type: 'po', po, case_id: po.case_id })}
+                          className="flex-1 rounded-lg border border-red-300 py-2 text-xs font-medium text-red-600 dark:border-red-700 dark:text-red-400"
+                        >
+                          Write Off
+                        </button>
+                      </div>
+                    )}
                   </Card>
               ))}
             </div>
@@ -380,6 +694,38 @@ export default function Money() {
                       <ChevronRight className="h-4 w-4 text-gray-300 dark:text-gray-600" />
                     </div>
                   </div>
+                  {comm.status === 'pending' && (
+                    <div className="mt-3 flex gap-2 border-t border-gray-100 pt-3 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => { setCommActionTarget(comm); setCommConfirmAmount(''); setShowCommConfirm(true); }}
+                        className="flex-1 rounded-lg bg-green-600 py-2 text-xs font-medium text-white"
+                      >
+                        Confirm Commission
+                      </button>
+                      <button
+                        onClick={() => { setCommActionTarget(comm); setCommDisputeAmount(''); setCommDisputeNote(''); setShowCommDispute(true); }}
+                        className="flex-1 rounded-lg border border-red-300 py-2 text-xs font-medium text-red-600 dark:border-red-700 dark:text-red-400"
+                      >
+                        Dispute
+                      </button>
+                    </div>
+                  )}
+                  {comm.status === 'disputed' && (
+                    <div className="mt-3 flex gap-2 border-t border-gray-100 pt-3 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => openResolveFlow({ type: 'commission', commission: comm, case_id: comm.case_id })}
+                        className="flex-1 rounded-lg bg-green-600 py-2 text-xs font-medium text-white"
+                      >
+                        Dispute Resolved
+                      </button>
+                      <button
+                        onClick={() => openWriteOffFlow({ type: 'commission', commission: comm, case_id: comm.case_id })}
+                        className="flex-1 rounded-lg border border-red-300 py-2 text-xs font-medium text-red-600 dark:border-red-700 dark:text-red-400"
+                      >
+                        Write Off
+                      </button>
+                    </div>
+                  )}
                 </Card>
               ))}
             </div>
@@ -734,6 +1080,184 @@ export default function Money() {
           )}
         </>
       )}
+
+      {/* Commission Confirm Bottom Sheet */}
+      <BottomSheet isOpen={showCommConfirm} onClose={() => { setShowCommConfirm(false); setCommActionTarget(null); }} title="Confirm Commission">
+        <div className="flex flex-col gap-3">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Amount Received</label>
+            <input
+              type="number"
+              step="0.01"
+              placeholder={commActionTarget?.expected_amount ? String(commActionTarget.expected_amount) : '0.00'}
+              value={commConfirmAmount}
+              onChange={(e) => setCommConfirmAmount(e.target.value)}
+              className="min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Leave blank to use expected amount ({formatCurrency(commActionTarget?.expected_amount)})
+          </p>
+          <Button fullWidth loading={actionSubmitting} className="bg-green-600 hover:bg-green-700" onClick={handleCommConfirm}>
+            Confirm Commission
+          </Button>
+        </div>
+      </BottomSheet>
+
+      {/* Commission Dispute Bottom Sheet */}
+      <BottomSheet isOpen={showCommDispute} onClose={() => { setShowCommDispute(false); setCommActionTarget(null); }} title="Dispute Commission">
+        <div className="flex flex-col gap-3">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Amount Actually Received</label>
+            <input
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              value={commDisputeAmount}
+              onChange={(e) => setCommDisputeAmount(e.target.value)}
+              className="min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Dispute Note (optional)</label>
+            <textarea
+              rows={3}
+              placeholder="Describe the discrepancy..."
+              value={commDisputeNote}
+              onChange={(e) => setCommDisputeNote(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+          <Button fullWidth loading={actionSubmitting} className="bg-red-600 hover:bg-red-700 text-white" onClick={handleCommDispute}>
+            Submit Dispute
+          </Button>
+        </div>
+      </BottomSheet>
+
+      {/* Dispute Resolved Bottom Sheet — Two-Step Flow */}
+      <BottomSheet isOpen={showResolve} onClose={() => { setShowResolve(false); setResolveTarget(null); setResolveStep('choose'); }} title="Resolve Dispute">
+        <div className="flex flex-col gap-3">
+          {resolveStep === 'choose' && (
+            <>
+              <p className="text-sm text-gray-600 dark:text-gray-400">What caused the discrepancy?</p>
+              <button
+                onClick={() => setResolveStep('po_wrong')}
+                className="w-full rounded-lg border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-800 active:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:active:bg-gray-700"
+              >
+                PO amount was entered incorrectly
+              </button>
+              <button
+                onClick={() => setResolveStep('commission_short')}
+                className="w-full rounded-lg border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-800 active:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:active:bg-gray-700"
+              >
+                Commission received was less than expected
+              </button>
+            </>
+          )}
+
+          {resolveStep === 'po_wrong' && (
+            <>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Correct PO Amount</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={resolveCorrectPOAmount}
+                  onChange={(e) => setResolveCorrectPOAmount(e.target.value)}
+                  className="min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+                {resolveCorrectPOAmount && resolveTarget?.commission?.commission_type === 'percentage' && resolveTarget.commission.rate && (
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Recalculated commission: {formatCurrency(Number(resolveCorrectPOAmount) * (resolveTarget.commission.rate / 100))} ({resolveTarget.commission.rate}%)
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Amount Received in Bank</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={resolveReceivedAmount}
+                  onChange={(e) => setResolveReceivedAmount(e.target.value)}
+                  className="min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Note (optional)</label>
+                <textarea
+                  rows={2}
+                  placeholder="Additional details..."
+                  value={resolveNote}
+                  onChange={(e) => setResolveNote(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="secondary" fullWidth onClick={() => setResolveStep('choose')}>Back</Button>
+                <Button fullWidth loading={actionSubmitting} className="bg-green-600 hover:bg-green-700" onClick={handleDisputeResolve} disabled={!resolveCorrectPOAmount || !resolveReceivedAmount}>
+                  Resolve
+                </Button>
+              </div>
+            </>
+          )}
+
+          {resolveStep === 'commission_short' && (
+            <>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Amount Actually Received in Bank</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={resolveReceivedAmount}
+                  onChange={(e) => setResolveReceivedAmount(e.target.value)}
+                  className="min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Note (optional)</label>
+                <textarea
+                  rows={2}
+                  placeholder="Additional details..."
+                  value={resolveNote}
+                  onChange={(e) => setResolveNote(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="secondary" fullWidth onClick={() => setResolveStep('choose')}>Back</Button>
+                <Button fullWidth loading={actionSubmitting} className="bg-green-600 hover:bg-green-700" onClick={handleDisputeResolve} disabled={!resolveReceivedAmount}>
+                  Resolve
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </BottomSheet>
+
+      {/* Write Off Bottom Sheet */}
+      <BottomSheet isOpen={showWriteOff} onClose={() => { setShowWriteOff(false); setWriteOffTarget(null); }} title="Write Off">
+        <div className="flex flex-col gap-3">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            This will write off the commission and mark the PO and case as paid. This action accepts the loss.
+          </p>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Note (optional)</label>
+            <textarea
+              rows={3}
+              placeholder="Reason for write-off..."
+              value={writeOffNote}
+              onChange={(e) => setWriteOffNote(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+          <Button fullWidth loading={actionSubmitting} className="bg-red-600 hover:bg-red-700 text-white" onClick={handleWriteOff}>
+            Confirm Write Off
+          </Button>
+        </div>
+      </BottomSheet>
     </div>
   );
 }

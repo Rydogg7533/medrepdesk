@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { TABLES } from '@/lib/tables';
 
 export function useContacts({ activeOnly, filter } = {}) {
   const { account } = useAuth();
@@ -12,7 +13,7 @@ export function useContacts({ activeOnly, filter } = {}) {
     queryKey: ['contacts', accountId, { filter: resolvedFilter }],
     queryFn: async () => {
       let query = supabase
-        .from('contacts')
+        .from(TABLES.CONTACTS)
         .select('*, facility:facilities(name), distributor:distributors(name), manufacturer:manufacturers(name), surgeon:surgeons(full_name)')
         .eq('account_id', accountId);
       if (resolvedFilter === 'active') {
@@ -38,7 +39,7 @@ export function useContact(id) {
     queryKey: ['contacts', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('contacts')
+        .from(TABLES.CONTACTS)
         .select('*, facility:facilities(name), distributor:distributors(name), manufacturer:manufacturers(name), surgeon:surgeons(full_name)')
         .eq('id', id)
         .eq('account_id', accountId)
@@ -58,7 +59,7 @@ export function useCreateContact() {
   return useMutation({
     mutationFn: async (values) => {
       const { data, error } = await supabase
-        .from('contacts')
+        .from(TABLES.CONTACTS)
         .insert({ ...values, account_id: accountId })
         .select()
         .single();
@@ -77,7 +78,7 @@ export function useUpdateContact() {
   return useMutation({
     mutationFn: async ({ id, ...values }) => {
       const { data, error } = await supabase
-        .from('contacts')
+        .from(TABLES.CONTACTS)
         .update({ ...values, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
@@ -97,9 +98,7 @@ export function useDeleteContact() {
 
   return useMutation({
     mutationFn: async (id) => {
-      console.log('[useDeleteContact] Attempting delete for id:', id);
-      const { data, error, status, statusText } = await supabase.from('contacts').delete().eq('id', id).select();
-      console.log('[useDeleteContact] Response:', { data, error, status, statusText });
+      const { data, error } = await supabase.from(TABLES.CONTACTS).delete().eq('id', id).select();
       if (error) {
         console.error('[useDeleteContact] Supabase error:', error);
         throw error;
@@ -108,7 +107,6 @@ export function useDeleteContact() {
         console.error('[useDeleteContact] No rows deleted — likely RLS policy blocking.');
         throw new Error('Delete failed — record not found or permission denied');
       }
-      console.log('[useDeleteContact] Successfully deleted:', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
@@ -126,7 +124,7 @@ export function useArchiveContact() {
   return useMutation({
     mutationFn: async (id) => {
       const { error } = await supabase
-        .from('contacts')
+        .from(TABLES.CONTACTS)
         .update({ is_archived: true, is_active: false, updated_at: new Date().toISOString() })
         .eq('id', id);
       if (error) throw error;
@@ -143,7 +141,7 @@ export function useUnarchiveContact() {
   return useMutation({
     mutationFn: async (id) => {
       const { error } = await supabase
-        .from('contacts')
+        .from(TABLES.CONTACTS)
         .update({ is_archived: false, is_active: false, updated_at: new Date().toISOString() })
         .eq('id', id);
       if (error) throw error;

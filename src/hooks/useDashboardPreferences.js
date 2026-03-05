@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { TABLES } from '@/lib/tables';
 import { useAuth } from '@/context/AuthContext';
 
 const DEFAULTS = {
@@ -25,7 +26,7 @@ export function useUpdateDashboardPreferences() {
       const current = user?.dashboard_preferences || {};
       const merged = { ...current, ...patch };
       const { error } = await supabase
-        .from('users')
+        .from(TABLES.USERS)
         .update({ dashboard_preferences: merged })
         .eq('id', user.id);
       if (error) throw error;

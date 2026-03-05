@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import DOMPurify from 'dompurify';
+import { sanitizeText } from '@/utils/sanitize';
 import { useCommission, useCreateCommission, useUpdateCommission } from '@/hooks/useCommissions';
 import { useCases, useCase } from '@/hooks/useCases';
 import { useDistributors } from '@/hooks/useDistributors';
@@ -111,7 +111,7 @@ export default function CommissionForm() {
       case_value: form.case_value ? Number(form.case_value) : null,
       expected_amount: form.expected_amount ? Number(form.expected_amount) : null,
       expected_date: form.expected_date || null,
-      notes: form.notes ? DOMPurify.sanitize(form.notes) : null,
+      notes: sanitizeText(form.notes),
     };
 
     try {

@@ -191,7 +191,8 @@ export default function CaseDetail() {
     );
   }
 
-  const currentIdx = STATUS_ORDER.indexOf(caseData.status);
+  const normalizedStatus = caseData.status === 'confirmed' ? 'scheduled' : caseData.status;
+  const currentIdx = STATUS_ORDER.indexOf(normalizedStatus);
   const hasDistributorDefaults = !!distributors.find(
     (d) => d.id === caseData.distributor_id && (d.default_commission_rate || d.default_flat_amount)
   );

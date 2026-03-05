@@ -1,8 +1,10 @@
+import { TABLES } from '@/lib/tables';
+
 export async function generateCaseNumber(supabase, accountId) {
   const year = new Date().getFullYear();
 
   const { data: account, error: accountError } = await supabase
-    .from('accounts')
+    .from(TABLES.ACCOUNTS)
     .select('referral_code')
     .eq('id', accountId)
     .single();
@@ -12,7 +14,7 @@ export async function generateCaseNumber(supabase, accountId) {
   const prefix = account.referral_code.slice(-4).toUpperCase();
 
   const { count, error: countError } = await supabase
-    .from('cases')
+    .from(TABLES.CASES)
     .select('*', { count: 'exact', head: true })
     .eq('account_id', accountId)
     .gte('created_at', `${year}-01-01T00:00:00Z`);

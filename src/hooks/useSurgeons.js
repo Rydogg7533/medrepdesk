@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { TABLES } from '@/lib/tables';
 
 export function useSurgeons({ activeOnly, filter } = {}) {
   const { account } = useAuth();
@@ -13,7 +14,7 @@ export function useSurgeons({ activeOnly, filter } = {}) {
     queryKey: ['surgeons', accountId, { filter: resolvedFilter }],
     queryFn: async () => {
       let query = supabase
-        .from('surgeons')
+        .from(TABLES.SURGEONS)
         .select('*, primary_facility:facilities(name)')
         .eq('account_id', accountId);
       if (resolvedFilter === 'active') {
@@ -75,7 +76,7 @@ export function useSurgeon(id) {
     queryKey: ['surgeons', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('surgeons')
+        .from(TABLES.SURGEONS)
         .select('*, primary_facility:facilities(name)')
         .eq('id', id)
         .single();
@@ -94,7 +95,7 @@ export function useCreateSurgeon() {
   return useMutation({
     mutationFn: async (values) => {
       const { data, error } = await supabase
-        .from('surgeons')
+        .from(TABLES.SURGEONS)
         .insert({ ...values, account_id: accountId, is_global: false })
         .select()
         .single();
@@ -112,9 +113,7 @@ export function useDeleteSurgeon() {
 
   return useMutation({
     mutationFn: async (id) => {
-      console.log('[useDeleteSurgeon] Attempting delete for id:', id);
-      const { data, error, status, statusText } = await supabase.from('surgeons').delete().eq('id', id).select();
-      console.log('[useDeleteSurgeon] Response:', { data, error, status, statusText });
+      const { data, error } = await supabase.from(TABLES.SURGEONS).delete().eq('id', id).select();
       if (error) {
         console.error('[useDeleteSurgeon] Supabase error:', error);
         throw error;
@@ -123,7 +122,6 @@ export function useDeleteSurgeon() {
         console.error('[useDeleteSurgeon] No rows deleted — likely RLS policy blocking. Check is_global and account_id.');
         throw new Error('Delete failed — record not found or permission denied. Check that this is not a global surgeon.');
       }
-      console.log('[useDeleteSurgeon] Successfully deleted:', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['surgeons'] });
@@ -141,7 +139,7 @@ export function useArchiveSurgeon() {
   return useMutation({
     mutationFn: async (id) => {
       const { error } = await supabase
-        .from('surgeons')
+        .from(TABLES.SURGEONS)
         .update({ is_archived: true, is_active: false, updated_at: new Date().toISOString() })
         .eq('id', id);
       if (error) throw error;
@@ -158,7 +156,7 @@ export function useUnarchiveSurgeon() {
   return useMutation({
     mutationFn: async (id) => {
       const { error } = await supabase
-        .from('surgeons')
+        .from(TABLES.SURGEONS)
         .update({ is_archived: false, is_active: false, updated_at: new Date().toISOString() })
         .eq('id', id);
       if (error) throw error;
@@ -172,8 +170,8 @@ export function useUnarchiveSurgeon() {
 export async function checkLinkedSurgeon(id) {
   const counts = [];
   const [cases, contacts] = await Promise.all([
-    supabase.from('cases').select('id', { count: 'exact', head: true }).eq('surgeon_id', id),
-    supabase.from('contacts').select('id', { count: 'exact', head: true }).eq('surgeon_id', id),
+    supabase.from(TABLES.CASES).select('id', { count: 'exact', head: true }).eq('surgeon_id', id),
+    supabase.from(TABLES.CONTACTS).select('id', { count: 'exact', head: true }).eq('surgeon_id', id),
   ]);
   if (cases.count > 0) counts.push(`${cases.count} case${cases.count > 1 ? 's' : ''}`);
   if (contacts.count > 0) counts.push(`${contacts.count} contact${contacts.count > 1 ? 's' : ''}`);
@@ -189,7 +187,7 @@ export function useImportGlobalSurgeon() {
   return useMutation({
     mutationFn: async (globalId) => {
       const { data: source, error: fetchError } = await supabase
-        .from('surgeons')
+        .from(TABLES.SURGEONS)
         .select('*')
         .eq('id', globalId)
         .single();
@@ -197,7 +195,7 @@ export function useImportGlobalSurgeon() {
 
       const { id, created_at, updated_at, account_id, is_global, is_archived, primary_facility_id, ...fields } = source;
       const { data, error } = await supabase
-        .from('surgeons')
+        .from(TABLES.SURGEONS)
         .insert({ ...fields, account_id: accountId, is_global: false, is_archived: false })
         .select()
         .single();
@@ -216,7 +214,7 @@ export function useUpdateSurgeon() {
   return useMutation({
     mutationFn: async ({ id, ...values }) => {
       const { data, error } = await supabase
-        .from('surgeons')
+        .from(TABLES.SURGEONS)
         .update({ ...values, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()

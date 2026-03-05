@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import DOMPurify from 'dompurify';
+import { sanitizeText } from '@/utils/sanitize';
 import { useFacility, useFacilities, useCreateFacility, useUpdateFacility } from '@/hooks/useFacilities';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -88,7 +88,7 @@ export default function FacilityForm() {
     if (duplicateMatch?.isActive) return;
 
     const payload = {
-      name: DOMPurify.sanitize(form.name.trim()),
+      name: sanitizeText(form.name.trim()),
       facility_type: form.facility_type || null,
       address: form.address || null,
       city: form.city || null,
@@ -96,7 +96,7 @@ export default function FacilityForm() {
       phone: form.phone || null,
       billing_phone: form.billing_phone || null,
       is_active: form.is_active,
-      notes: form.notes ? DOMPurify.sanitize(form.notes) : null,
+      notes: sanitizeText(form.notes),
     };
 
     try {

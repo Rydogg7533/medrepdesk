@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import DOMPurify from 'dompurify';
+import { sanitizeText } from '@/utils/sanitize';
 import { useCreateCommunication } from '@/hooks/useCommunications';
 import { useCases } from '@/hooks/useCases';
 import Card from '@/components/ui/Card';
@@ -68,11 +68,11 @@ export default function CommunicationForm() {
       comm_type: form.comm_type,
       direction: form.direction,
       contact_id: form.contact_id || null,
-      contact_name: form.contact_name ? DOMPurify.sanitize(form.contact_name) : null,
-      contact_role: form.contact_role ? DOMPurify.sanitize(form.contact_role) : null,
-      subject: form.subject ? DOMPurify.sanitize(form.subject) : null,
-      notes: form.notes ? DOMPurify.sanitize(form.notes) : null,
-      outcome: form.outcome ? DOMPurify.sanitize(form.outcome) : null,
+      contact_name: sanitizeText(form.contact_name),
+      contact_role: sanitizeText(form.contact_role),
+      subject: sanitizeText(form.subject),
+      notes: sanitizeText(form.notes),
+      outcome: sanitizeText(form.outcome),
       follow_up_date: form.follow_up_date || null,
     };
 

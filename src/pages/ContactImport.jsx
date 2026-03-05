@@ -9,6 +9,7 @@ import { useDistributors } from '@/hooks/useDistributors';
 import { useManufacturers } from '@/hooks/useManufacturers';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { TABLES } from '@/lib/tables';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 
@@ -427,7 +428,7 @@ export default function ContactImport() {
 
     if (validRows.length > 0) {
       const { data: imported, error } = await supabase
-        .from('contacts')
+        .from(TABLES.CONTACTS)
         .insert(validRows)
         .select();
 

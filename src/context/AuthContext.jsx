@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { TABLES } from '@/lib/tables';
 import DOMPurify from 'dompurify';
 
 const AuthContext = createContext(null);
@@ -14,7 +15,7 @@ export function useAuth() {
 
 async function fetchUserAndAccount(userId) {
   const { data, error } = await supabase
-    .from('users')
+    .from(TABLES.USERS)
     .select('*, account:accounts(*)')
     .eq('id', userId)
     .single();
@@ -60,7 +61,7 @@ export function AuthProvider({ children }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, sess) => {
-      if (_event === 'SIGNED_IN') {
+      if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED') {
         loadUserData(sess);
       } else if (_event === 'SIGNED_OUT') {
         setSession(null);
@@ -122,9 +123,14 @@ export function AuthProvider({ children }) {
 
   const refreshUser = useCallback(async () => {
     if (session?.user) {
-      const userData = await fetchUserAndAccount(session.user.id);
-      setUser(userData);
-      setAccount(userData.account);
+      try {
+        const userData = await fetchUserAndAccount(session.user.id);
+        setUser(userData);
+        setAccount(userData.account);
+        setError(null);
+      } catch (err) {
+        setError(err.message);
+      }
     }
   }, [session]);
 

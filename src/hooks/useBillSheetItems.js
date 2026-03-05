@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { TABLES } from '@/lib/tables';
 import { useAuth } from '@/context/AuthContext';
 
 export function useBillSheetItems(caseId) {
@@ -10,7 +11,7 @@ export function useBillSheetItems(caseId) {
     queryKey: ['bill_sheet_items', caseId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('bill_sheet_items')
+        .from(TABLES.BILL_SHEET_ITEMS)
         .select('*, distributor_product:distributor_products(*), manufacturer:manufacturers(id, name, billing_email, billing_contact_phone), case:cases(id, case_number, status, scheduled_date, facility_id, distributor_id, surgeon:surgeons(full_name), facility:facilities(name), distributor:distributors(id, name, billing_email, billing_email_cc))')
         .eq('case_id', caseId)
         .eq('account_id', accountId)
@@ -34,7 +35,7 @@ export function useCreateBillSheetItems() {
         account_id: accountId,
       }));
       const { data, error } = await supabase
-        .from('bill_sheet_items')
+        .from(TABLES.BILL_SHEET_ITEMS)
         .insert(toInsert)
         .select();
       if (error) throw error;

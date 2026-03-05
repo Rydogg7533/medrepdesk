@@ -313,6 +313,7 @@ export const commissionSchema = z.object({
   received_date: z.string().nullable().optional(),
   status: z.enum(['pending', 'confirmed', 'received', 'disputed', 'written_off']).default('pending'),
   notes: z.string().nullable().optional(),
+  dispute_resolution_note: z.string().nullable().optional(),
   created_at: z.string(),
   updated_at: z.string(),
 });

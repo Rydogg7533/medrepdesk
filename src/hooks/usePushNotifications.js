@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { TABLES } from '@/lib/tables';
 import { useAuth } from '@/context/AuthContext';
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
@@ -47,9 +48,8 @@ export function usePushNotifications() {
 
       if (perm !== 'granted') return null;
 
-      // Register the custom push SW
-      const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-      await navigator.serviceWorker.ready;
+      // SW is registered by VitePWA — just wait for it to be ready
+      const registration = await navigator.serviceWorker.ready;
 
       const sub = await registration.pushManager.subscribe({
         userVisibleOnly: true,
@@ -57,7 +57,7 @@ export function usePushNotifications() {
       });
 
       // Store subscription in push_subscriptions table
-      const { error } = await supabase.from('push_subscriptions').upsert(
+      const { error } = await supabase.from(TABLES.PUSH_SUBSCRIPTIONS).upsert(
         {
           user_id: user.id,
           subscription: sub.toJSON(),
@@ -85,7 +85,7 @@ export function usePushNotifications() {
       await subscription.unsubscribe();
 
       await supabase
-        .from('push_subscriptions')
+        .from(TABLES.PUSH_SUBSCRIPTIONS)
         .delete()
         .eq('user_id', user.id);
 

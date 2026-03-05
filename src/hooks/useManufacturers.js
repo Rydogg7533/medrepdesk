@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { TABLES } from '@/lib/tables';
 
 export function useManufacturers({ activeOnly, filter } = {}) {
   const { account } = useAuth();
@@ -12,7 +13,7 @@ export function useManufacturers({ activeOnly, filter } = {}) {
     queryKey: ['manufacturers', accountId, { filter: resolvedFilter }],
     queryFn: async () => {
       let query = supabase
-        .from('manufacturers')
+        .from(TABLES.MANUFACTURERS)
         .select('*')
         .eq('account_id', accountId);
       if (resolvedFilter === 'active') {
@@ -38,7 +39,7 @@ export function useManufacturer(id) {
     queryKey: ['manufacturers', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('manufacturers')
+        .from(TABLES.MANUFACTURERS)
         .select('*')
         .eq('id', id)
         .eq('account_id', accountId)
@@ -58,7 +59,7 @@ export function useCreateManufacturer() {
   return useMutation({
     mutationFn: async (values) => {
       const { data, error } = await supabase
-        .from('manufacturers')
+        .from(TABLES.MANUFACTURERS)
         .insert({ ...values, account_id: accountId })
         .select()
         .single();
@@ -77,7 +78,7 @@ export function useUpdateManufacturer() {
   return useMutation({
     mutationFn: async ({ id, ...values }) => {
       const { data, error } = await supabase
-        .from('manufacturers')
+        .from(TABLES.MANUFACTURERS)
         .update({ ...values, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
@@ -97,9 +98,7 @@ export function useDeleteManufacturer() {
 
   return useMutation({
     mutationFn: async (id) => {
-      console.log('[useDeleteManufacturer] Attempting delete for id:', id);
-      const { data, error, status, statusText } = await supabase.from('manufacturers').delete().eq('id', id).select();
-      console.log('[useDeleteManufacturer] Response:', { data, error, status, statusText });
+      const { data, error } = await supabase.from(TABLES.MANUFACTURERS).delete().eq('id', id).select();
       if (error) {
         console.error('[useDeleteManufacturer] Supabase error:', error);
         throw error;
@@ -108,7 +107,6 @@ export function useDeleteManufacturer() {
         console.error('[useDeleteManufacturer] No rows deleted — likely RLS policy blocking.');
         throw new Error('Delete failed — record not found or permission denied');
       }
-      console.log('[useDeleteManufacturer] Successfully deleted:', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['manufacturers'] });
@@ -126,7 +124,7 @@ export function useArchiveManufacturer() {
   return useMutation({
     mutationFn: async (id) => {
       const { error } = await supabase
-        .from('manufacturers')
+        .from(TABLES.MANUFACTURERS)
         .update({ is_archived: true, is_active: false, updated_at: new Date().toISOString() })
         .eq('id', id);
       if (error) throw error;
@@ -143,7 +141,7 @@ export function useUnarchiveManufacturer() {
   return useMutation({
     mutationFn: async (id) => {
       const { error } = await supabase
-        .from('manufacturers')
+        .from(TABLES.MANUFACTURERS)
         .update({ is_archived: false, is_active: false, updated_at: new Date().toISOString() })
         .eq('id', id);
       if (error) throw error;
@@ -156,7 +154,7 @@ export function useUnarchiveManufacturer() {
 
 export async function checkLinkedManufacturer(id) {
   const { count } = await supabase
-    .from('contacts')
+    .from(TABLES.CONTACTS)
     .select('id', { count: 'exact', head: true })
     .eq('manufacturer_id', id);
   const total = count || 0;

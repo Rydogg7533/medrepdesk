@@ -44,7 +44,7 @@ export default function AppLayout() {
           {isDashboard && (
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('open-dashboard-settings'))}
-              className="p-1"
+              className="min-h-touch p-2"
             >
               <Settings className="h-5 w-5 text-gray-500 dark:text-gray-400" />
             </button>

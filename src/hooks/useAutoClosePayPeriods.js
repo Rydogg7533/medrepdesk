@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { TABLES } from '@/lib/tables';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 import { closePayPeriod } from '@/utils/payPeriodClose';
@@ -25,7 +26,7 @@ export function useAutoClosePayPeriods() {
 
       // Find open periods where period_end < today
       const { data: expiredPeriods, error } = await supabase
-        .from('pay_periods')
+        .from(TABLES.PAY_PERIODS)
         .select('id, period_start, period_end')
         .eq('account_id', account.id)
         .eq('status', 'open')

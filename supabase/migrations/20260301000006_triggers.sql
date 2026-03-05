@@ -11,6 +11,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_bill_sheet_submitted ON po_chase_log;
 CREATE TRIGGER trigger_bill_sheet_submitted
 AFTER INSERT ON po_chase_log
 FOR EACH ROW EXECUTE FUNCTION advance_case_on_bill_sheet();
@@ -28,6 +29,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_po_requested ON po_chase_log;
 CREATE TRIGGER trigger_po_requested
 AFTER INSERT ON po_chase_log
 FOR EACH ROW EXECUTE FUNCTION advance_case_on_po_request();
@@ -53,6 +55,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_po_received ON purchase_orders;
 CREATE TRIGGER trigger_po_received
 AFTER UPDATE ON purchase_orders
 FOR EACH ROW EXECUTE FUNCTION advance_case_on_po_received();
@@ -74,6 +77,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_po_paid ON purchase_orders;
 CREATE TRIGGER trigger_po_paid
 AFTER UPDATE ON purchase_orders
 FOR EACH ROW EXECUTE FUNCTION advance_case_on_payment();
@@ -91,6 +95,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_update_last_contacted ON communications;
 CREATE TRIGGER trigger_update_last_contacted
 AFTER INSERT ON communications
 FOR EACH ROW EXECUTE FUNCTION update_contact_last_contacted();
@@ -114,14 +119,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS audit_cases ON cases;
 CREATE TRIGGER audit_cases
   AFTER INSERT OR UPDATE OR DELETE ON cases
   FOR EACH ROW EXECUTE FUNCTION log_audit();
 
+DROP TRIGGER IF EXISTS audit_purchase_orders ON purchase_orders;
 CREATE TRIGGER audit_purchase_orders
   AFTER INSERT OR UPDATE OR DELETE ON purchase_orders
   FOR EACH ROW EXECUTE FUNCTION log_audit();
 
+DROP TRIGGER IF EXISTS audit_commissions ON commissions;
 CREATE TRIGGER audit_commissions
   AFTER INSERT OR UPDATE OR DELETE ON commissions
   FOR EACH ROW EXECUTE FUNCTION log_audit();

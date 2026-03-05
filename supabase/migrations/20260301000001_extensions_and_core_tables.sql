@@ -3,7 +3,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 
 -- ACCOUNTS
-CREATE TABLE accounts (
+CREATE TABLE IF NOT EXISTS accounts (
   id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name                        text NOT NULL,
   email                       text NOT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE accounts (
 );
 
 -- USERS
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   id                          uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   account_id                  uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   role                        text NOT NULL DEFAULT 'owner'
@@ -63,7 +63,7 @@ CREATE TABLE users (
 );
 
 -- DISTRIBUTORS
-CREATE TABLE distributors (
+CREATE TABLE IF NOT EXISTS distributors (
   id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id                  uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   name                        text NOT NULL,
@@ -81,7 +81,7 @@ CREATE TABLE distributors (
 );
 
 -- FACILITIES
-CREATE TABLE facilities (
+CREATE TABLE IF NOT EXISTS facilities (
   id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id                  uuid REFERENCES accounts(id) ON DELETE CASCADE,
   is_global                   boolean NOT NULL DEFAULT false,
@@ -98,7 +98,7 @@ CREATE TABLE facilities (
 );
 
 -- SURGEONS
-CREATE TABLE surgeons (
+CREATE TABLE IF NOT EXISTS surgeons (
   id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id                  uuid REFERENCES accounts(id) ON DELETE CASCADE,
   is_global                   boolean NOT NULL DEFAULT false,

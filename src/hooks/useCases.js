@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { TABLES } from '@/lib/tables';
 import { generateCaseNumber } from '@/utils/caseNumber';
 
 export function useCases(filters = {}) {
@@ -11,7 +12,7 @@ export function useCases(filters = {}) {
     queryKey: ['cases', accountId, filters],
     queryFn: async () => {
       let query = supabase
-        .from('cases')
+        .from(TABLES.CASES)
         .select('*, surgeon:surgeons(full_name), facility:facilities(name), distributor:distributors(name)')
         .eq('account_id', accountId)
         .order('scheduled_date', { ascending: false });
@@ -46,7 +47,7 @@ export function useCase(id) {
     queryKey: ['cases', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('cases')
+        .from(TABLES.CASES)
         .select('*, surgeon:surgeons(*), facility:facilities(*), distributor:distributors(*)')
         .eq('id', id)
         .eq('account_id', accountId)
@@ -67,9 +68,8 @@ export function useCreateCase() {
     mutationFn: async (values) => {
       const caseNumber = await generateCaseNumber(supabase, accountId);
       const insertPayload = { ...values, account_id: accountId, case_number: caseNumber, status: 'scheduled' };
-      console.log('[useCreateCase] insert payload:', JSON.stringify(insertPayload, null, 2));
       const { data, error } = await supabase
-        .from('cases')
+        .from(TABLES.CASES)
         .insert(insertPayload)
         .select()
         .single();
@@ -77,7 +77,6 @@ export function useCreateCase() {
         console.error('[useCreateCase] insert error:', error);
         throw error;
       }
-      console.log('[useCreateCase] created case:', data?.id, 'scheduled_date:', data?.scheduled_date, 'scheduled_time:', data?.scheduled_time);
       return data;
     },
     onSuccess: () => {
@@ -92,7 +91,7 @@ export function useUpdateCase() {
   return useMutation({
     mutationFn: async ({ id, ...values }) => {
       const { data, error } = await supabase
-        .from('cases')
+        .from(TABLES.CASES)
         .update({ ...values, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
@@ -112,7 +111,7 @@ export function useDeleteCase() {
 
   return useMutation({
     mutationFn: async (id) => {
-      const { error } = await supabase.from('cases').delete().eq('id', id);
+      const { error } = await supabase.from(TABLES.CASES).delete().eq('id', id);
       if (error) {
         console.error('Failed to delete case:', error);
         throw error;

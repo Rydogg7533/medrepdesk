@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { TABLES } from '@/lib/tables';
 
 export function useBillSheets() {
   const { account } = useAuth();
@@ -11,7 +12,7 @@ export function useBillSheets() {
     queryFn: async () => {
       // Fetch all bill sheet items with case/manufacturer joins
       const { data: items, error: itemsError } = await supabase
-        .from('bill_sheet_items')
+        .from(TABLES.BILL_SHEET_ITEMS)
         .select('*, case:cases(id, case_number, status, scheduled_date, facility_id, distributor_id, surgeon:surgeons(full_name), facility:facilities(id, name, phone, billing_phone), distributor:distributors(id, name, billing_email, billing_email_cc)), manufacturer:manufacturers(id, name, billing_email, billing_contact_phone)')
         .eq('account_id', accountId)
         .order('created_at', { ascending: false });
@@ -19,7 +20,7 @@ export function useBillSheets() {
 
       // Fetch submission chase log entries
       const { data: submissions, error: subError } = await supabase
-        .from('po_chase_log')
+        .from(TABLES.PO_CHASE_LOG)
         .select('case_id, created_at')
         .eq('account_id', accountId)
         .eq('chase_type', 'bill_sheet_submitted')
@@ -36,7 +37,7 @@ export function useBillSheets() {
 
       // Fetch POs for active/archived determination and hasPO state
       const { data: pos, error: poError } = await supabase
-        .from('purchase_orders')
+        .from(TABLES.PURCHASE_ORDERS)
         .select('id, case_id, status, po_number, amount, received_date, po_email_sent')
         .eq('account_id', accountId);
       if (poError) throw poError;

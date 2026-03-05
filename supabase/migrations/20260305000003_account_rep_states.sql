@@ -1,1 +1,1 @@
-ALTER TABLE accounts ADD COLUMN rep_states text[] DEFAULT NULL;
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS rep_states text[] DEFAULT NULL;

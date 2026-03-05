@@ -40,6 +40,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS trigger_referral_signup_notification ON referrals;
 CREATE TRIGGER trigger_referral_signup_notification
   AFTER INSERT ON referrals
   FOR EACH ROW EXECUTE FUNCTION notify_referral_signup();

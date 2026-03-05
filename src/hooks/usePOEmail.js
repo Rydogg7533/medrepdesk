@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { TABLES } from '@/lib/tables';
 import { useAuth } from '@/context/AuthContext';
 
 export function useSendPOEmail() {
@@ -55,7 +56,7 @@ export function useSendPOEmail() {
 
       // Log to po_email_logs
       const { error: logError } = await supabase
-        .from('po_email_logs')
+        .from(TABLES.PO_EMAIL_LOGS)
         .insert({
           account_id: accountId,
           po_id: po.id,
@@ -73,20 +74,13 @@ export function useSendPOEmail() {
 
       // Set po_email_sent = true on the PO
       const { error: updateError } = await supabase
-        .from('purchase_orders')
+        .from(TABLES.PURCHASE_ORDERS)
         .update({ po_email_sent: true, updated_at: new Date().toISOString() })
         .eq('id', po.id);
 
       if (updateError) throw updateError;
 
-      // Advance case to 'billed'
-      if (po.case_id) {
-        await supabase
-          .from('cases')
-          .update({ status: 'billed', updated_at: new Date().toISOString() })
-          .eq('id', po.case_id)
-          .in('status', ['po_received']);
-      }
+      // Case status advancement to 'billed' is handled by DB trigger (advance_case_on_po_emailed)
 
       return { success: true };
     },

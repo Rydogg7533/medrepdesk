@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { TABLES } from '@/lib/tables';
 
 export function useCommissions(filters = {}) {
   const { account } = useAuth();
@@ -10,7 +11,7 @@ export function useCommissions(filters = {}) {
     queryKey: ['commissions', accountId, filters],
     queryFn: async () => {
       let query = supabase
-        .from('commissions')
+        .from(TABLES.COMMISSIONS)
         .select('*, case:cases(case_number), distributor:distributors(name)')
         .eq('account_id', accountId)
         .order('created_at', { ascending: false });
@@ -40,7 +41,7 @@ export function useCommission(id) {
     queryKey: ['commissions', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('commissions')
+        .from(TABLES.COMMISSIONS)
         .select('*, case:cases(case_number, surgeon:surgeons(full_name)), distributor:distributors(*)')
         .eq('id', id)
         .eq('account_id', accountId)
@@ -60,7 +61,7 @@ export function useCaseCommission(caseId) {
     queryKey: ['commissions', 'case', caseId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('commissions')
+        .from(TABLES.COMMISSIONS)
         .select('*, distributor:distributors(name)')
         .eq('case_id', caseId)
         .eq('account_id', accountId)
@@ -84,7 +85,7 @@ export function useCreateCommission() {
       if (!payPeriodId && accountId) {
         const today = new Date().toISOString().split('T')[0];
         const { data: openPeriod } = await supabase
-          .from('pay_periods')
+          .from(TABLES.PAY_PERIODS)
           .select('id')
           .eq('account_id', accountId)
           .eq('status', 'open')
@@ -95,7 +96,7 @@ export function useCreateCommission() {
       }
 
       const { data, error } = await supabase
-        .from('commissions')
+        .from(TABLES.COMMISSIONS)
         .insert({ ...values, account_id: accountId, pay_period_id: payPeriodId })
         .select()
         .single();
@@ -116,7 +117,7 @@ export function useUpdateCommission() {
   return useMutation({
     mutationFn: async ({ id, ...values }) => {
       const { data, error } = await supabase
-        .from('commissions')
+        .from(TABLES.COMMISSIONS)
         .update({ ...values, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
@@ -127,6 +128,7 @@ export function useUpdateCommission() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['commissions'] });
       queryClient.invalidateQueries({ queryKey: ['cases'] });
+      queryClient.invalidateQueries({ queryKey: ['purchase_orders'] });
     },
   });
 }

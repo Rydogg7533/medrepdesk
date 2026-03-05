@@ -47,7 +47,7 @@ export default function Referrals() {
   const connectRefresh = searchParams.get('connect') === 'refresh';
 
   const referralCode = account?.referral_code || '';
-  const shareLink = `https://medrepdesk.io/join?ref=${referralCode}`;
+  const shareLink = `${window.location.origin}/join?ref=${referralCode}`;
   const hasConnectId = !!account?.stripe_connect_id;
   const hasReferrals = referrals.length > 0;
 

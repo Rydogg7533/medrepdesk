@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { TABLES } from '@/lib/tables';
 
 export function usePOs(filters = {}) {
   const { account } = useAuth();
@@ -10,7 +11,7 @@ export function usePOs(filters = {}) {
     queryKey: ['purchase_orders', accountId, filters],
     queryFn: async () => {
       let query = supabase
-        .from('purchase_orders')
+        .from(TABLES.PURCHASE_ORDERS)
         .select('*, case:cases(case_number, surgeon:surgeons(full_name)), facility:facilities(name), distributor:distributors(name)')
         .eq('account_id', accountId)
         .order('created_at', { ascending: false });
@@ -41,7 +42,7 @@ export function usePO(id) {
     queryKey: ['purchase_orders', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('purchase_orders')
+        .from(TABLES.PURCHASE_ORDERS)
         .select('*, case:cases(*, surgeon:surgeons(full_name), facility:facilities(*), distributor:distributors(*)), facility:facilities(*), distributor:distributors(*)')
         .eq('id', id)
         .eq('account_id', accountId)
@@ -61,7 +62,7 @@ export function useCasePOs(caseId) {
     queryKey: ['purchase_orders', 'case', caseId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('purchase_orders')
+        .from(TABLES.PURCHASE_ORDERS)
         .select('*, facility:facilities(name), distributor:distributors(name)')
         .eq('case_id', caseId)
         .eq('account_id', accountId)
@@ -81,7 +82,7 @@ export function useCreatePO() {
   return useMutation({
     mutationFn: async (values) => {
       const { data, error } = await supabase
-        .from('purchase_orders')
+        .from(TABLES.PURCHASE_ORDERS)
         .insert({ ...values, account_id: accountId })
         .select()
         .single();
@@ -101,7 +102,7 @@ export function useUpdatePO() {
   return useMutation({
     mutationFn: async ({ id, ...values }) => {
       const { data, error } = await supabase
-        .from('purchase_orders')
+        .from(TABLES.PURCHASE_ORDERS)
         .update({ ...values, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
@@ -121,7 +122,7 @@ export function useDeletePO() {
 
   return useMutation({
     mutationFn: async (id) => {
-      const { error } = await supabase.from('purchase_orders').delete().eq('id', id);
+      const { error } = await supabase.from(TABLES.PURCHASE_ORDERS).delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {

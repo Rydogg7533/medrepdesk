@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { TABLES } from '@/lib/tables';
 
 export function useChaseLog(caseId) {
   const { account } = useAuth();
@@ -10,7 +11,7 @@ export function useChaseLog(caseId) {
     queryKey: ['chase_log', caseId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('po_chase_log')
+        .from(TABLES.PO_CHASE_LOG)
         .select('*, facility:facilities(name)')
         .eq('case_id', caseId)
         .eq('account_id', accountId)
@@ -30,7 +31,7 @@ export function useCreateChaseEntry() {
   return useMutation({
     mutationFn: async (values) => {
       const { data, error } = await supabase
-        .from('po_chase_log')
+        .from(TABLES.PO_CHASE_LOG)
         .insert({ ...values, account_id: accountId, created_by: user?.id })
         .select()
         .single();
@@ -52,7 +53,7 @@ export function useUpdateChaseEntry() {
   return useMutation({
     mutationFn: async ({ id, ...values }) => {
       const { data, error } = await supabase
-        .from('po_chase_log')
+        .from(TABLES.PO_CHASE_LOG)
         .update({ ...values, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
@@ -75,7 +76,7 @@ export function useOverdueFollowUps() {
     queryKey: ['chase_log', 'overdue_followups', accountId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('po_chase_log')
+        .from(TABLES.PO_CHASE_LOG)
         .select('*, case:cases(case_number), facility:facilities(name)')
         .eq('account_id', accountId)
         .eq('follow_up_done', false)
@@ -98,7 +99,7 @@ export function useOverduePromisedDates() {
     queryKey: ['chase_log', 'overdue_promised', accountId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('po_chase_log')
+        .from(TABLES.PO_CHASE_LOG)
         .select('*, case:cases(case_number), facility:facilities(name)')
         .eq('account_id', accountId)
         .eq('follow_up_done', false)

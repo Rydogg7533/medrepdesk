@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import DOMPurify from 'dompurify';
+import { sanitizeText } from '@/utils/sanitize';
 import { useSurgeon, useSurgeons, useCreateSurgeon, useUpdateSurgeon } from '@/hooks/useSurgeons';
 import { useSearchFacilities } from '@/hooks/useFacilities';
 import { useRepStates } from '@/hooks/useRepStates';
@@ -115,13 +115,13 @@ export default function SurgeonForm() {
     const full_name = computedFullName;
 
     const payload = {
-      full_name: DOMPurify.sanitize(full_name),
+      full_name: sanitizeText(full_name),
       specialty: form.specialty || null,
       primary_facility_id: form.primary_facility_id || null,
       phone: form.phone || null,
       email: form.email || null,
       is_active: form.is_active,
-      notes: form.notes ? DOMPurify.sanitize(form.notes) : null,
+      notes: sanitizeText(form.notes),
     };
 
     try {

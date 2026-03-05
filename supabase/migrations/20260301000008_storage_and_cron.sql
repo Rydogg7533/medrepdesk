@@ -6,21 +6,25 @@ VALUES (
   false,
   10485760, -- 10MB
   ARRAY['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'application/pdf']
-);
+)
+ON CONFLICT (id) DO NOTHING;
 
 -- Storage policies
+DROP POLICY IF EXISTS "case_docs_select" ON storage.objects;
 CREATE POLICY "case_docs_select" ON storage.objects
   FOR SELECT USING (
     bucket_id = 'case-documents'
     AND (storage.foldername(name))[1]::uuid = get_account_id()
   );
 
+DROP POLICY IF EXISTS "case_docs_insert" ON storage.objects;
 CREATE POLICY "case_docs_insert" ON storage.objects
   FOR INSERT WITH CHECK (
     bucket_id = 'case-documents'
     AND (storage.foldername(name))[1]::uuid = get_account_id()
   );
 
+DROP POLICY IF EXISTS "case_docs_delete" ON storage.objects;
 CREATE POLICY "case_docs_delete" ON storage.objects
   FOR DELETE USING (
     bucket_id = 'case-documents'

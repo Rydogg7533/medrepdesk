@@ -1,5 +1,5 @@
 -- CASES
-CREATE TABLE cases (
+CREATE TABLE IF NOT EXISTS cases (
   id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id                  uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   assigned_to                 uuid REFERENCES users(id),
@@ -25,7 +25,7 @@ CREATE TABLE cases (
 );
 
 -- PURCHASE ORDERS
-CREATE TABLE purchase_orders (
+CREATE TABLE IF NOT EXISTS purchase_orders (
   id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id                  uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   case_id                     uuid NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
@@ -52,7 +52,7 @@ CREATE TABLE purchase_orders (
 );
 
 -- PO CHASE LOG
-CREATE TABLE po_chase_log (
+CREATE TABLE IF NOT EXISTS po_chase_log (
   id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id                  uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   case_id                     uuid NOT NULL REFERENCES cases(id) ON DELETE CASCADE,

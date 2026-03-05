@@ -1,4 +1,5 @@
 import { formatDate, formatCurrency } from '@/utils/formatters';
+import { TABLES } from '@/lib/tables';
 
 /**
  * Close a pay period:
@@ -17,7 +18,7 @@ import { formatDate, formatCurrency } from '@/utils/formatters';
 export async function closePayPeriod(supabase, periodId, accountId, userId) {
   // 1. Fetch the period
   const { data: period, error: periodErr } = await supabase
-    .from('pay_periods')
+    .from(TABLES.PAY_PERIODS)
     .select('*')
     .eq('id', periodId)
     .single();
@@ -25,7 +26,7 @@ export async function closePayPeriod(supabase, periodId, accountId, userId) {
 
   // 2. Find unlinked commissions within the period date range
   const { data: unlinkedComms, error: commsErr } = await supabase
-    .from('commissions')
+    .from(TABLES.COMMISSIONS)
     .select('id, expected_amount')
     .eq('account_id', accountId)
     .is('pay_period_id', null)
@@ -37,7 +38,7 @@ export async function closePayPeriod(supabase, periodId, accountId, userId) {
   if (unlinkedComms && unlinkedComms.length > 0) {
     const commIds = unlinkedComms.map((c) => c.id);
     const { error: linkErr } = await supabase
-      .from('commissions')
+      .from(TABLES.COMMISSIONS)
       .update({ pay_period_id: periodId, updated_at: new Date().toISOString() })
       .in('id', commIds);
     if (linkErr) throw linkErr;
@@ -45,7 +46,7 @@ export async function closePayPeriod(supabase, periodId, accountId, userId) {
 
   // 4. Get ALL commissions linked to this period (including previously linked ones)
   const { data: allLinkedComms, error: allErr } = await supabase
-    .from('commissions')
+    .from(TABLES.COMMISSIONS)
     .select('expected_amount')
     .eq('pay_period_id', periodId);
   if (allErr) throw allErr;
@@ -57,7 +58,7 @@ export async function closePayPeriod(supabase, periodId, accountId, userId) {
 
   // 5. Update period: status='closed', expected_amount
   const { data: closedPeriod, error: updateErr } = await supabase
-    .from('pay_periods')
+    .from(TABLES.PAY_PERIODS)
     .update({
       status: 'closed',
       expected_amount: expectedAmount,
@@ -71,7 +72,7 @@ export async function closePayPeriod(supabase, periodId, accountId, userId) {
   // 6. Create notification
   if (userId) {
     const dateRange = `${formatDate(period.period_start)} - ${formatDate(period.period_end)}`;
-    await supabase.from('notifications').insert({
+    await supabase.from(TABLES.NOTIFICATIONS).insert({
       account_id: accountId,
       user_id: userId,
       type: 'pay_period_closed',

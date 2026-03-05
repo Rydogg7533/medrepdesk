@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { calculatePayPeriods } from '@/utils/payPeriods';
+import { TABLES } from '@/lib/tables';
 
 export function usePayPeriods(distributorId) {
   const { account } = useAuth();
@@ -11,7 +12,7 @@ export function usePayPeriods(distributorId) {
     queryKey: ['pay_periods', accountId, distributorId],
     queryFn: async () => {
       let query = supabase
-        .from('pay_periods')
+        .from(TABLES.PAY_PERIODS)
         .select('*, distributor:distributors(name)')
         .eq('account_id', accountId)
         .order('period_end', { ascending: false });
@@ -36,7 +37,7 @@ export function usePayPeriod(id) {
     queryKey: ['pay_periods', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('pay_periods')
+        .from(TABLES.PAY_PERIODS)
         .select('*, distributor:distributors(name)')
         .eq('id', id)
         .eq('account_id', accountId)
@@ -56,7 +57,7 @@ export function useCreatePayPeriod() {
   return useMutation({
     mutationFn: async (values) => {
       const { data, error } = await supabase
-        .from('pay_periods')
+        .from(TABLES.PAY_PERIODS)
         .insert({ ...values, account_id: accountId })
         .select()
         .single();
@@ -75,7 +76,7 @@ export function useUpdatePayPeriod() {
   return useMutation({
     mutationFn: async ({ id, ...values }) => {
       const { data, error } = await supabase
-        .from('pay_periods')
+        .from(TABLES.PAY_PERIODS)
         .update({ ...values, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
@@ -97,7 +98,7 @@ export function usePayPeriodCommissions(periodId) {
     queryKey: ['commissions', 'pay_period', periodId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('commissions')
+        .from(TABLES.COMMISSIONS)
         .select('*, case:cases(case_number), distributor:distributors(name)')
         .eq('pay_period_id', periodId)
         .eq('account_id', accountId)
@@ -140,7 +141,7 @@ export function useEnsurePayPeriods(distributorId, paySchedule) {
       }));
 
       const { data, error } = await supabase
-        .from('pay_periods')
+        .from(TABLES.PAY_PERIODS)
         .upsert(rows, { onConflict: 'account_id,distributor_id,period_start,period_end', ignoreDuplicates: true })
         .select();
       if (error) throw error;

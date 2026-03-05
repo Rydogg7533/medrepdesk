@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { TABLES } from '@/lib/tables';
 import { useAuth } from '@/context/AuthContext';
 
 export function useUpdateUser() {
@@ -8,7 +9,7 @@ export function useUpdateUser() {
   return useMutation({
     mutationFn: async (values) => {
       const { data, error } = await supabase
-        .from('users')
+        .from(TABLES.USERS)
         .update({ ...values, updated_at: new Date().toISOString() })
         .eq('id', user.id)
         .select()
@@ -25,7 +26,7 @@ export function useUpdateAccountOnboarding() {
   return useMutation({
     mutationFn: async (values) => {
       const { data, error } = await supabase
-        .from('accounts')
+        .from(TABLES.ACCOUNTS)
         .update({ ...values, updated_at: new Date().toISOString() })
         .eq('id', account.id)
         .select()

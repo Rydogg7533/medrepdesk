@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { TABLES } from '@/lib/tables';
 
 export function useNotifications(limit = 20) {
   const { account, user } = useAuth();
@@ -10,7 +11,7 @@ export function useNotifications(limit = 20) {
     queryKey: ['notifications', accountId, limit],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('notifications')
+        .from(TABLES.NOTIFICATIONS)
         .select('*')
         .eq('account_id', accountId)
         .order('sent_at', { ascending: false })
@@ -30,7 +31,7 @@ export function useUnreadCount() {
     queryKey: ['notifications', 'unread-count', accountId],
     queryFn: async () => {
       const { count, error } = await supabase
-        .from('notifications')
+        .from(TABLES.NOTIFICATIONS)
         .select('*', { count: 'exact', head: true })
         .eq('account_id', accountId)
         .eq('is_read', false);
@@ -48,7 +49,7 @@ export function useMarkRead() {
   return useMutation({
     mutationFn: async (id) => {
       const { error } = await supabase
-        .from('notifications')
+        .from(TABLES.NOTIFICATIONS)
         .update({ is_read: true })
         .eq('id', id);
       if (error) throw error;
@@ -66,7 +67,7 @@ export function useMarkAllRead() {
   return useMutation({
     mutationFn: async () => {
       const { error } = await supabase
-        .from('notifications')
+        .from(TABLES.NOTIFICATIONS)
         .update({ is_read: true })
         .eq('account_id', account.id)
         .eq('is_read', false);

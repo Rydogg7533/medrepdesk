@@ -20,6 +20,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_po_emailed ON purchase_orders;
 CREATE TRIGGER trigger_po_emailed
 AFTER UPDATE ON purchase_orders
 FOR EACH ROW EXECUTE FUNCTION advance_case_on_po_emailed();

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Sparkles, Wand2 } from 'lucide-react';
-import DOMPurify from 'dompurify';
+import { sanitizeText } from '@/utils/sanitize';
 import { caseInsertSchema } from '@/lib/schemas';
 import { useCase, useCreateCase, useUpdateCase } from '@/hooks/useCases';
 import { useSurgeons, useSearchSurgeons } from '@/hooks/useSurgeons';
@@ -154,10 +154,8 @@ export default function CaseForm() {
       procedure_type: form.procedure_type || null,
       scheduled_date: form.scheduled_date || null,
       scheduled_time,
-      notes: form.notes ? DOMPurify.sanitize(form.notes) : null,
+      notes: sanitizeText(form.notes),
     };
-
-    console.log('[CaseForm] handleSubmit payload:', JSON.stringify(payload, null, 2));
 
     try {
       if (isEdit) {

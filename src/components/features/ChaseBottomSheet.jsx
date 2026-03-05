@@ -4,7 +4,7 @@ import { useCreateChaseEntry } from '@/hooks/useChaseLog';
 import { useToast } from '@/components/ui/Toast';
 import BottomSheet from '@/components/ui/BottomSheet';
 import Button from '@/components/ui/Button';
-import DOMPurify from 'dompurify';
+import { sanitizeText } from '@/utils/sanitize';
 
 /**
  * Universal Chase PO bottom sheet.
@@ -82,7 +82,7 @@ export default function ChaseBottomSheet({
       facility_id: facilityId || null,
       chase_type: chaseType,
       action_taken: actionType === 'note' ? 'note' : actionType,
-      outcome: logForm.outcome ? DOMPurify.sanitize(logForm.outcome) : null,
+      outcome: sanitizeText(logForm.outcome),
       promised_date: logForm.promised_date || null,
       next_follow_up: logForm.next_follow_up || null,
     });

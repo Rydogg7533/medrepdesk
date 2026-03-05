@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { TABLES } from '@/lib/tables';
 
 export function useDistributors({ activeOnly = false } = {}) {
   const { account } = useAuth();
@@ -10,7 +11,7 @@ export function useDistributors({ activeOnly = false } = {}) {
     queryKey: ['distributors', accountId, { activeOnly }],
     queryFn: async () => {
       let query = supabase
-        .from('distributors')
+        .from(TABLES.DISTRIBUTORS)
         .select('*')
         .eq('account_id', accountId);
       if (activeOnly) query = query.eq('is_active', true);
@@ -30,7 +31,7 @@ export function useDistributor(id) {
     queryKey: ['distributors', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('distributors')
+        .from(TABLES.DISTRIBUTORS)
         .select('*')
         .eq('id', id)
         .eq('account_id', accountId)
@@ -50,7 +51,7 @@ export function useCreateDistributor() {
   return useMutation({
     mutationFn: async (values) => {
       const { data, error } = await supabase
-        .from('distributors')
+        .from(TABLES.DISTRIBUTORS)
         .insert({ ...values, account_id: accountId })
         .select()
         .single();
@@ -69,7 +70,7 @@ export function useUpdateDistributor() {
   return useMutation({
     mutationFn: async ({ id, ...values }) => {
       const { data, error } = await supabase
-        .from('distributors')
+        .from(TABLES.DISTRIBUTORS)
         .update({ ...values, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
@@ -89,7 +90,7 @@ export function useDeleteDistributor() {
 
   return useMutation({
     mutationFn: async (id) => {
-      const { error } = await supabase.from('distributors').delete().eq('id', id);
+      const { error } = await supabase.from(TABLES.DISTRIBUTORS).delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {

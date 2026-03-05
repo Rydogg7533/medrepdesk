@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import DOMPurify from 'dompurify';
+import { sanitizeText } from '@/utils/sanitize';
 import { useContact, useCreateContact, useUpdateContact } from '@/hooks/useContacts';
 import { useSearchFacilities } from '@/hooks/useFacilities';
 import { useManufacturers } from '@/hooks/useManufacturers';
@@ -128,8 +128,8 @@ export default function ContactForm() {
     const fullName = [prefix, first, last].filter(Boolean).join(' ');
 
     const payload = {
-      full_name: DOMPurify.sanitize(fullName),
-      role: form.role ? DOMPurify.sanitize(form.role.trim()) : null,
+      full_name: sanitizeText(fullName),
+      role: sanitizeText(form.role?.trim()),
       contact_type: contactType || null,
       facility_id: contactType === 'facility' ? form.facility_id || null : null,
       distributor_id: contactType === 'distributor' ? form.distributor_id || null : null,
@@ -138,7 +138,7 @@ export default function ContactForm() {
       phone: phone || null,
       email: email || null,
       is_active: form.is_active,
-      notes: form.notes ? DOMPurify.sanitize(form.notes) : null,
+      notes: sanitizeText(form.notes),
     };
 
     try {

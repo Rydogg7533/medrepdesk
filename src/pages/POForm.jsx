@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Camera, Check, Minus, Loader2 } from 'lucide-react';
-import DOMPurify from 'dompurify';
+import { sanitizeText } from '@/utils/sanitize';
 import { usePO, useCreatePO, useUpdatePO } from '@/hooks/usePOs';
 import { useCreateChaseEntry } from '@/hooks/useChaseLog';
 import { useCases, useCase } from '@/hooks/useCases';
@@ -128,7 +128,7 @@ export default function POForm() {
       amount: form.amount ? Number(form.amount) : null,
       facility_id: selectedCase?.facility_id || null,
       distributor_id: selectedCase?.distributor_id || null,
-      notes: form.notes ? DOMPurify.sanitize(form.notes) : null,
+      notes: sanitizeText(form.notes),
       status: 'not_requested',
     };
 

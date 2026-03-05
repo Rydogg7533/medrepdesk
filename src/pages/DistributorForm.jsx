@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import DOMPurify from 'dompurify';
+import { sanitizeText } from '@/utils/sanitize';
 import { useDistributor, useDistributors, useCreateDistributor, useUpdateDistributor } from '@/hooks/useDistributors';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -99,7 +99,7 @@ export default function DistributorForm() {
       : null;
 
     const payload = {
-      name: DOMPurify.sanitize(form.name.trim()),
+      name: sanitizeText(form.name.trim()),
       billing_email: form.billing_email || null,
       billing_email_cc: ccArray,
       billing_contact_name: form.billing_contact_name || null,
@@ -110,7 +110,7 @@ export default function DistributorForm() {
       default_flat_amount: form.default_commission_type === 'flat' && form.default_flat_amount
         ? Number(form.default_flat_amount) : null,
       is_active: form.is_active,
-      notes: form.notes ? DOMPurify.sanitize(form.notes) : null,
+      notes: sanitizeText(form.notes),
     };
 
     try {

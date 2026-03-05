@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { TABLES } from '@/lib/tables';
 
 export function useFacilities({ activeOnly, filter } = {}) {
   const { account } = useAuth();
@@ -14,7 +15,7 @@ export function useFacilities({ activeOnly, filter } = {}) {
     queryKey: ['facilities', accountId, { filter: resolvedFilter }],
     queryFn: async () => {
       let query = supabase
-        .from('facilities')
+        .from(TABLES.FACILITIES)
         .select('*')
         .eq('account_id', accountId);
       if (resolvedFilter === 'active') {
@@ -76,7 +77,7 @@ export function useFacility(id) {
     queryKey: ['facilities', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('facilities')
+        .from(TABLES.FACILITIES)
         .select('*')
         .eq('id', id)
         .single();
@@ -95,7 +96,7 @@ export function useCreateFacility() {
   return useMutation({
     mutationFn: async (values) => {
       const { data, error } = await supabase
-        .from('facilities')
+        .from(TABLES.FACILITIES)
         .insert({ ...values, account_id: accountId, is_global: false })
         .select()
         .single();
@@ -113,9 +114,7 @@ export function useDeleteFacility() {
 
   return useMutation({
     mutationFn: async (id) => {
-      console.log('[useDeleteFacility] Attempting delete for id:', id);
-      const { data, error, status, statusText } = await supabase.from('facilities').delete().eq('id', id).select();
-      console.log('[useDeleteFacility] Response:', { data, error, status, statusText });
+      const { data, error } = await supabase.from(TABLES.FACILITIES).delete().eq('id', id).select();
       if (error) {
         console.error('[useDeleteFacility] Supabase error:', error);
         throw error;
@@ -124,7 +123,6 @@ export function useDeleteFacility() {
         console.error('[useDeleteFacility] No rows deleted — likely RLS policy blocking. Check is_global and account_id.');
         throw new Error('Delete failed — record not found or permission denied. Check that this is not a global facility.');
       }
-      console.log('[useDeleteFacility] Successfully deleted:', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['facilities'] });
@@ -142,7 +140,7 @@ export function useArchiveFacility() {
   return useMutation({
     mutationFn: async (id) => {
       const { error } = await supabase
-        .from('facilities')
+        .from(TABLES.FACILITIES)
         .update({ is_archived: true, is_active: false, updated_at: new Date().toISOString() })
         .eq('id', id);
       if (error) throw error;
@@ -159,7 +157,7 @@ export function useUnarchiveFacility() {
   return useMutation({
     mutationFn: async (id) => {
       const { error } = await supabase
-        .from('facilities')
+        .from(TABLES.FACILITIES)
         .update({ is_archived: false, is_active: false, updated_at: new Date().toISOString() })
         .eq('id', id);
       if (error) throw error;
@@ -173,10 +171,10 @@ export function useUnarchiveFacility() {
 export async function checkLinkedFacility(id) {
   const counts = [];
   const [cases, contacts, surgeons, pos] = await Promise.all([
-    supabase.from('cases').select('id', { count: 'exact', head: true }).eq('facility_id', id),
-    supabase.from('contacts').select('id', { count: 'exact', head: true }).eq('facility_id', id),
-    supabase.from('surgeons').select('id', { count: 'exact', head: true }).eq('primary_facility_id', id),
-    supabase.from('purchase_orders').select('id', { count: 'exact', head: true }).eq('facility_id', id),
+    supabase.from(TABLES.CASES).select('id', { count: 'exact', head: true }).eq('facility_id', id),
+    supabase.from(TABLES.CONTACTS).select('id', { count: 'exact', head: true }).eq('facility_id', id),
+    supabase.from(TABLES.SURGEONS).select('id', { count: 'exact', head: true }).eq('primary_facility_id', id),
+    supabase.from(TABLES.PURCHASE_ORDERS).select('id', { count: 'exact', head: true }).eq('facility_id', id),
   ]);
   if (cases.count > 0) counts.push(`${cases.count} case${cases.count > 1 ? 's' : ''}`);
   if (contacts.count > 0) counts.push(`${contacts.count} contact${contacts.count > 1 ? 's' : ''}`);
@@ -194,7 +192,7 @@ export function useImportGlobalFacility() {
   return useMutation({
     mutationFn: async (globalId) => {
       const { data: source, error: fetchError } = await supabase
-        .from('facilities')
+        .from(TABLES.FACILITIES)
         .select('*')
         .eq('id', globalId)
         .single();
@@ -202,7 +200,7 @@ export function useImportGlobalFacility() {
 
       const { id, created_at, updated_at, account_id, is_global, is_archived, ...fields } = source;
       const { data, error } = await supabase
-        .from('facilities')
+        .from(TABLES.FACILITIES)
         .insert({ ...fields, account_id: accountId, is_global: false, is_archived: false })
         .select()
         .single();
@@ -221,7 +219,7 @@ export function useUpdateFacility() {
   return useMutation({
     mutationFn: async ({ id, ...values }) => {
       const { data, error } = await supabase
-        .from('facilities')
+        .from(TABLES.FACILITIES)
         .update({ ...values, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
