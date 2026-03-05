@@ -35,7 +35,15 @@ const EDITABLE_INTENTS = {
   log_communication: '/communications/new',
 };
 
-export default function VoiceQuickLog({ isOpen, onClose }) {
+const CONVERSATIONAL_INTENTS = ['add_contact', 'add_surgeon', 'add_facility'];
+
+const REDIRECT_MESSAGES = {
+  add_contact: 'Let me walk you through adding a contact...',
+  add_surgeon: 'Let me walk you through adding a surgeon...',
+  add_facility: 'Let me walk you through adding a facility...',
+};
+
+export default function VoiceQuickLog({ isOpen, onClose, onConversationalRedirect }) {
   const { account, user } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
@@ -73,6 +81,14 @@ export default function VoiceQuickLog({ isOpen, onClose }) {
 
     try {
       const result = await parseMutation.mutateAsync(text);
+      // Auto-redirect entity creation intents to conversational flow
+      if (CONVERSATIONAL_INTENTS.includes(result.intent) && onConversationalRedirect) {
+        toast({ message: REDIRECT_MESSAGES[result.intent], type: 'info' });
+        const scriptType = result.intent;
+        handleClose();
+        onConversationalRedirect(scriptType);
+        return;
+      }
       setParsed(result);
       setStep('result');
     } catch (err) {
@@ -100,10 +116,26 @@ export default function VoiceQuickLog({ isOpen, onClose }) {
 
   async function handleConfirmSave() {
     if (!parsed) return;
+
+    // Redirect entity-creation intents to conversational flow
+    if (CONVERSATIONAL_INTENTS.includes(parsed.intent) && onConversationalRedirect) {
+      toast({ message: REDIRECT_MESSAGES[parsed.intent], type: 'info' });
+      const scriptType = parsed.intent;
+      handleClose();
+      onConversationalRedirect(scriptType);
+      return;
+    }
+
     setStep('saving');
 
     try {
       const result = await executeVoiceAction(parsed, account.id, user.id, supabase);
+      if (result.redirect === 'conversational' && onConversationalRedirect) {
+        toast({ message: REDIRECT_MESSAGES[result.scriptType], type: 'info' });
+        handleClose();
+        onConversationalRedirect(result.scriptType);
+        return;
+      }
       if (result.success) {
         toast({ message: result.message, type: 'success' });
         queryClient.invalidateQueries({ queryKey: ['cases'] });

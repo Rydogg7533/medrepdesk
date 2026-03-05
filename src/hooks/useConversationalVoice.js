@@ -11,9 +11,14 @@ export function useConversationalVoice({ script, onComplete, onCancel }) {
   const [conversationLog, setConversationLog] = useState([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [phase, setPhase] = useState('idle'); // idle | speaking | listening | confirming | done
+  const phaseRef = useRef(phase);
   const utteranceRef = useRef(null);
   const prevListeningRef = useRef(false);
   const mountedRef = useRef(true);
+
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -88,16 +93,24 @@ export function useConversationalVoice({ script, onComplete, onCancel }) {
     const name = prefs.assistant_name || 'Max';
     const style = prefs.confirmation_style || 'brief';
 
+    function formatForSpeech(value) {
+      const digits = String(value).replace(/\D/g, '');
+      if (digits.length === 10) {
+        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+      }
+      return value;
+    }
+
     let summary;
     if (style === 'brief') {
       const entries = script
         .filter((s) => collected[s.field])
-        .map((s) => collected[s.field]);
+        .map((s) => formatForSpeech(collected[s.field]));
       summary = `Got it. I have: ${entries.join(', ')}. Should I save this?`;
     } else {
       const entries = script
         .filter((s) => collected[s.field])
-        .map((s) => `${s.field.replace(/_/g, ' ')}: ${collected[s.field]}`);
+        .map((s) => `${s.field.replace(/_/g, ' ')}: ${formatForSpeech(collected[s.field])}`);
       summary = `Here's what I have. ${entries.join('. ')}. Should I save this?`;
     }
 
@@ -132,22 +145,30 @@ export function useConversationalVoice({ script, onComplete, onCancel }) {
       return;
     }
 
-    if (phase === 'confirming') {
-      if (lower.includes('yes') || lower.includes('save') || lower.includes('confirm') || lower.includes('yep') || lower.includes('yeah')) {
-        setPhase('done');
-        if (onComplete) onComplete(collected);
-        return;
-      }
-      if (lower.includes('no') || lower.includes('start over') || lower.includes('redo')) {
+    if (phaseRef.current === 'confirming') {
+      const DENY_WORDS = ['no', 'nope', 'wrong', 'incorrect', 'start over', 'redo', 'go back'];
+      const isDeny = DENY_WORDS.some((w) => lower.includes(w));
+
+      if (isDeny) {
         setCollected({});
         setConversationLog([]);
         askStep(0);
         return;
       }
+
+      const CONFIRM_WORDS = ['yes', 'yeah', 'yep', 'yup', 'correct', "that's right", 'thats right', 'save', 'confirm', 'sure', 'do it', 'looks good', 'perfect'];
+      const isConfirm = CONFIRM_WORDS.some((w) => lower.includes(w));
+
+      if (isConfirm) {
+        setPhase('done');
+        if (onComplete) onComplete(collected);
+        return;
+      }
+
       // Didn't understand, re-ask
       speak('Sorry, should I save this? Say yes or no.').then(() => {
         if (mountedRef.current) {
-          setPhase('listening');
+          setPhase('confirming');
           startListening();
         }
       });

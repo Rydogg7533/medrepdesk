@@ -145,7 +145,11 @@ export default function AppLayout() {
         </div>
       </BottomSheet>
 
-      <VoiceQuickLog isOpen={voiceOpen} onClose={() => setVoiceOpen(false)} />
+      <VoiceQuickLog
+        isOpen={voiceOpen}
+        onClose={() => setVoiceOpen(false)}
+        onConversationalRedirect={(scriptType) => setConvoVoice(scriptType)}
+      />
       {convoVoice && (
         <ConversationalVoiceModal
           isOpen={!!convoVoice}

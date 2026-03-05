@@ -13,6 +13,12 @@ export async function executeVoiceAction(parsedResult, accountId, userId, supaba
       return logCommission(fields, accountId, supabase);
     case 'log_communication':
       return logCommunication(fields, accountId, userId, supabase);
+    case 'add_contact':
+      return { redirect: 'conversational', scriptType: 'add_contact' };
+    case 'add_surgeon':
+      return { redirect: 'conversational', scriptType: 'add_surgeon' };
+    case 'add_facility':
+      return { redirect: 'conversational', scriptType: 'add_facility' };
     default:
       return { success: false, recordId: null, message: `Unsupported intent: ${intent}` };
   }
