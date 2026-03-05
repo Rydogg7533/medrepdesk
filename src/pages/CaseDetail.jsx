@@ -18,6 +18,7 @@ import BottomSheet from '@/components/ui/BottomSheet';
 import Skeleton from '@/components/ui/Skeleton';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import PipelineGuide from '@/components/features/PipelineGuide';
+import { useToast } from '@/components/ui/Toast';
 import POSentConfirmation from '@/components/features/POSentConfirmation';
 import { formatDate, formatTime, formatCurrency } from '@/utils/formatters';
 import { CASE_STATUSES } from '@/utils/constants';
@@ -53,6 +54,7 @@ export default function CaseDetail() {
   const { data: billSheetItems = [] } = useBillSheetItems(id);
   const updateCase = useUpdateCase();
   const deleteCase = useDeleteCase();
+  const toast = useToast();
   const createCommission = useCreateCommission();
   const createCommunication = useCreateCommunication();
   const createChase = useCreateChaseEntry();
@@ -71,8 +73,14 @@ export default function CaseDetail() {
   }
 
   async function handleDelete() {
-    await deleteCase.mutateAsync(id);
-    navigate('/cases', { replace: true });
+    try {
+      await deleteCase.mutateAsync(id);
+      navigate('/cases', { replace: true });
+      toast({ message: 'Case deleted', type: 'success' });
+    } catch (err) {
+      console.error('Failed to delete case:', err);
+      toast({ message: err.message || 'Failed to delete case', type: 'error' });
+    }
   }
 
   async function handleReschedule() {
@@ -519,7 +527,7 @@ export default function CaseDetail() {
         onClose={() => setShowDelete(false)}
         onConfirm={handleDelete}
         title="Delete Case"
-        message={`Permanently delete ${caseData.case_number}? This cannot be undone.`}
+        message={`Delete ${caseData.case_number}? This will also delete all related bill sheets, POs, chase logs, communications, and commissions. This cannot be undone.`}
         confirmLabel="Delete"
       />
 

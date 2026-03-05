@@ -107,10 +107,17 @@ export function useDeleteCase() {
   return useMutation({
     mutationFn: async (id) => {
       const { error } = await supabase.from('cases').delete().eq('id', id);
-      if (error) throw error;
+      if (error) {
+        console.error('Failed to delete case:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cases'] });
+      queryClient.invalidateQueries({ queryKey: ['bill_sheets'] });
+      queryClient.invalidateQueries({ queryKey: ['purchase_orders'] });
+      queryClient.invalidateQueries({ queryKey: ['communications'] });
+      queryClient.invalidateQueries({ queryKey: ['commissions'] });
     },
   });
 }
