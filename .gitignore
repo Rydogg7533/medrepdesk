@@ -56,3 +56,4 @@ hospital_data.csv
 Hospital_General_Information.csv
 NPPES_*
 TASK_STEP6.md
+.env.local.save
