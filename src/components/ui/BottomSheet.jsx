@@ -25,14 +25,13 @@ export default function BottomSheet({ isOpen, onClose, title, fullHeight, childr
     if (diff > 80) onClose();
   }
 
+  if (!isOpen) return null;
+
   return (
     <>
       {/* Backdrop */}
       <div
-        className={clsx(
-          'fixed inset-0 z-40 bg-black/40 transition-opacity duration-300',
-          isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
-        )}
+        className="fixed inset-0 z-40 bg-black/40"
         onClick={onClose}
       />
 
@@ -41,10 +40,7 @@ export default function BottomSheet({ isOpen, onClose, title, fullHeight, childr
         ref={sheetRef}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className={clsx(
-          'fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-white pb-safe-bottom shadow-xl transition-transform duration-300 ease-out dark:bg-gray-800',
-          isOpen ? 'translate-y-0' : 'translate-y-full'
-        )}
+        className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-white pb-safe-bottom shadow-xl dark:bg-gray-800"
       >
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-2">
