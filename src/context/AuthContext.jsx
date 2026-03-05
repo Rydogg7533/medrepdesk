@@ -120,6 +120,14 @@ export function AuthProvider({ children }) {
     if (signOutError) throw signOutError;
   };
 
+  const refreshUser = useCallback(async () => {
+    if (session?.user) {
+      const userData = await fetchUserAndAccount(session.user.id);
+      setUser(userData);
+      setAccount(userData.account);
+    }
+  }, [session]);
+
   const value = {
     session,
     user,
@@ -130,6 +138,7 @@ export function AuthProvider({ children }) {
     signIn,
     signInWithGoogle,
     signOut,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -13,6 +13,7 @@ import { canUseAIExtraction, getRemainingExtractions } from '@/utils/planLimits'
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import TimeWheelPicker from '@/components/ui/TimeWheelPicker';
 import SearchableSelect from '@/components/ui/SearchableSelect';
 import { useDistributorProducts } from '@/hooks/useDistributorProducts';
 import { groupProductsByCategory, getProductLabel } from '@/utils/productCatalog';
@@ -325,36 +326,14 @@ export default function CaseForm() {
 
           <div className="w-full">
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Time</label>
-            <div className="flex w-full gap-2">
-              <select
-                value={form.time_hour}
-                onChange={(e) => setForm((p) => ({ ...p, time_hour: e.target.value }))}
-                className="min-h-touch flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
-              >
-                <option value="">Hr</option>
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
-                  <option key={h} value={h}>{h}</option>
-                ))}
-              </select>
-              <select
-                value={form.time_minute}
-                onChange={(e) => setForm((p) => ({ ...p, time_minute: e.target.value }))}
-                className="min-h-touch flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
-              >
-                <option value="">Min</option>
-                {['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'].map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
-              <select
-                value={form.time_period}
-                onChange={(e) => setForm((p) => ({ ...p, time_period: e.target.value }))}
-                className="min-h-touch flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm dark:text-white font-medium outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
-              >
-                <option value="AM">AM</option>
-                <option value="PM">PM</option>
-              </select>
-            </div>
+            <TimeWheelPicker
+              hour={form.time_hour}
+              minute={form.time_minute}
+              period={form.time_period}
+              onChangeHour={(v) => setForm((p) => ({ ...p, time_hour: v }))}
+              onChangeMinute={(v) => setForm((p) => ({ ...p, time_minute: v }))}
+              onChangePeriod={(v) => setForm((p) => ({ ...p, time_period: v }))}
+            />
           </div>
 
           <div className="w-full">

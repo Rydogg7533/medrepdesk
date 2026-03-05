@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 
@@ -18,8 +18,7 @@ export function useDashboardPreferences() {
 }
 
 export function useUpdateDashboardPreferences() {
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
 
   return useMutation({
     mutationFn: async (patch) => {
@@ -33,13 +32,7 @@ export function useUpdateDashboardPreferences() {
       return merged;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['auth'] });
-      // Also refetch user data by reloading auth state
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          queryClient.invalidateQueries();
-        }
-      });
+      refreshUser();
     },
   });
 }
