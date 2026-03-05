@@ -6,6 +6,7 @@ const FROM_ADDRESS = "MedRepDesk <notifications@medrepdesk.io>";
 
 interface EmailOptions {
   to: string | string[];
+  cc?: string | string[];
   subject: string;
   html: string;
   text?: string;
@@ -29,6 +30,7 @@ export async function sendEmail(options: EmailOptions): Promise<{ id?: string; e
       body: JSON.stringify({
         from: FROM_ADDRESS,
         to: Array.isArray(options.to) ? options.to : [options.to],
+        ...(options.cc?.length && { cc: Array.isArray(options.cc) ? options.cc : [options.cc] }),
         subject: options.subject,
         html: options.html,
         text: options.text,

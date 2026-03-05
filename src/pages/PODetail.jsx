@@ -7,6 +7,7 @@ import { useChaseLog, useCreateChaseEntry } from '@/hooks/useChaseLog';
 import ContactAutocomplete from '@/components/ui/ContactAutocomplete';
 import { useDraftChaseEmail } from '@/hooks/useAI';
 import { useSendPOEmail } from '@/hooks/usePOEmail';
+import { usePoEmailLog } from '@/hooks/usePoEmailLog';
 import { useCreateCommunication } from '@/hooks/useCommunications';
 import { useAuth } from '@/context/AuthContext';
 import Card from '@/components/ui/Card';
@@ -16,6 +17,7 @@ import BottomSheet from '@/components/ui/BottomSheet';
 import Skeleton from '@/components/ui/Skeleton';
 import ChaseTimeline from '@/components/features/ChaseTimeline';
 import InfoTooltip from '@/components/ui/InfoTooltip';
+import POSentConfirmation from '@/components/features/POSentConfirmation';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 
 export default function PODetail() {
@@ -29,6 +31,7 @@ export default function PODetail() {
   const createChase = useCreateChaseEntry();
   const draftEmail = useDraftChaseEmail();
   const sendPOEmail = useSendPOEmail();
+  const { data: emailLog } = usePoEmailLog(id);
   const createComm = useCreateCommunication();
   const [showDelete, setShowDelete] = useState(false);
   const [showSendToDistributor, setShowSendToDistributor] = useState(false);
@@ -248,9 +251,34 @@ export default function PODetail() {
           <InfoRow label="Amount" value={formatCurrency(po.amount)} />
           <InfoRow label="Date of Surgery" value={formatDate(po.case?.scheduled_date)} />
           <InfoRow label="PO Received Date" value={formatDate(po.received_date)} />
-          <InfoRow label="Sent to Manufacturer" value={po.po_email_sent ? (po.po_email_sent === true ? 'Yes' : formatDate(po.po_email_sent)) : '—'} />
         </div>
       </Card>
+
+      {/* Sent to Manufacturer confirmation */}
+      {po.po_email_sent && emailLog ? (
+        <POSentConfirmation
+          emailLog={emailLog}
+          contactName={
+            (po.manufacturer || po.case?.manufacturer)?.billing_contact_name ||
+            (po.distributor || po.case?.distributor)?.billing_contact_name
+          }
+          poNumber={po.po_number}
+        />
+      ) : (
+        <Card className="mb-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-500 dark:text-gray-400">Not yet sent to manufacturer</p>
+            {['received', 'processing'].includes(po.status) && (
+              <button
+                onClick={() => setShowSendToDistributor(true)}
+                className="flex items-center gap-1 text-xs font-medium text-brand-800 dark:text-brand-400"
+              >
+                <Send className="h-3.5 w-3.5" /> Send Now
+              </button>
+            )}
+          </div>
+        </Card>
+      )}
 
       {/* Quick Actions */}
       {po.status !== 'paid' && (

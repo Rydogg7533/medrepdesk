@@ -93,6 +93,8 @@ export function useSendPOEmail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase_orders'] });
       queryClient.invalidateQueries({ queryKey: ['cases'] });
+      queryClient.invalidateQueries({ queryKey: ['po_email_log'] });
+      queryClient.invalidateQueries({ queryKey: ['bill_sheets'] });
     },
   });
 }

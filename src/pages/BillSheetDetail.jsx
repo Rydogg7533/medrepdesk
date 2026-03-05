@@ -5,12 +5,14 @@ import { useBillSheetItems } from '@/hooks/useBillSheetItems';
 import { useChaseLog, useCreateChaseEntry } from '@/hooks/useChaseLog';
 import { useCasePOs, useCreatePO } from '@/hooks/usePOs';
 import { useSendPOEmail } from '@/hooks/usePOEmail';
+import { usePoEmailLog } from '@/hooks/usePoEmailLog';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Skeleton from '@/components/ui/Skeleton';
 import BottomSheet from '@/components/ui/BottomSheet';
+import POSentConfirmation from '@/components/features/POSentConfirmation';
 import { formatCurrency, formatDate, formatRelativeTime } from '@/utils/formatters';
 
 export default function BillSheetDetail() {
@@ -28,7 +30,7 @@ export default function BillSheetDetail() {
 
   const [showRecordPO, setShowRecordPO] = useState(false);
   const [showSendPrompt, setShowSendPrompt] = useState(false);
-  const [createdPO, setCreatedPO] = useState(null);
+  const [pendingPOData, setPendingPOData] = useState(null);
   const [poForm, setPOForm] = useState({
     po_number: '',
     amount: '',
@@ -39,6 +41,7 @@ export default function BillSheetDetail() {
   const receivedPO = casePOs.find((po) => ['received', 'processing', 'paid'].includes(po.status));
   const hasPO = !!receivedPO;
   const poSentToMfr = !!receivedPO?.po_email_sent;
+  const { data: emailLog } = usePoEmailLog(receivedPO?.id);
 
   // Auto-open Record PO sheet when navigated with ?record=1
   useEffect(() => {
@@ -66,16 +69,35 @@ export default function BillSheetDetail() {
   const lastChase = chaseEntries.find((e) => e.chase_type !== 'bill_sheet_submitted');
   const promisedEntry = chaseEntries.find((e) => e.promised_date && !e.follow_up_done);
 
-  async function handleRecordPO(e) {
+  function handleRecordPO(e) {
     e.preventDefault();
     if (!poForm.po_number.trim() || !poForm.amount) return;
 
+    const data = {
+      po_number: poForm.po_number.trim(),
+      amount: Number(poForm.amount),
+      received_date: poForm.received_date || new Date().toISOString().split('T')[0],
+    };
+
+    setShowRecordPO(false);
+
+    if (manufacturer?.billing_email) {
+      // Defer PO creation — show Send prompt first
+      setPendingPOData(data);
+      setShowSendPrompt(true);
+    } else {
+      // No manufacturer email — create PO immediately
+      savePO(data, false);
+    }
+  }
+
+  async function savePO(data, sendEmail) {
     try {
       const po = await createPO.mutateAsync({
         case_id: caseId,
-        po_number: poForm.po_number.trim(),
-        amount: Number(poForm.amount),
-        received_date: poForm.received_date || new Date().toISOString().split('T')[0],
+        po_number: data.po_number,
+        amount: data.amount,
+        received_date: data.received_date,
         status: 'received',
         facility_id: caseInfo?.facility_id || null,
         distributor_id: caseInfo?.distributor_id || null,
@@ -88,41 +110,56 @@ export default function BillSheetDetail() {
         facility_id: caseInfo?.facility_id || null,
       });
 
-      setCreatedPO(po);
-      setShowRecordPO(false);
-
-      if (manufacturer?.billing_email) {
-        setShowSendPrompt(true);
+      if (sendEmail) {
+        await sendPOEmail.mutateAsync({
+          po: { ...po, facility: caseInfo?.facility, manufacturer },
+          caseData: caseInfo,
+        });
+        toast({ message: 'PO recorded and sent to manufacturer', type: 'success' });
       } else {
         toast({ message: 'PO recorded successfully', type: 'success' });
       }
     } catch (err) {
       toast({ message: err.message || 'Failed to record PO', type: 'error' });
     }
+    setPendingPOData(null);
+    setPOForm({ po_number: '', amount: '', received_date: new Date().toISOString().split('T')[0] });
   }
 
   async function handleSendToManufacturer() {
-    const poToSend = createdPO || receivedPO;
-    if (!poToSend) return;
-    try {
-      await sendPOEmail.mutateAsync({
-        po: {
-          ...poToSend,
-          facility: caseInfo?.facility,
-          manufacturer,
-        },
-        caseData: caseInfo,
-      });
+    if (pendingPOData) {
+      // New PO being recorded — create PO + send email
       setShowSendPrompt(false);
-      toast({ message: 'PO sent to manufacturer', type: 'success' });
-    } catch (err) {
-      toast({ message: err.message || 'Failed to send email', type: 'error' });
+      await savePO(pendingPOData, true);
+    } else if (receivedPO) {
+      // Existing PO — just send email
+      try {
+        await sendPOEmail.mutateAsync({
+          po: { ...receivedPO, facility: caseInfo?.facility, manufacturer },
+          caseData: caseInfo,
+        });
+        setShowSendPrompt(false);
+        toast({ message: 'PO sent to manufacturer', type: 'success' });
+      } catch (err) {
+        toast({ message: err.message || 'Failed to send email', type: 'error' });
+      }
     }
   }
 
   function handleSkipSend() {
+    if (pendingPOData) {
+      // Create PO without sending email
+      setShowSendPrompt(false);
+      savePO(pendingPOData, false);
+    } else {
+      setShowSendPrompt(false);
+    }
+  }
+
+  function handleDismissSendPrompt() {
+    // Dismissing (clicking outside) cancels everything — no PO created
+    setPendingPOData(null);
     setShowSendPrompt(false);
-    toast({ message: 'PO recorded successfully', type: 'success' });
   }
 
   if (itemsLoading) {
@@ -180,17 +217,16 @@ export default function BillSheetDetail() {
       </Card>
 
       {/* Status indicator */}
+      {poSentToMfr && (
+        <POSentConfirmation
+          emailLog={emailLog}
+          contactName={manufacturer?.billing_contact_name}
+          poNumber={receivedPO?.po_number}
+        />
+      )}
       <Card className="mb-4">
         {poSentToMfr ? (
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                Sent to Manufacturer
-              </span>
-              <span className="text-sm text-gray-500 dark:text-gray-400">
-                {formatDate(receivedPO.received_date)}
-              </span>
-            </div>
             <button
               onClick={() => navigate(`/po/${receivedPO.id}`)}
               className="flex items-center gap-1 text-sm font-medium text-brand-800 dark:text-brand-400"
@@ -198,6 +234,9 @@ export default function BillSheetDetail() {
               PO #{receivedPO.po_number || '—'}
               <ChevronRight className="h-4 w-4" />
             </button>
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              Received {formatDate(receivedPO.received_date)}
+            </span>
           </div>
         ) : hasPO ? (
           <div className="flex items-center justify-between">
@@ -367,7 +406,7 @@ export default function BillSheetDetail() {
       </BottomSheet>
 
       {/* Send to Manufacturer Prompt */}
-      <BottomSheet isOpen={showSendPrompt} onClose={handleSkipSend} title="Send PO to Manufacturer?">
+      <BottomSheet isOpen={showSendPrompt} onClose={handleDismissSendPrompt} title="Send PO to Manufacturer?">
         <div className="flex flex-col gap-3">
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Send PO details to <span className="font-medium text-gray-900 dark:text-gray-100">{manufacturer?.name}</span>?

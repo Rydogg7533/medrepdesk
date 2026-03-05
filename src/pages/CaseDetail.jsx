@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit2, Trash2, CheckCircle, Plus, Phone, Mail, MessageSquare, HelpCircle, CalendarClock, XCircle, RotateCcw } from 'lucide-react';
 import { useCase, useUpdateCase, useDeleteCase } from '@/hooks/useCases';
 import { useCasePOs } from '@/hooks/usePOs';
+import { usePoEmailLog } from '@/hooks/usePoEmailLog';
 import { useCaseCommission, useCreateCommission } from '@/hooks/useCommissions';
 import { useCaseCommunications, useCreateCommunication } from '@/hooks/useCommunications';
 import { useChaseLog, useCreateChaseEntry } from '@/hooks/useChaseLog';
@@ -17,6 +18,7 @@ import BottomSheet from '@/components/ui/BottomSheet';
 import Skeleton from '@/components/ui/Skeleton';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import PipelineGuide from '@/components/features/PipelineGuide';
+import POSentConfirmation from '@/components/features/POSentConfirmation';
 import { formatDate, formatTime, formatCurrency } from '@/utils/formatters';
 import { CASE_STATUSES } from '@/utils/constants';
 import { getProductLabel } from '@/utils/productCatalog';
@@ -42,6 +44,8 @@ export default function CaseDetail() {
   const { user } = useAuth();
   const { data: caseData, isLoading } = useCase(id);
   const { data: casePOs = [] } = useCasePOs(id);
+  const sentPO = casePOs.find((po) => po.po_email_sent);
+  const { data: emailLog } = usePoEmailLog(sentPO?.id);
   const { data: caseCommission } = useCaseCommission(id);
   const { data: caseCommunications = [] } = useCaseCommunications(id);
   const { data: chaseEntries = [] } = useChaseLog(id);
@@ -313,6 +317,16 @@ export default function CaseDetail() {
             )}
           </div>
         </Card>
+      )}
+
+      {/* PO Sent to Manufacturer */}
+      {sentPO && emailLog && (
+        <POSentConfirmation
+          emailLog={emailLog}
+          contactName={caseData.distributor?.billing_contact_name}
+          poNumber={sentPO.po_number}
+          amount={sentPO.amount}
+        />
       )}
 
       {/* Commission Section */}

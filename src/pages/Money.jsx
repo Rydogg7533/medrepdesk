@@ -51,6 +51,8 @@ export default function Money() {
   const [chaseTarget, setChaseTarget] = useState(null); // bill sheet object for chase bottom sheet
   const [recordTarget, setRecordTarget] = useState(null); // bill sheet object for record PO bottom sheet
   const [showSendPrompt, setShowSendPrompt] = useState(false);
+  const [pendingPOData, setPendingPOData] = useState(null); // deferred PO data
+  const [pendingRecordTarget, setPendingRecordTarget] = useState(null); // bill sheet for deferred PO
   const [createdPO, setCreatedPO] = useState(null);
   const [sendManufacturer, setSendManufacturer] = useState(null);
   const [poForm, setPOForm] = useState({
@@ -125,62 +127,103 @@ export default function Money() {
     toast({ message: 'Follow-up logged', type: 'success' });
   }
 
-  // Record PO received inline
-  async function handleRecordPO(e) {
+  // Record PO received inline — defers actual creation until Send/Skip
+  function handleRecordPO(e) {
     e.preventDefault();
     if (!recordTarget || !poForm.po_number.trim() || !poForm.amount) return;
 
+    const data = {
+      po_number: poForm.po_number.trim(),
+      amount: Number(poForm.amount),
+      received_date: poForm.received_date || new Date().toISOString().split('T')[0],
+    };
+
+    const mfr = recordTarget.manufacturer;
+    const target = recordTarget;
+    setRecordTarget(null);
+
+    if (mfr?.billing_email) {
+      // Defer PO creation — show Send prompt first
+      setPendingPOData(data);
+      setPendingRecordTarget(target);
+      setSendManufacturer(mfr);
+      setShowSendPrompt(true);
+    } else {
+      // No manufacturer email — create PO immediately
+      saveMoneyPO(data, target, false, null);
+    }
+  }
+
+  async function saveMoneyPO(data, target, sendEmail, mfr) {
     try {
       const po = await createPO.mutateAsync({
-        case_id: recordTarget.caseId,
-        po_number: poForm.po_number.trim(),
-        amount: Number(poForm.amount),
-        received_date: poForm.received_date || new Date().toISOString().split('T')[0],
+        case_id: target.caseId,
+        po_number: data.po_number,
+        amount: data.amount,
+        received_date: data.received_date,
         status: 'received',
-        facility_id: recordTarget.facilityId || null,
-        distributor_id: recordTarget.distributorId || null,
+        facility_id: target.facilityId || null,
+        distributor_id: target.distributorId || null,
       });
 
       await createChase.mutateAsync({
-        case_id: recordTarget.caseId,
+        case_id: target.caseId,
         po_id: po.id,
         chase_type: 'po_received',
-        facility_id: recordTarget.facilityId || null,
+        facility_id: target.facilityId || null,
       });
 
-      setCreatedPO(po);
-      const mfr = recordTarget.manufacturer;
-      setRecordTarget(null);
-      setPOForm({ po_number: '', amount: '', received_date: new Date().toISOString().split('T')[0] });
-
-      if (mfr?.billing_email) {
-        setSendManufacturer(mfr);
-        setShowSendPrompt(true);
+      if (sendEmail && mfr) {
+        await sendPOEmail.mutateAsync({
+          po: { ...po, manufacturer: mfr },
+          caseData: { case_number: target.caseNumber },
+        });
+        toast({ message: 'PO recorded and sent to manufacturer', type: 'success' });
       } else {
         toast({ message: 'PO recorded successfully', type: 'success' });
       }
     } catch (err) {
       toast({ message: err.message || 'Failed to record PO', type: 'error' });
     }
+    setPendingPOData(null);
+    setPendingRecordTarget(null);
+    setPOForm({ po_number: '', amount: '', received_date: new Date().toISOString().split('T')[0] });
   }
 
   async function handleSendToManufacturer() {
-    if (!createdPO || !sendManufacturer) return;
-    try {
-      await sendPOEmail.mutateAsync({
-        po: { ...createdPO, manufacturer: sendManufacturer },
-        caseData: { case_number: createdPO.case_number },
-      });
+    if (pendingPOData && pendingRecordTarget) {
       setShowSendPrompt(false);
-      toast({ message: 'PO sent to manufacturer', type: 'success' });
-    } catch (err) {
-      toast({ message: err.message || 'Failed to send email', type: 'error' });
+      await saveMoneyPO(pendingPOData, pendingRecordTarget, true, sendManufacturer);
+    } else if (createdPO && sendManufacturer) {
+      // Legacy path for existing PO sends from bill sheet cards
+      try {
+        await sendPOEmail.mutateAsync({
+          po: { ...createdPO, manufacturer: sendManufacturer },
+          caseData: { case_number: createdPO.case_number },
+        });
+        setShowSendPrompt(false);
+        toast({ message: 'PO sent to manufacturer', type: 'success' });
+      } catch (err) {
+        toast({ message: err.message || 'Failed to send email', type: 'error' });
+      }
     }
   }
 
   function handleSkipSend() {
+    if (pendingPOData && pendingRecordTarget) {
+      setShowSendPrompt(false);
+      saveMoneyPO(pendingPOData, pendingRecordTarget, false, null);
+    } else {
+      setShowSendPrompt(false);
+      toast({ message: 'PO recorded successfully', type: 'success' });
+    }
+  }
+
+  function handleDismissSendPrompt() {
+    // Dismissing cancels everything — no PO created
+    setPendingPOData(null);
+    setPendingRecordTarget(null);
     setShowSendPrompt(false);
-    toast({ message: 'PO recorded successfully', type: 'success' });
   }
 
   return (
@@ -468,7 +511,7 @@ export default function Money() {
           </BottomSheet>
 
           {/* Send to Manufacturer Prompt */}
-          <BottomSheet isOpen={showSendPrompt} onClose={handleSkipSend} title="Send PO to Manufacturer?">
+          <BottomSheet isOpen={showSendPrompt} onClose={handleDismissSendPrompt} title="Send PO to Manufacturer?">
             <div className="flex flex-col gap-3">
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Send PO details to <span className="font-medium text-gray-900 dark:text-gray-100">{sendManufacturer?.name}</span>?
