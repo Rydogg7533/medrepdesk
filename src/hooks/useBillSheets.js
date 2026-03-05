@@ -12,7 +12,7 @@ export function useBillSheets() {
       // Fetch all bill sheet items with case/manufacturer joins
       const { data: items, error: itemsError } = await supabase
         .from('bill_sheet_items')
-        .select('*, case:cases(id, case_number, status, scheduled_date, facility_id, distributor_id, surgeon:surgeons(full_name), facility:facilities(id, name, phone, billing_contact_phone, billing_email), distributor:distributors(id, name, billing_email, billing_email_cc)), manufacturer:manufacturers(id, name, billing_email, billing_email_cc)')
+        .select('*, case:cases(id, case_number, status, scheduled_date, facility_id, distributor_id, surgeon:surgeons(full_name), facility:facilities(id, name, phone, billing_phone), distributor:distributors(id, name, billing_email, billing_email_cc)), manufacturer:manufacturers(id, name, billing_email, billing_contact_phone)')
         .eq('account_id', accountId)
         .order('created_at', { ascending: false });
       if (itemsError) throw itemsError;
@@ -69,8 +69,8 @@ export function useBillSheets() {
             surgeon: item.case?.surgeon?.full_name,
             facility: item.case?.facility?.name,
             facilityId: item.case?.facility_id,
-            facilityPhone: item.case?.facility?.billing_contact_phone || item.case?.facility?.phone,
-            facilityEmail: item.case?.facility?.billing_email,
+            facilityPhone: item.case?.facility?.billing_phone || item.case?.facility?.phone,
+            facilityEmail: item.case?.distributor?.billing_email,
             distributorId: item.case?.distributor_id,
             distributor: item.case?.distributor,
             manufacturer: item.manufacturer,
