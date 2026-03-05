@@ -2,7 +2,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, Zap, Users, Building2 } from 'lucide-react';
 import clsx from 'clsx';
 import Button from '@/components/ui/Button';
-import { useSubscription, useCreateCheckout } from '@/hooks/useSubscription';
+import { useSubscription, useCreateCheckout, useCreatePortalSession } from '@/hooks/useSubscription';
 import { PLAN_LIMITS } from '@/utils/constants';
 
 const plans = [
@@ -57,8 +57,9 @@ const plans = [
 export default function Pricing() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { plan: currentPlan, isActive, isTrialing } = useSubscription();
+  const { plan: currentPlan, isActive, isTrialing, hasStripeCustomer } = useSubscription();
   const checkout = useCreateCheckout();
+  const portalSession = useCreatePortalSession();
 
   const cancelMsg = searchParams.get('checkout') === 'cancel';
 
@@ -89,6 +90,24 @@ export default function Pricing() {
       {cancelMsg && (
         <div className="mt-3 rounded-lg bg-amber-50 px-4 py-2 text-center text-sm text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
           Checkout was canceled. You can try again anytime.
+        </div>
+      )}
+
+      {hasStripeCustomer && (
+        <div className="mt-4 text-center">
+          <button
+            onClick={async () => {
+              try {
+                const result = await portalSession.mutateAsync();
+                if (result?.url) window.location.href = result.url;
+              } catch (err) {
+                console.error('Portal error:', err);
+              }
+            }}
+            className="text-sm font-medium text-brand-800 underline dark:text-brand-400"
+          >
+            Manage Subscription
+          </button>
         </div>
       )}
 
@@ -158,6 +177,11 @@ export default function Pricing() {
                   >
                     {isActive ? 'Switch Plan' : 'Start Free Trial'}
                   </Button>
+                )}
+                {!isActive && (
+                  <p className="mt-2 text-center text-[11px] text-gray-400 dark:text-gray-500">
+                    14-day free trial, no credit card required
+                  </p>
                 )}
               </div>
             </div>

@@ -51,6 +51,7 @@ import BillSheetDetail from '@/pages/BillSheetDetail';
 import ActionItems from '@/pages/ActionItems';
 import PayPeriodSummary from '@/pages/PayPeriodSummary';
 import Onboarding from '@/pages/Onboarding';
+import SubscriptionGate from '@/components/SubscriptionGate';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -131,7 +132,7 @@ function App() {
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
 
             {/* Protected routes with AppLayout */}
-            <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+            <Route element={<ProtectedRoute><SubscriptionGate><AppLayout /></SubscriptionGate></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/cases" element={<Cases />} />
               <Route path="/cases/new" element={<CaseForm />} />

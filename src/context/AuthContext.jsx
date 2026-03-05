@@ -41,6 +41,7 @@ export function AuthProvider({ children }) {
     }
 
     try {
+      setLoading(true);
       setSession(sess);
       const userData = await fetchUserAndAccount(sess.user.id);
       setUser(userData);

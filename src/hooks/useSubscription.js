@@ -5,14 +5,26 @@ import { useAuth } from '@/context/AuthContext';
 export function useSubscription() {
   const { account } = useAuth();
 
+  const plan = account?.plan || 'solo';
+  const subStatus = account?.sub_status || 'trialing';
+  const isActive = ['active', 'trialing'].includes(subStatus);
+  const isTrialing = subStatus === 'trialing';
+  const isPastDue = subStatus === 'past_due';
+  const isCanceled = subStatus === 'canceled';
+
   return {
-    plan: account?.plan || 'solo',
-    status: account?.sub_status || 'trialing',
-    isActive: ['active', 'trialing'].includes(account?.sub_status),
-    isPastDue: account?.sub_status === 'past_due',
-    isCanceled: account?.sub_status === 'canceled',
-    isTrialing: account?.sub_status === 'trialing',
+    plan,
+    status: subStatus,
+    subStatus,
+    isActive,
+    isTrial: isTrialing,
+    isTrialing,
+    isPastDue,
+    isCanceled,
     hasStripeCustomer: !!account?.stripe_customer_id,
+    canAccessAssistant: isActive && ['assistant', 'distributorship'].includes(plan),
+    canAccessDistributorship: isActive && plan === 'distributorship',
+    trialEndsAt: account?.created_at ? new Date(new Date(account.created_at).getTime() + 14 * 24 * 60 * 60 * 1000) : null,
   };
 }
 
