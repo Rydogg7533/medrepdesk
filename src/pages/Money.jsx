@@ -141,13 +141,6 @@ export default function Money() {
         distributor_id: target.distributorId || null,
       });
 
-      await createChase.mutateAsync({
-        case_id: target.caseId,
-        po_id: po.id,
-        chase_type: 'po_received',
-        facility_id: target.facilityId || null,
-      });
-
       if (sendEmail && mfr) {
         await sendPOEmail.mutateAsync({
           po: { ...po, manufacturer: mfr },
@@ -447,7 +440,7 @@ export default function Money() {
                   className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 />
               </div>
-              <Button type="submit" fullWidth loading={createPO.isPending || createChase.isPending}>
+              <Button type="submit" fullWidth loading={createPO.isPending}>
                 Save PO
               </Button>
             </form>
