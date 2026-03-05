@@ -27,7 +27,8 @@ export default function SearchableSelect({
 
   const isAsync = !!onSearch;
 
-  const selectedOption = options.find((o) => o[valueKey] === value);
+  const selectedOption = options.find((o) => o[valueKey] === value)
+    || initialOptions.find((o) => o[valueKey] === value);
   const displayLabel = selectedOption
     ? selectedOption[displayKey]
     : initialLabel || '';
