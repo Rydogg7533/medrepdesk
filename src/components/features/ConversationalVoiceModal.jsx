@@ -92,7 +92,7 @@ function buildFacilityScript() {
       validator: (text) => {
         const lower = text.toLowerCase();
         if (lower.includes('hospital')) return { value: 'hospital' };
-        if (lower.includes('ambulatory') || lower.includes('surgery center') || lower.includes('asc')) return { value: 'asc' };
+        if (lower.includes('ambulatory') || lower.includes('surgery center') || lower.includes('asc') || lower.includes('surgical')) return { value: 'asc' };
         if (lower.includes('clinic')) return { value: 'clinic' };
         return { value: 'other' };
       },
@@ -103,9 +103,9 @@ function buildFacilityScript() {
       field: 'state',
       required: false,
       validator: (text) => {
-        const upper = text.toUpperCase().trim();
-        if (upper.length === 2) return { value: upper };
-        return { value: text };
+        const trimmed = text.trim();
+        if (trimmed.length === 2) return { value: trimmed.toUpperCase() };
+        return { value: trimmed };
       },
     },
   ];

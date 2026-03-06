@@ -170,10 +170,23 @@ export default function VoiceQuickLog({ isOpen, onClose, onConversationalRedirec
     }
   }
 
+  function handleAddFacility() {
+    if (onConversationalRedirect) {
+      const caseData = parsed?.fields || {};
+      handleClose();
+      onConversationalRedirect('add_facility', { prefillName: unknownFacilityName, caseData });
+    }
+  }
+
   const unknownSurgeonAmbiguity = parsed?.ambiguities?.find(
     (a) => typeof a === 'string' && a.toLowerCase().includes('not found in your surgeon list')
   );
   const unknownSurgeonName = parsed?.fields?.surgeon_name;
+
+  const unknownFacilityAmbiguity = parsed?.ambiguities?.find(
+    (a) => typeof a === 'string' && a.toLowerCase().includes('not found in your facility list')
+  );
+  const unknownFacilityName = parsed?.fields?.facility_name;
 
   function handleClose() {
     if (isListening) stopListening();
@@ -345,6 +358,19 @@ export default function VoiceQuickLog({ isOpen, onClose, onConversationalRedirec
                 </p>
                 <div className="flex gap-2">
                   <Button size="sm" onClick={handleAddSurgeon}>Add Surgeon</Button>
+                  <Button size="sm" variant="secondary" onClick={() => {}}>Continue Without</Button>
+                </div>
+              </div>
+            )}
+
+            {/* Unknown facility prompt */}
+            {unknownFacilityAmbiguity && unknownFacilityName && !parsed.fields?.facility_id && (
+              <div className="rounded-xl bg-blue-50 dark:bg-blue-900/20 px-4 py-3">
+                <p className="mb-2 text-sm text-blue-800 dark:text-blue-300">
+                  <span className="font-medium">{unknownFacilityName}</span> isn't in your facility list. Add it?
+                </p>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={handleAddFacility}>Add Facility</Button>
                   <Button size="sm" variant="secondary" onClick={() => {}}>Continue Without</Button>
                 </div>
               </div>

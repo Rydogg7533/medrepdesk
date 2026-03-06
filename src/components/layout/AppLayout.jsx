@@ -120,21 +120,21 @@ export default function AppLayout() {
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Voice Log</span>
               </button>
               <button
-                onClick={() => { setFabOpen(false); setConvoVoice('add_contact'); }}
+                onClick={() => { setFabOpen(false); setConvoVoice({ scriptType: 'add_contact' }); }}
                 className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 <UserRound className="h-5 w-5 text-brand-800 dark:text-brand-400" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Voice: Add Contact</span>
               </button>
               <button
-                onClick={() => { setFabOpen(false); setConvoVoice('add_surgeon'); }}
+                onClick={() => { setFabOpen(false); setConvoVoice({ scriptType: 'add_surgeon' }); }}
                 className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 <Stethoscope className="h-5 w-5 text-brand-800 dark:text-brand-400" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Voice: Add Surgeon</span>
               </button>
               <button
-                onClick={() => { setFabOpen(false); setConvoVoice('add_facility'); }}
+                onClick={() => { setFabOpen(false); setConvoVoice({ scriptType: 'add_facility' }); }}
                 className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 <Building2 className="h-5 w-5 text-brand-800 dark:text-brand-400" />
@@ -158,14 +158,26 @@ export default function AppLayout() {
           prefillName={convoVoice.prefillName}
           onComplete={(savedRecord) => {
             const caseData = convoVoice.caseData;
+            const st = convoVoice.scriptType;
             setConvoVoice(null);
-            if (caseData && savedRecord && convoVoice.scriptType === 'add_surgeon') {
+            if (caseData && savedRecord && st === 'add_surgeon') {
               navigate('/cases/new', {
                 state: {
                   prefill: {
                     ...caseData,
                     surgeon_id: savedRecord.id,
                     surgeon_name: savedRecord.full_name,
+                  },
+                  showReadyBanner: true,
+                },
+              });
+            } else if (caseData && savedRecord && st === 'add_facility') {
+              navigate('/cases/new', {
+                state: {
+                  prefill: {
+                    ...caseData,
+                    facility_id: savedRecord.id,
+                    facility_name: savedRecord.name,
                   },
                   showReadyBanner: true,
                 },
