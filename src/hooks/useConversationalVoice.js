@@ -156,8 +156,18 @@ export function useConversationalVoice({ script, onComplete, onCancel, onAllAnsw
       if (onAllAnsweredRef.current) {
         const result = await onAllAnsweredRef.current(currentCollected, { speak, startListening, dispatch, mountedRef });
         if (result) {
+          if (result._restart) {
+            dispatch({ type: 'RESTART' });
+            askStep(0, {});
+            return;
+          }
           finalCollected = result;
           dispatch({ type: 'SET_COLLECTED', collected: result });
+          if (result._skipReadback) {
+            dispatch({ type: 'CONFIRM_SAVE' });
+            if (onCompleteRef.current) onCompleteRef.current(finalCollected);
+            return;
+          }
         }
       }
       await doReadBackAndConfirm(finalCollected);

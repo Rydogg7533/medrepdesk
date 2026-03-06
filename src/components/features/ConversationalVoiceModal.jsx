@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { Mic, MicOff, Loader2, Volume2, CheckCircle, ArrowLeft } from 'lucide-react';
 import BottomSheet from '@/components/ui/BottomSheet';
 import Button from '@/components/ui/Button';
@@ -165,9 +165,9 @@ export default function ConversationalVoiceModal({ isOpen, onClose, scriptType =
         });
         toast({ message: `Surgeon "${finalCollected.full_name}" added`, type: 'success' });
       } else if (scriptType === 'add_facility') {
-        if (finalCollected._globalMatch) {
-          savedRecord = await importGlobalFacility.mutateAsync(finalCollected._globalMatch.id);
-          toast({ message: `Facility "${finalCollected._globalMatch.name}" imported`, type: 'success' });
+        if (finalCollected._globalMatchId) {
+          savedRecord = await importGlobalFacility.mutateAsync(finalCollected._globalMatchId);
+          toast({ message: `Facility "${finalCollected.name}" imported`, type: 'success' });
         } else {
           savedRecord = await createFacility.mutateAsync({
             name: sanitizeText(finalCollected.name),
@@ -190,8 +190,6 @@ export default function ConversationalVoiceModal({ isOpen, onClose, scriptType =
     }
   }, [scriptType, facilities, createContact, createSurgeon, createFacility, importGlobalFacility, toast, hasPrefill, prefillName, onCompleteProp]);
 
-  const globalMatchRef = useRef(null);
-
   function listenOnce() {
     return new Promise((resolve) => {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -208,47 +206,63 @@ export default function ConversationalVoiceModal({ isOpen, onClose, scriptType =
   }
 
   const handleAllAnswered = useCallback(async (collected, { speak }) => {
-    if (scriptType !== 'add_facility') return null;
-
-    console.log('FACILITY SEARCH - collected:', collected);
+    if (scriptType !== 'add_facility' || !collected.name) return null;
 
     try {
-      console.log('FACILITY SEARCH - querying global DB...');
-      const { data } = await supabase
+      const { data: matches } = await supabase
         .from('facilities')
         .select('*')
         .eq('is_global', true)
         .ilike('name', `%${collected.name}%`)
         .limit(1);
-      const match = data?.[0];
-      console.log('FACILITY SEARCH - results:', data);
 
-      if (!match) return null;
+      if (matches && matches.length > 0) {
+        // MATCH FOUND
+        const match = matches[0];
+        const addressPart = match.address ? `located at ${match.address} in` : 'in';
+        await speak(`I found ${match.name} ${addressPart} ${match.city}, ${match.state}. Is this the facility you are looking for?`);
 
-      globalMatchRef.current = match;
+        const response = await listenOnce();
+        const confirmed = /yes|yeah|yep|correct|that'?s it|right/i.test(response || '');
 
-      const location = [match.city, match.state].filter(Boolean).join(', ');
-      const addressPart = match.address ? ` located at ${match.address} in ${location}` : ` in ${location}`;
-      await speak(`I found ${match.name}${addressPart}. Is this the facility you are looking for?`);
-
-      const response = await listenOnce();
-      const lower = (response || '').toLowerCase().trim();
-
-      const isYes = ['yes', 'yeah', 'yep', 'yup', 'correct', "that's it", 'thats it', "that's right", 'thats right'].some((w) => lower.includes(w));
-
-      if (isYes) {
-        const merged = { ...collected };
-        if (match.address) merged.address = match.address;
-        if (match.city) merged.city = match.city;
-        if (match.state) merged.state = match.state;
-        if (match.phone) merged.phone = match.phone;
-        if (match.facility_type) merged.facility_type = match.facility_type;
-        merged._globalMatch = match;
-        return merged;
+        if (confirmed) {
+          await speak('Great, I have filled in all the details from our database.');
+          return {
+            ...collected,
+            name: match.name,
+            address: match.address,
+            city: match.city,
+            state: match.state,
+            phone: match.phone,
+            billing_phone: match.billing_phone,
+            facility_type: match.facility_type || collected.facility_type,
+            _globalMatchId: match.id,
+            _skipReadback: true,
+          };
+        } else {
+          await speak('No problem, I will create a new entry with the information you provided.');
+          return { ...collected, _skipReadback: true };
+        }
       } else {
-        await speak("No problem, I'll create a new entry with the information you provided.");
-        globalMatchRef.current = null;
-        return null;
+        // NO MATCH FOUND — readback collected info and confirm
+        const readback = [
+          `Facility name: ${collected.name}`,
+          collected.facility_type ? `Type: ${collected.facility_type}` : null,
+          collected.city ? `City: ${collected.city}` : null,
+          collected.state ? `State: ${collected.state}` : null,
+        ].filter(Boolean).join(', ');
+
+        await speak(`No match found in our database. I still want to add this facility with the following information: ${readback}. Does that sound correct?`);
+
+        const response = await listenOnce();
+        const confirmed = /yes|yeah|yep|correct|right|sounds good/i.test(response || '');
+
+        if (!confirmed) {
+          await speak('No problem, let us start over.');
+          return { _restart: true };
+        }
+        // Confirmed — skip readback since we already confirmed
+        return { ...collected, _skipReadback: true };
       }
     } catch {
       return null;
