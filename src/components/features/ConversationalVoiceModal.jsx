@@ -210,21 +210,18 @@ export default function ConversationalVoiceModal({ isOpen, onClose, scriptType =
   const handleAllAnswered = useCallback(async (collected, { speak }) => {
     if (scriptType !== 'add_facility') return null;
 
+    console.log('FACILITY SEARCH - collected:', collected);
+
     try {
-      let query = supabase
+      console.log('FACILITY SEARCH - querying global DB...');
+      const { data } = await supabase
         .from('facilities')
         .select('*')
         .eq('is_global', true)
-        .ilike('name', `%${collected.name}%`);
-
-      if (collected.city) {
-        query = query.ilike('city', `%${collected.city}%`);
-      } else if (collected.state) {
-        query = query.ilike('state', `%${collected.state}%`);
-      }
-
-      const { data } = await query.limit(1);
+        .ilike('name', `%${collected.name}%`)
+        .limit(1);
       const match = data?.[0];
+      console.log('FACILITY SEARCH - results:', data);
 
       if (!match) return null;
 
