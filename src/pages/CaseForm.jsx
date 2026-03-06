@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Wand2, Mic } from 'lucide-react';
+import { ArrowLeft, Sparkles, Wand2, Mic, CheckCircle } from 'lucide-react';
 import { sanitizeText } from '@/utils/sanitize';
 import { caseInsertSchema } from '@/lib/schemas';
 import { useCase, useCreateCase, useUpdateCase } from '@/hooks/useCases';
@@ -25,6 +25,8 @@ export default function CaseForm() {
   const navigate = useNavigate();
   const location = useLocation();
   const prefill = location.state?.prefill;
+  const showReadyBanner = location.state?.showReadyBanner;
+  const topRef = useRef(null);
 
   const { data: existingCase } = useCase(isEdit ? id : null);
   const createCase = useCreateCase();
@@ -164,9 +166,14 @@ export default function CaseForm() {
     }));
     if (prefill.surgeon_id || prefill.facility_id || prefill.procedure_type || prefill.scheduled_date) {
       setEntryMode('manual');
-      setParseBanner('Pre-filled from voice input - review fields below');
+      if (!showReadyBanner) {
+        setParseBanner('Pre-filled from voice input - review fields below');
+      }
     }
-  }, [prefill, isEdit]);
+    if (showReadyBanner) {
+      topRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [prefill, isEdit, showReadyBanner]);
 
   function onChange(e) {
     const { name, value } = e.target;
@@ -211,8 +218,10 @@ export default function CaseForm() {
 
   const isPending = createCase.isPending || updateCase.isPending;
 
+  const isReadyToSave = showReadyBanner && form.surgeon_id && form.facility_id && form.scheduled_date;
+
   return (
-    <div className="p-4">
+    <div className="p-4" ref={topRef}>
       <div className="mb-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="min-h-touch p-1">
           <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
@@ -221,6 +230,13 @@ export default function CaseForm() {
           {isEdit ? 'Edit Case' : 'New Case'}
         </h1>
       </div>
+
+      {isReadyToSave && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg bg-green-50 dark:bg-green-900/30 p-3 text-sm text-green-700 dark:text-green-400">
+          <CheckCircle className="h-4 w-4 flex-shrink-0" />
+          Ready to schedule — review and tap Save to confirm
+        </div>
+      )}
 
       {serverError && (
         <div className="mb-4 rounded-lg bg-red-50 dark:bg-red-900/30 p-3 text-sm text-red-600 dark:text-red-400">{serverError}</div>

@@ -164,8 +164,9 @@ export default function VoiceQuickLog({ isOpen, onClose, onConversationalRedirec
 
   function handleAddSurgeon() {
     if (onConversationalRedirect) {
+      const caseData = parsed?.fields || {};
       handleClose();
-      onConversationalRedirect('add_surgeon');
+      onConversationalRedirect('add_surgeon', { prefillName: unknownSurgeonName, caseData });
     }
   }
 

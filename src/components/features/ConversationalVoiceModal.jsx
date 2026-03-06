@@ -117,7 +117,7 @@ const SCRIPT_CONFIGS = {
   add_facility: { title: 'Add Facility', buildScript: () => buildFacilityScript() },
 };
 
-export default function ConversationalVoiceModal({ isOpen, onClose, scriptType = 'add_contact' }) {
+export default function ConversationalVoiceModal({ isOpen, onClose, scriptType = 'add_contact', prefillName, onComplete: onCompleteProp }) {
   const toast = useToast();
   const createContact = useCreateContact();
   const createSurgeon = useCreateSurgeon();
@@ -127,46 +127,62 @@ export default function ConversationalVoiceModal({ isOpen, onClose, scriptType =
   const [saving, setSaving] = useState(false);
 
   const config = SCRIPT_CONFIGS[scriptType];
-  const script = config.buildScript(facilities);
+  let script = config.buildScript(facilities);
+
+  // If prefillName is provided for add_surgeon, skip the name question
+  const hasPrefill = prefillName && scriptType === 'add_surgeon';
+  if (hasPrefill) {
+    script = script.filter((s) => s.field !== 'full_name');
+  }
 
   const handleComplete = useCallback(async (collected) => {
+    // Merge prefilled name back into collected data
+    const finalCollected = hasPrefill
+      ? { full_name: prefillName, ...collected }
+      : collected;
+
     setSaving(true);
     try {
+      let savedRecord;
       if (scriptType === 'add_contact') {
-        const facilityMatch = fuzzyMatchFacility(collected.facility_name, facilities);
-        await createContact.mutateAsync({
-          full_name: sanitizeText(collected.full_name),
-          role: collected.role ? sanitizeText(collected.role) : null,
+        const facilityMatch = fuzzyMatchFacility(finalCollected.facility_name, facilities);
+        savedRecord = await createContact.mutateAsync({
+          full_name: sanitizeText(finalCollected.full_name),
+          role: finalCollected.role ? sanitizeText(finalCollected.role) : null,
           facility_id: facilityMatch?.id || null,
-          phone: collected.phone || null,
-          email: collected.email || null,
+          phone: finalCollected.phone || null,
+          email: finalCollected.email || null,
         });
-        toast({ message: `Contact "${collected.full_name}" added`, type: 'success' });
+        toast({ message: `Contact "${finalCollected.full_name}" added`, type: 'success' });
       } else if (scriptType === 'add_surgeon') {
-        const facilityMatch = fuzzyMatchFacility(collected.primary_facility_name, facilities);
-        await createSurgeon.mutateAsync({
-          full_name: sanitizeText(collected.full_name),
-          specialty: collected.specialty ? sanitizeText(collected.specialty) : null,
+        const facilityMatch = fuzzyMatchFacility(finalCollected.primary_facility_name, facilities);
+        savedRecord = await createSurgeon.mutateAsync({
+          full_name: sanitizeText(finalCollected.full_name),
+          specialty: finalCollected.specialty ? sanitizeText(finalCollected.specialty) : null,
           primary_facility_id: facilityMatch?.id || null,
-          phone: collected.phone || null,
+          phone: finalCollected.phone || null,
         });
-        toast({ message: `Surgeon "${collected.full_name}" added`, type: 'success' });
+        toast({ message: `Surgeon "${finalCollected.full_name}" added`, type: 'success' });
       } else if (scriptType === 'add_facility') {
-        await createFacility.mutateAsync({
-          name: sanitizeText(collected.name),
-          facility_type: collected.facility_type || null,
-          city: collected.city ? sanitizeText(collected.city) : null,
-          state: collected.state ? sanitizeText(collected.state) : null,
+        savedRecord = await createFacility.mutateAsync({
+          name: sanitizeText(finalCollected.name),
+          facility_type: finalCollected.facility_type || null,
+          city: finalCollected.city ? sanitizeText(finalCollected.city) : null,
+          state: finalCollected.state ? sanitizeText(finalCollected.state) : null,
         });
-        toast({ message: `Facility "${collected.name}" added`, type: 'success' });
+        toast({ message: `Facility "${finalCollected.name}" added`, type: 'success' });
       }
-      handleClose();
+      if (onCompleteProp && savedRecord) {
+        onCompleteProp(savedRecord);
+      } else {
+        handleClose();
+      }
     } catch (err) {
       toast({ message: `Failed to save: ${err.message}`, type: 'error' });
     } finally {
       setSaving(false);
     }
-  }, [scriptType, facilities, createContact, createSurgeon, createFacility, toast]);
+  }, [scriptType, facilities, createContact, createSurgeon, createFacility, toast, hasPrefill, prefillName, onCompleteProp]);
 
   const handleCancel = useCallback(() => {
     voice.reset();

@@ -17,7 +17,7 @@ export default function AppLayout() {
   const [fabOpen, setFabOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
-  const [convoVoice, setConvoVoice] = useState(null); // 'add_contact' | 'add_surgeon' | 'add_facility' | null
+  const [convoVoice, setConvoVoice] = useState(null); // { scriptType, prefillName?, caseData? } | null
   const { canAccessAssistant } = useSubscription();
   const navigate = useNavigate();
   const location = useLocation();
@@ -148,13 +148,30 @@ export default function AppLayout() {
       <VoiceQuickLog
         isOpen={voiceOpen}
         onClose={() => setVoiceOpen(false)}
-        onConversationalRedirect={(scriptType) => setConvoVoice(scriptType)}
+        onConversationalRedirect={(scriptType, extras) => setConvoVoice({ scriptType, ...(extras || {}) })}
       />
       {convoVoice && (
         <ConversationalVoiceModal
           isOpen={!!convoVoice}
           onClose={() => setConvoVoice(null)}
-          scriptType={convoVoice}
+          scriptType={convoVoice.scriptType}
+          prefillName={convoVoice.prefillName}
+          onComplete={(savedRecord) => {
+            const caseData = convoVoice.caseData;
+            setConvoVoice(null);
+            if (caseData && savedRecord && convoVoice.scriptType === 'add_surgeon') {
+              navigate('/cases/new', {
+                state: {
+                  prefill: {
+                    ...caseData,
+                    surgeon_id: savedRecord.id,
+                    surgeon_name: savedRecord.full_name,
+                  },
+                  showReadyBanner: true,
+                },
+              });
+            }
+          }}
         />
       )}
 

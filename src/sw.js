@@ -10,7 +10,7 @@ precacheAndRoute(self.__WB_MANIFEST);
 registerRoute(
   ({ url }) => url.hostname.includes('supabase.co'),
   new NetworkFirst({
-    cacheName: 'supabase-api',
+    cacheName: 'supabase-api-v2',
     plugins: [
       new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 }),
     ],
