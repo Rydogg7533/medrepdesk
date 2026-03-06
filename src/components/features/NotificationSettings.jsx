@@ -111,11 +111,23 @@ function NumberStepper({ value, onChange, label, suffix, min = 0, max = 30, disa
 
 export default function NotificationSettings() {
   const { account } = useAuth();
-  const { supported: pushSupported, isSubscribed, subscribe, unsubscribe, loading: pushLoading } = usePushNotifications();
+  const { supported: pushSupported, isSubscribed, subscribe, unsubscribe, loading: pushLoading, error: pushError } = usePushNotifications();
   const updateAccount = useUpdateAccount();
   const toast = useToast();
 
   const pushEnabled = isSubscribed;
+
+  async function handleEnablePush() {
+    const sub = await subscribe();
+    if (sub) {
+      toast({ message: 'Push notifications enabled', type: 'success' });
+    }
+  }
+
+  async function handleDisablePush() {
+    await unsubscribe();
+    toast({ message: 'Push notifications disabled', type: 'info' });
+  }
 
   const [form, setForm] = useState({
     reminder_hour: 20,
@@ -215,7 +227,7 @@ export default function NotificationSettings() {
           <div className="mt-3">
             {pushEnabled ? (
               <button
-                onClick={unsubscribe}
+                onClick={handleDisablePush}
                 disabled={pushLoading}
                 className="text-xs text-gray-500 underline hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
               >
@@ -226,11 +238,14 @@ export default function NotificationSettings() {
                 variant="primary"
                 fullWidth
                 loading={pushLoading}
-                onClick={subscribe}
+                onClick={handleEnablePush}
               >
                 <Bell className="h-4 w-4" />
                 Enable Push Notifications
               </Button>
+            )}
+            {pushError && (
+              <p className="mt-2 text-xs text-red-500 dark:text-red-400">{pushError}</p>
             )}
           </div>
         </div>

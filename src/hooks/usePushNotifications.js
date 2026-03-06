@@ -23,6 +23,7 @@ export function usePushNotifications() {
   );
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [supported] = useState(
     typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window
   );
@@ -39,14 +40,35 @@ export function usePushNotifications() {
   }, [supported, user]);
 
   const subscribe = useCallback(async () => {
-    if (!supported || !user || !VAPID_PUBLIC_KEY) return null;
+    setError(null);
+
+    if (!supported) {
+      setError('Push notifications are not supported in this browser.');
+      return null;
+    }
+    if (!user) {
+      setError('You must be logged in to enable push notifications.');
+      return null;
+    }
+    if (!VAPID_PUBLIC_KEY) {
+      setError('Push notifications are not configured. Contact support.');
+      console.error('VITE_VAPID_PUBLIC_KEY is not set');
+      return null;
+    }
 
     setLoading(true);
     try {
       const perm = await Notification.requestPermission();
       setPermission(perm);
 
-      if (perm !== 'granted') return null;
+      if (perm === 'denied') {
+        setError('Notification permission was denied. Check your browser settings.');
+        return null;
+      }
+      if (perm !== 'granted') {
+        setError('Notification permission is required to enable push notifications.');
+        return null;
+      }
 
       // SW is registered by VitePWA — just wait for it to be ready
       const registration = await navigator.serviceWorker.ready;
@@ -57,7 +79,7 @@ export function usePushNotifications() {
       });
 
       // Store subscription in push_subscriptions table
-      const { error } = await supabase.from(TABLES.PUSH_SUBSCRIPTIONS).upsert(
+      const { error: dbError } = await supabase.from(TABLES.PUSH_SUBSCRIPTIONS).upsert(
         {
           user_id: user.id,
           subscription: sub.toJSON(),
@@ -65,12 +87,13 @@ export function usePushNotifications() {
         },
         { onConflict: 'user_id' }
       );
-      if (error) throw error;
+      if (dbError) throw dbError;
 
       setSubscription(sub);
       return sub;
     } catch (err) {
       console.error('Push subscription failed:', err);
+      setError(err.message || 'Failed to enable push notifications.');
       return null;
     } finally {
       setLoading(false);
@@ -102,6 +125,7 @@ export function usePushNotifications() {
     permission,
     subscription,
     loading,
+    error,
     subscribe,
     unsubscribe,
     isSubscribed: !!subscription,
