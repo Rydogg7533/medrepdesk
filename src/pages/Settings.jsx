@@ -4,7 +4,6 @@ import {
   CreditCard,
   ExternalLink,
   Shield,
-  Bell,
   User,
   ChevronRight,
   AlertTriangle,
@@ -18,12 +17,12 @@ import clsx from 'clsx';
 import Button from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
 import { useSubscription, useCreatePortalSession } from '@/hooks/useSubscription';
-import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useUpdateAccount } from '@/hooks/useAccount';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import { PLAN_LIMITS } from '@/utils/constants';
 import { US_STATES } from '@/utils/usStates';
 import VoiceSettings from '@/components/features/VoiceSettings';
+import NotificationSettings from '@/components/features/NotificationSettings';
 
 const SUB_STATUS_DISPLAY = {
   active: { label: 'Active', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
@@ -39,7 +38,6 @@ export default function Settings() {
   const { user, account } = useAuth();
   const { plan, status, isActive, isPastDue, isCanceled, isTrialing, hasStripeCustomer } = useSubscription();
   const portalSession = useCreatePortalSession();
-  const { supported: pushSupported, isSubscribed, subscribe, unsubscribe, loading: pushLoading } = usePushNotifications();
   const updateAccount = useUpdateAccount();
 
   const [selectedStates, setSelectedStates] = useState(() => account?.rep_states || []);
@@ -314,39 +312,8 @@ export default function Settings() {
       {/* Voice Assistant */}
       <VoiceSettings />
 
-      {/* Push Notifications */}
-      {pushSupported && (
-        <section className="mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
-          <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Notifications</h2>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Bell className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Push Notifications<InfoTooltip text="Choose which notifications you receive and how (push, email, or both)." /></p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {isSubscribed ? 'Enabled' : 'Disabled'}
-                </p>
-              </div>
-            </div>
-            <Button
-              variant={isSubscribed ? 'secondary' : 'primary'}
-              size="sm"
-              loading={pushLoading}
-              onClick={isSubscribed ? unsubscribe : subscribe}
-            >
-              {isSubscribed ? 'Disable' : 'Enable'}
-            </Button>
-          </div>
-          <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-3 dark:border-gray-700">
-            <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Escalation Threshold<InfoTooltip text="Number of chase attempts before MedRepDesk recommends escalating. Default is 3." /></p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {account?.escalation_threshold || 3} attempts
-              </p>
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Notifications */}
+      <NotificationSettings />
     </div>
   );
 }
