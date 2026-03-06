@@ -117,7 +117,11 @@ const SCRIPT_CONFIGS = {
   add_facility: { title: 'Add Facility', buildScript: () => buildFacilityScript() },
 };
 
-export default function ConversationalVoiceModal({ isOpen, onClose, scriptType = 'add_contact', prefillName, onComplete: onCompleteProp }) {
+export default function ConversationalVoiceModal({ isOpen, onClose, scriptType: scriptTypeProp = 'add_contact', prefillName: prefillNameProp, onComplete: onCompleteProp }) {
+  // Normalize scriptType — handle both string and object forms
+  const type = typeof scriptTypeProp === 'object' ? scriptTypeProp.scriptType : scriptTypeProp;
+  const prefillName = typeof scriptTypeProp === 'object' ? scriptTypeProp.prefillName || prefillNameProp : prefillNameProp;
+
   const toast = useToast();
   const createContact = useCreateContact();
   const createSurgeon = useCreateSurgeon();
@@ -127,11 +131,11 @@ export default function ConversationalVoiceModal({ isOpen, onClose, scriptType =
 
   const [saving, setSaving] = useState(false);
 
-  const config = SCRIPT_CONFIGS[scriptType];
+  const config = SCRIPT_CONFIGS[type] || SCRIPT_CONFIGS.add_contact;
   let script = config.buildScript(facilities);
 
   // If prefillName is provided for add_surgeon, skip the name question
-  const hasPrefill = prefillName && scriptType === 'add_surgeon';
+  const hasPrefill = prefillName && type === 'add_surgeon';
   if (hasPrefill) {
     script = script.filter((s) => s.field !== 'full_name');
   }
@@ -145,7 +149,7 @@ export default function ConversationalVoiceModal({ isOpen, onClose, scriptType =
     setSaving(true);
     try {
       let savedRecord;
-      if (scriptType === 'add_contact') {
+      if (type === 'add_contact') {
         const facilityMatch = fuzzyMatchFacility(finalCollected.facility_name, facilities);
         savedRecord = await createContact.mutateAsync({
           full_name: sanitizeText(finalCollected.full_name),
@@ -155,7 +159,7 @@ export default function ConversationalVoiceModal({ isOpen, onClose, scriptType =
           email: finalCollected.email || null,
         });
         toast({ message: `Contact "${finalCollected.full_name}" added`, type: 'success' });
-      } else if (scriptType === 'add_surgeon') {
+      } else if (type === 'add_surgeon') {
         const facilityMatch = fuzzyMatchFacility(finalCollected.primary_facility_name, facilities);
         savedRecord = await createSurgeon.mutateAsync({
           full_name: sanitizeText(finalCollected.full_name),
@@ -164,7 +168,7 @@ export default function ConversationalVoiceModal({ isOpen, onClose, scriptType =
           phone: finalCollected.phone || null,
         });
         toast({ message: `Surgeon "${finalCollected.full_name}" added`, type: 'success' });
-      } else if (scriptType === 'add_facility') {
+      } else if (type === 'add_facility') {
         if (finalCollected._globalMatchId) {
           savedRecord = await importGlobalFacility.mutateAsync(finalCollected._globalMatchId);
           toast({ message: `Facility "${finalCollected.name}" imported`, type: 'success' });
@@ -188,7 +192,7 @@ export default function ConversationalVoiceModal({ isOpen, onClose, scriptType =
     } finally {
       setSaving(false);
     }
-  }, [scriptType, facilities, createContact, createSurgeon, createFacility, importGlobalFacility, toast, hasPrefill, prefillName, onCompleteProp]);
+  }, [type, facilities, createContact, createSurgeon, createFacility, importGlobalFacility, toast, hasPrefill, prefillName, onCompleteProp]);
 
   function listenOnce() {
     return new Promise((resolve) => {
@@ -206,7 +210,7 @@ export default function ConversationalVoiceModal({ isOpen, onClose, scriptType =
   }
 
   const handleAllAnswered = useCallback(async (collected, { speak }) => {
-    if (scriptType !== 'add_facility' || !collected.name) return null;
+    if (type !== 'add_facility' || !collected.name) return null;
 
     try {
       const { data: matches } = await supabase
@@ -267,7 +271,7 @@ export default function ConversationalVoiceModal({ isOpen, onClose, scriptType =
     } catch {
       return null;
     }
-  }, [scriptType]);
+  }, [type]);
 
   const handleCancel = useCallback(() => {
     voice.reset();

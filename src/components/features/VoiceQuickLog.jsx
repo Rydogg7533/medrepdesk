@@ -188,6 +188,10 @@ export default function VoiceQuickLog({ isOpen, onClose, onConversationalRedirec
   );
   const unknownFacilityName = parsed?.fields?.facility_name;
 
+  if (parsed?.ambiguities) {
+    console.log('FACILITY AMBIGUITY:', parsed.ambiguities);
+  }
+
   function handleClose() {
     if (isListening) stopListening();
     setStep('idle');
