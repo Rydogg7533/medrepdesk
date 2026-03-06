@@ -15,11 +15,11 @@ export default function RecentActivity({ limit = 5 }) {
   const { account } = useAuth();
 
   const { data: chaseEntries = [] } = useQuery({
-    queryKey: ['recent_chase_log', account?.id],
+    queryKey: ['recent_chase_log_v2', account?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from(TABLES.PO_CHASE_LOG)
-        .select('id, notes, action_taken, created_at, case:cases(case_number)')
+        .select('id, outcome, action_taken, created_at, case:cases(case_number)')
         .eq('account_id', account.id)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -48,7 +48,7 @@ export default function RecentActivity({ limit = 5 }) {
     ...chaseEntries.map((e) => ({
       id: `chase-${e.id}`,
       type: e.action_taken || 'note',
-      text: e.notes || 'Chase log entry',
+      text: e.outcome || 'Chase log entry',
       caseNumber: e.case?.case_number,
       created_at: e.created_at,
     })),

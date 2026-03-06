@@ -51,6 +51,8 @@ import BillSheetDetail from '@/pages/BillSheetDetail';
 import ActionItems from '@/pages/ActionItems';
 import PayPeriodSummary from '@/pages/PayPeriodSummary';
 import Onboarding from '@/pages/Onboarding';
+import TermsOfService from '@/pages/legal/TermsOfService';
+import PrivacyPolicy from '@/pages/legal/PrivacyPolicy';
 import SubscriptionGate from '@/components/SubscriptionGate';
 
 const queryClient = new QueryClient({
@@ -128,6 +130,11 @@ function App() {
             <Route path="/join" element={<JoinReferral />} />
             <Route path="/" element={<LandingRoute />} />
 
+            {/* Public pages (no auth) */}
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/pricing" element={<Pricing />} />
+
             {/* Onboarding (protected, no AppLayout) */}
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
 
@@ -166,7 +173,6 @@ function App() {
               <Route path="/manufacturers/new" element={<ManufacturerForm />} />
               <Route path="/manufacturers/:id" element={<ManufacturerForm />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/pricing" element={<Pricing />} />
               <Route path="/referrals" element={<Referrals />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/my-distributor" element={<MyDistributor />} />

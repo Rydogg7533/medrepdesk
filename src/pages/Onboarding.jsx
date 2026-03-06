@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Plus, X, Check, Search, ChevronDown, ChevronRight, CheckCircle,
-  Building2, User, Stethoscope, Contact, Factory, Briefcase,
+  Building2, User, Stethoscope, Contact, Factory, Briefcase, Bell, DollarSign,
+  Zap, Copy, Mic,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { supabase } from '@/lib/supabase';
@@ -16,6 +17,7 @@ import { useSearchSurgeons, useCreateSurgeon, useImportGlobalSurgeon } from '@/h
 import { useCreateContact } from '@/hooks/useContacts';
 import { useCreateManufacturer } from '@/hooks/useManufacturers';
 import { useCreateCase } from '@/hooks/useCases';
+import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import BottomSheet from '@/components/ui/BottomSheet';
@@ -23,7 +25,16 @@ import { US_STATES } from '@/utils/usStates';
 import { PRODUCT_CATALOG } from '@/utils/productCatalog';
 import { SURGEON_SPECIALTIES, SURGEON_PREFIXES } from '@/utils/constants';
 
-const TOTAL_STEPS = 9;
+const VoiceQuickLogComponent = lazy(() => import('@/components/features/VoiceQuickLog'));
+function VoiceQuickLogLazy({ onClose }) {
+  return (
+    <Suspense fallback={<div className="p-4 text-center text-sm text-gray-400">Loading...</div>}>
+      <VoiceQuickLogComponent isOpen onClose={onClose} />
+    </Suspense>
+  );
+}
+
+const TOTAL_STEPS = 11;
 
 const TIMEZONES = [
   'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
@@ -85,9 +96,9 @@ function StepWrapper({ step, onBack, children }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// STEP 4: YOUR FACILITIES (top-level component to preserve search state)
+// STEP 5: YOUR FACILITIES (top-level component to preserve search state)
 // ═══════════════════════════════════════════════════════════════════════════════
-function Step4Facilities({ userState, addedFacilities, setAddedFacilities, importGlobalFacility, createFacility, goToStep, goBack }) {
+function Step5Facilities({ userState, addedFacilities, setAddedFacilities, importGlobalFacility, createFacility, goToStep, goBack }) {
   const filterStates = useMemo(() => userState ? [userState] : [], [userState]);
   const { search: searchFacilities, results: facilityResults, isSearching: facilitySearching } = useSearchFacilities({ filterStates });
   const [searchTerm, setSearchTerm] = useState('');
@@ -131,14 +142,14 @@ function Step4Facilities({ userState, addedFacilities, setAddedFacilities, impor
 
   async function handleContinue() {
     if (addedFacilities.length === 0) { setError('Add at least 1 facility to continue'); return; }
-    await goToStep(5);
+    await goToStep(6);
   }
 
   const addedIds = new Set(addedFacilities.map((f) => f.id));
   const filteredResults = facilityResults.filter((r) => !addedIds.has(r.value));
 
   return (
-    <StepWrapper step={4} onBack={goBack}>
+    <StepWrapper step={5} onBack={goBack}>
       <h1 className="mb-1 mt-4 text-xl font-bold text-gray-900 dark:text-gray-100">Your Facilities <span className="text-red-500">*</span></h1>
       <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">Where do you cover cases? Add at least 1.</p>
 
@@ -225,9 +236,9 @@ function Step4Facilities({ userState, addedFacilities, setAddedFacilities, impor
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// STEP 5: YOUR SURGEONS (top-level component to preserve search state)
+// STEP 6: YOUR SURGEONS (top-level component to preserve search state)
 // ═══════════════════════════════════════════════════════════════════════════════
-function Step5Surgeons({ userState, addedSurgeons, setAddedSurgeons, addedFacilities, importGlobalSurgeon, createSurgeon, goToStep, goBack }) {
+function Step6Surgeons({ userState, addedSurgeons, setAddedSurgeons, addedFacilities, importGlobalSurgeon, createSurgeon, goToStep, goBack }) {
   const filterStates = useMemo(() => userState ? [userState] : [], [userState]);
   const { search: searchSurgeons, results: surgeonResults, isSearching: surgeonSearching } = useSearchSurgeons({ filterStates });
   const [searchTerm, setSearchTerm] = useState('');
@@ -281,14 +292,14 @@ function Step5Surgeons({ userState, addedSurgeons, setAddedSurgeons, addedFacili
 
   async function handleContinue() {
     if (addedSurgeons.length === 0) { setError('Add at least 1 surgeon to continue'); return; }
-    await goToStep(6);
+    await goToStep(7);
   }
 
   const addedIds = new Set(addedSurgeons.map((s) => s.id));
   const filteredResults = surgeonResults.filter((r) => !addedIds.has(r.value));
 
   return (
-    <StepWrapper step={5} onBack={goBack}>
+    <StepWrapper step={6} onBack={goBack}>
       <h1 className="mb-1 mt-4 text-xl font-bold text-gray-900 dark:text-gray-100">Your Surgeons <span className="text-red-500">*</span></h1>
       <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">Who do you cover? Add at least 1.</p>
 
@@ -426,8 +437,48 @@ export default function Onboarding() {
     if (step > 1) goToStep(step - 1);
   }
 
-  // ── STEP 1: WELCOME + TOS ──────────────────────────────────────────────
+  // ── STEP 1: VALUE PROP ─────────────────────────────────────────────────
   function Step1() {
+    return (
+      <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-gray-900">
+        <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+          <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-brand-800">
+            <Briefcase className="h-10 w-10 text-white" />
+          </div>
+          <h1 className="mb-3 text-2xl font-bold text-gray-900 dark:text-gray-100">Stop chasing POs in spreadsheets</h1>
+          <p className="mb-10 text-sm text-gray-500 dark:text-gray-400">Track every case from the OR to your bank account. Never lose a commission again.</p>
+
+          <div className="mb-10 w-full space-y-4 text-left">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900/30">
+                <Zap className="h-4 w-4 text-brand-800 dark:text-brand-400" />
+              </div>
+              <span className="text-sm text-gray-700 dark:text-gray-300">PO chase workflow built for ortho reps</span>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/30">
+                <DollarSign className="h-4 w-4 text-green-600" />
+              </div>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Know exactly where every dollar is</span>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                <Bell className="h-4 w-4 text-blue-600" />
+              </div>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Get paid faster with automated follow-ups</span>
+            </div>
+          </div>
+
+          <div className="w-full pb-safe-bottom">
+            <Button fullWidth onClick={() => goToStep(2)}>Get Started</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── STEP 2: WELCOME + TOS ──────────────────────────────────────────────
+  function Step2() {
     const [tosChecked, setTosChecked] = useState(false);
     const [privacyChecked, setPrivacyChecked] = useState(false);
 
@@ -440,7 +491,7 @@ export default function Onboarding() {
           privacy_agreed_at: new Date().toISOString(),
           tos_ip_address: 'client',
         });
-        await goToStep(2);
+        await goToStep(3);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -449,7 +500,7 @@ export default function Onboarding() {
     }
 
     return (
-      <StepWrapper step={1} onBack={goBack}>
+      <StepWrapper step={2} onBack={goBack}>
         <div className="flex flex-col items-center justify-center pt-16 text-center">
           <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-800">
             <Briefcase className="h-8 w-8 text-white" />
@@ -466,7 +517,7 @@ export default function Onboarding() {
                 className="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-800 focus:ring-brand-800"
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">
-                I agree to the <span className="font-medium text-brand-800 dark:text-brand-400">Terms of Service</span> <span className="text-red-500">*</span>
+                I agree to the <Link to="/terms" className="font-medium text-brand-800 dark:text-brand-400 underline">Terms of Service</Link> <span className="text-red-500">*</span>
               </span>
             </label>
             <label className="flex items-start gap-3 rounded-lg border border-gray-200 dark:border-gray-700 p-4 cursor-pointer">
@@ -477,7 +528,7 @@ export default function Onboarding() {
                 className="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-800 focus:ring-brand-800"
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">
-                I agree to the <span className="font-medium text-brand-800 dark:text-brand-400">Privacy Policy</span> <span className="text-red-500">*</span>
+                I agree to the <Link to="/privacy" className="font-medium text-brand-800 dark:text-brand-400 underline">Privacy Policy</Link> <span className="text-red-500">*</span>
               </span>
             </label>
           </div>
@@ -491,7 +542,7 @@ export default function Onboarding() {
               loading={saving}
               onClick={handleAccept}
             >
-              Get Started
+              Continue
             </Button>
           </div>
         </div>
@@ -499,8 +550,8 @@ export default function Onboarding() {
     );
   }
 
-  // ── STEP 2: YOUR INFO ──────────────────────────────────────────────────
-  function Step2() {
+  // ── STEP 3: YOUR INFO ──────────────────────────────────────────────────
+  function Step3() {
     const detectedTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const [form, setForm] = useState({
       full_name: user?.full_name || '',
@@ -536,7 +587,7 @@ export default function Onboarding() {
           rep_states: [form.state],
         });
         setUserState(form.state);
-        await goToStep(3);
+        await goToStep(4);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -545,7 +596,7 @@ export default function Onboarding() {
     }
 
     return (
-      <StepWrapper step={2} onBack={goBack}>
+      <StepWrapper step={3} onBack={goBack}>
         <h1 className="mb-1 mt-4 text-xl font-bold text-gray-900 dark:text-gray-100">Your Info</h1>
         <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">Tell us about yourself</p>
 
@@ -593,11 +644,12 @@ export default function Onboarding() {
     );
   }
 
-  // ── STEP 3: MY DISTRIBUTOR ─────────────────────────────────────────────
-  function Step3() {
+  // ── STEP 4: MY DISTRIBUTOR ─────────────────────────────────────────────
+  function Step4() {
     const [distForm, setDistForm] = useState({
       name: '', phone: '', address: '',
       billing_email: '', billing_contact_name: '', billing_contact_phone: '',
+      default_commission_rate: '',
     });
     const [addedGroups, setAddedGroups] = useState([]);
     const [checkedProducts, setCheckedProducts] = useState({});
@@ -660,6 +712,7 @@ export default function Onboarding() {
           billing_email: distForm.billing_email || null,
           billing_contact_name: distForm.billing_contact_name || null,
           billing_contact_phone: distForm.billing_contact_phone || null,
+          default_commission_rate: distForm.default_commission_rate ? Number(distForm.default_commission_rate) : null,
           pay_schedule: payForm.pay_frequency ? {
             frequency: payForm.pay_frequency,
             pay_day: payForm.pay_day || null,
@@ -702,7 +755,7 @@ export default function Onboarding() {
           });
         }
 
-        await goToStep(4);
+        await goToStep(5);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -711,13 +764,33 @@ export default function Onboarding() {
     }
 
     async function handleSkip() {
-      await goToStep(4);
+      await goToStep(5);
     }
 
     return (
-      <StepWrapper step={3} onBack={goBack}>
+      <StepWrapper step={4} onBack={goBack}>
         <h1 className="mb-1 mt-4 text-xl font-bold text-gray-900 dark:text-gray-100">My Distributor</h1>
         <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">Set up your distributor, products, and pay schedule</p>
+
+        {/* Default Commission Rate */}
+        <div className="mb-6">
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Default commission rate</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              max="100"
+              name="default_commission_rate"
+              value={distForm.default_commission_rate}
+              onChange={onDistChange}
+              placeholder="25"
+              className="w-32 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+            />
+            <span className="text-sm text-gray-500 dark:text-gray-400">%</span>
+          </div>
+          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Used when no product-specific rate is set</p>
+        </div>
 
         {/* Section A: Distributor Info */}
         <div className="space-y-4">
@@ -860,8 +933,8 @@ export default function Onboarding() {
   // Steps 4 & 5 are extracted as top-level components (Step4Facilities, Step5Surgeons)
   // to prevent search state from being lost on parent re-renders
 
-  // ── STEP 6: YOUR CONTACTS ─────────────────────────────────────────────
-  function Step6() {
+  // ── STEP 7: YOUR CONTACTS ─────────────────────────────────────────────
+  function Step7() {
     const [showSkipConfirm, setShowSkipConfirm] = useState(false);
     const [contactForm, setContactForm] = useState({ first_name: '', last_name: '', role: '', phone: '', email: '', facility_id: '' });
 
@@ -889,7 +962,7 @@ export default function Onboarding() {
     }
 
     return (
-      <StepWrapper step={6} onBack={goBack}>
+      <StepWrapper step={7} onBack={goBack}>
         <h1 className="mb-1 mt-4 text-xl font-bold text-gray-900 dark:text-gray-100">Your Contacts</h1>
         <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">Add key contacts at your facilities — billing contacts, OR managers, nurses</p>
 
@@ -933,14 +1006,14 @@ export default function Onboarding() {
 
         {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
         <div className="mt-6 flex flex-col gap-3 pb-6">
-          <Button fullWidth onClick={() => goToStep(7)}>Continue</Button>
+          <Button fullWidth onClick={() => goToStep(8)}>Continue</Button>
           <button onClick={() => setShowSkipConfirm(true)} className="text-center text-sm text-gray-400 dark:text-gray-500">Skip</button>
         </div>
 
         <SkipConfirmation
           isOpen={showSkipConfirm}
           onClose={() => setShowSkipConfirm(false)}
-          onSkip={() => { setShowSkipConfirm(false); goToStep(7); }}
+          onSkip={() => { setShowSkipConfirm(false); goToStep(8); }}
           title="Contacts make PO chasing faster"
           body={"Your billing contacts are the people you'll call and email when chasing POs. Adding them now means:\n\n• One-tap call/email when following up\n• Auto-populated contact info in chase logs\n• Never lose track of who you talked to\n\nYou can always add contacts later from the Contacts tab."}
           goBackLabel="Go Back & Add Contacts"
@@ -949,8 +1022,8 @@ export default function Onboarding() {
     );
   }
 
-  // ── STEP 7: MANUFACTURERS ─────────────────────────────────────────────
-  function Step7() {
+  // ── STEP 8: MANUFACTURERS ─────────────────────────────────────────────
+  function Step8() {
     const [showSkipConfirm, setShowSkipConfirm] = useState(false);
     const [mfgForm, setMfgForm] = useState({ name: '', billing_email: '', billing_contact_name: '', billing_contact_phone: '', phone: '' });
 
@@ -976,7 +1049,7 @@ export default function Onboarding() {
     }
 
     return (
-      <StepWrapper step={7} onBack={goBack}>
+      <StepWrapper step={8} onBack={goBack}>
         <h1 className="mb-1 mt-4 text-xl font-bold text-gray-900 dark:text-gray-100">Manufacturers</h1>
         <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">Which manufacturers make the products you sell?</p>
 
@@ -1005,14 +1078,14 @@ export default function Onboarding() {
 
         {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
         <div className="mt-6 flex flex-col gap-3 pb-6">
-          <Button fullWidth onClick={() => goToStep(8)}>Continue</Button>
+          <Button fullWidth onClick={() => goToStep(9)}>Continue</Button>
           <button onClick={() => setShowSkipConfirm(true)} className="text-center text-sm text-gray-400 dark:text-gray-500">Skip</button>
         </div>
 
         <SkipConfirmation
           isOpen={showSkipConfirm}
           onClose={() => setShowSkipConfirm(false)}
-          onSkip={() => { setShowSkipConfirm(false); goToStep(8); }}
+          onSkip={() => { setShowSkipConfirm(false); goToStep(9); }}
           title="Manufacturers are where POs get sent"
           body={"When you receive a PO, MedRepDesk sends it to the manufacturer for you. Without manufacturers set up:\n\n• You'll need to manually forward POs\n• PO routing emails won't work\n• The 'Billed' step of your pipeline won't trigger\n\nYou can always add manufacturers later from the Contacts tab."}
           goBackLabel="Go Back & Add Manufacturers"
@@ -1021,8 +1094,8 @@ export default function Onboarding() {
     );
   }
 
-  // ── STEP 8: YOUR FIRST CASE ────────────────────────────────────────────
-  function Step8() {
+  // ── STEP 9: YOUR FIRST CASE ────────────────────────────────────────────
+  function Step9() {
     const [showSkipConfirm, setShowSkipConfirm] = useState(false);
     const [caseForm, setCaseForm] = useState({
       surgeon_id: '', facility_id: '', procedure_type: '',
@@ -1047,7 +1120,7 @@ export default function Onboarding() {
           notes: caseForm.notes || null,
         });
         setCreatedCase(c);
-        await goToStep(9);
+        await goToStep(10);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -1064,7 +1137,7 @@ export default function Onboarding() {
     });
 
     return (
-      <StepWrapper step={8} onBack={goBack}>
+      <StepWrapper step={9} onBack={goBack}>
         <h1 className="mb-1 mt-4 text-xl font-bold text-gray-900 dark:text-gray-100">Your First Case</h1>
         <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">Ready to add your first case?</p>
 
@@ -1107,7 +1180,7 @@ export default function Onboarding() {
         <SkipConfirmation
           isOpen={showSkipConfirm}
           onClose={() => setShowSkipConfirm(false)}
-          onSkip={() => { setShowSkipConfirm(false); goToStep(9); }}
+          onSkip={() => { setShowSkipConfirm(false); goToStep(10); }}
           title="See MedRepDesk in action"
           body={"Adding your first case lets you see the full workflow — from scheduling through PO tracking to commission payment. Even a past case works!\n\nYou can add cases anytime from the Cases tab or the + button."}
           goBackLabel="Go Back & Add a Case"
@@ -1116,17 +1189,75 @@ export default function Onboarding() {
     );
   }
 
-  // ── STEP 9: DONE! ─────────────────────────────────────────────────────
-  function Step9() {
+  // ── STEP 10: PUSH NOTIFICATIONS ──────────────────────────────────────
+  function Step10() {
+    async function handleAllow() {
+      try {
+        await Notification.requestPermission();
+      } catch { /* silent */ }
+      await goToStep(11);
+    }
+
+    return (
+      <StepWrapper step={10} onBack={goBack}>
+        <div className="flex flex-col items-center justify-center pt-16 text-center">
+          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+            <Bell className="h-8 w-8 text-blue-600" />
+          </div>
+          <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-gray-100">Stay on top of every case</h1>
+          <h2 className="mb-2 text-lg font-semibold text-gray-800 dark:text-gray-200">Never miss a follow-up</h2>
+          <p className="mb-8 text-sm text-gray-500 dark:text-gray-400">
+            Get notified when a PO is late, a promised date passes, or a follow-up is due. MedRepDesk works best with notifications on.
+          </p>
+
+          <div className="w-full space-y-3">
+            <Button fullWidth onClick={handleAllow}>Allow Notifications</Button>
+            <button
+              onClick={() => goToStep(11)}
+              className="w-full text-center text-sm text-gray-400 dark:text-gray-500"
+            >
+              Skip for now
+            </button>
+          </div>
+        </div>
+      </StepWrapper>
+    );
+  }
+
+  // ── STEP 11: DONE! ─────────────────────────────────────────────────────
+  function Step11() {
+    const toast = useToast();
+    const [referralCode, setReferralCode] = useState('');
+    const [copied, setCopied] = useState(false);
+    const [showVoice, setShowVoice] = useState(false);
+    const supportsVoice = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
+
+    useEffect(() => {
+      if (account?.referral_code) {
+        setReferralCode(account.referral_code);
+      }
+    }, [account?.referral_code]);
+
     async function handleFinish() {
       setSaving(true);
       try {
-        await updateUser.mutateAsync({ onboarding_completed: true, onboarding_step: 9 });
-        // Force reload to refresh user state in AuthContext
+        await updateUser.mutateAsync({ onboarding_completed: true, onboarding_step: 11 });
         window.location.href = '/dashboard';
       } catch (err) {
         setError(err.message);
         setSaving(false);
+      }
+    }
+
+    async function handleCopyReferral() {
+      const link = `medrepdesk.io/join?ref=${referralCode}`;
+      try {
+        await navigator.clipboard.writeText(link);
+        setCopied(true);
+        toast({ message: 'Referral link copied!', type: 'success' });
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        toast({ message: 'Could not copy link', type: 'error' });
       }
     }
 
@@ -1140,7 +1271,7 @@ export default function Onboarding() {
     if (createdCase) items.push('1 case');
 
     return (
-      <StepWrapper step={9} onBack={goBack}>
+      <StepWrapper step={11} onBack={goBack}>
         <div className="flex flex-col items-center justify-center pt-16 text-center">
           <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 animate-bounce">
             <CheckCircle className="h-10 w-10 text-green-600" />
@@ -1149,7 +1280,7 @@ export default function Onboarding() {
           <p className="mb-8 text-sm text-gray-500 dark:text-gray-400">Your MedRepDesk account is ready to go</p>
 
           {items.length > 0 && (
-            <div className="mb-8 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 text-left">
+            <div className="mb-6 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 text-left">
               <h2 className="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Setup Summary</h2>
               <div className="space-y-1.5">
                 {items.map((item) => (
@@ -1162,9 +1293,50 @@ export default function Onboarding() {
             </div>
           )}
 
+          {/* Referral Section */}
+          {referralCode && (
+            <div className="mb-6 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 text-left">
+              <h2 className="mb-1 text-sm font-semibold text-gray-900 dark:text-gray-100">Know another rep?</h2>
+              <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+                Share MedRepDesk and earn 25% of their subscription for 12 months.
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 rounded-lg bg-gray-100 dark:bg-gray-700 px-3 py-2">
+                  <p className="text-xs font-mono text-gray-600 dark:text-gray-300 truncate">medrepdesk.io/join?ref={referralCode}</p>
+                </div>
+                <button
+                  onClick={handleCopyReferral}
+                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-brand-800 text-white active:bg-brand-900"
+                >
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Voice Demo Section */}
+          {supportsVoice && (
+            <div className="mb-6 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 text-left">
+              <h2 className="mb-1 text-sm font-semibold text-gray-900 dark:text-gray-100">Try voice — log a case in 10 seconds</h2>
+              <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+                Tap the mic and say: "Knee case with Dr. Smith next Tuesday"
+              </p>
+              <button
+                onClick={() => setShowVoice(true)}
+                className="flex items-center gap-2 rounded-lg bg-brand-100 dark:bg-brand-900/30 px-4 py-2.5 text-sm font-medium text-brand-800 dark:text-brand-400 active:bg-brand-200 dark:active:bg-brand-900/50"
+              >
+                <Mic className="h-4 w-4" />
+                Try Voice Input
+              </button>
+              {showVoice && (
+                <VoiceQuickLogLazy onClose={() => setShowVoice(false)} />
+              )}
+            </div>
+          )}
+
           {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
 
-          <div className="w-full">
+          <div className="w-full pb-6">
             <Button fullWidth loading={saving} onClick={handleFinish}>Go to Dashboard</Button>
           </div>
         </div>
@@ -1177,12 +1349,14 @@ export default function Onboarding() {
     case 1: return <Step1 />;
     case 2: return <Step2 />;
     case 3: return <Step3 />;
-    case 4: return <Step4Facilities userState={userState} addedFacilities={addedFacilities} setAddedFacilities={setAddedFacilities} importGlobalFacility={importGlobalFacility} createFacility={createFacility} goToStep={goToStep} goBack={goBack} />;
-    case 5: return <Step5Surgeons userState={userState} addedSurgeons={addedSurgeons} setAddedSurgeons={setAddedSurgeons} addedFacilities={addedFacilities} importGlobalSurgeon={importGlobalSurgeon} createSurgeon={createSurgeon} goToStep={goToStep} goBack={goBack} />;
-    case 6: return <Step6 />;
+    case 4: return <Step4 />;
+    case 5: return <Step5Facilities userState={userState} addedFacilities={addedFacilities} setAddedFacilities={setAddedFacilities} importGlobalFacility={importGlobalFacility} createFacility={createFacility} goToStep={goToStep} goBack={goBack} />;
+    case 6: return <Step6Surgeons userState={userState} addedSurgeons={addedSurgeons} setAddedSurgeons={setAddedSurgeons} addedFacilities={addedFacilities} importGlobalSurgeon={importGlobalSurgeon} createSurgeon={createSurgeon} goToStep={goToStep} goBack={goBack} />;
     case 7: return <Step7 />;
     case 8: return <Step8 />;
     case 9: return <Step9 />;
+    case 10: return <Step10 />;
+    case 11: return <Step11 />;
     default: return <Step1 />;
   }
 }

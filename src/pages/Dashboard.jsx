@@ -20,6 +20,7 @@ import Skeleton from '@/components/ui/Skeleton';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import POPipelineStrip from '@/components/dashboard/POPipelineStrip';
 import RecentActivity from '@/components/dashboard/RecentActivity';
+import ActivationChecklist from '@/components/dashboard/ActivationChecklist';
 import { DollarSign } from 'lucide-react';
 import { formatDate, formatTime, formatCurrency, getGreeting } from '@/utils/formatters';
 import { buildActionItems } from '@/utils/actionItems';
@@ -128,6 +129,9 @@ export default function Dashboard() {
       <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
         {getGreeting()}, {firstName}
       </h1>
+
+      {/* A2. Activation Checklist */}
+      <ActivationChecklist />
 
       {/* B. Setup Banners */}
       {showStatesBanner && (

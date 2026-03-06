@@ -157,10 +157,22 @@ export default function VoiceQuickLog({ isOpen, onClose, onConversationalRedirec
     const intent = parsed?.intent;
     const route = EDITABLE_INTENTS[intent];
     if (route) {
-      navigate(route);
+      navigate(route, { state: { prefill: parsed?.fields || {} } });
     }
     handleClose();
   }
+
+  function handleAddSurgeon() {
+    if (onConversationalRedirect) {
+      handleClose();
+      onConversationalRedirect('add_surgeon');
+    }
+  }
+
+  const unknownSurgeonAmbiguity = parsed?.ambiguities?.find(
+    (a) => typeof a === 'string' && a.toLowerCase().includes('not found in your surgeon list')
+  );
+  const unknownSurgeonName = parsed?.fields?.surgeon_name;
 
   function handleClose() {
     if (isListening) stopListening();
@@ -321,6 +333,19 @@ export default function VoiceQuickLog({ isOpen, onClose, onConversationalRedirec
                 <ul className="text-xs text-amber-600 dark:text-amber-400 list-disc list-inside">
                   {parsed.ambiguities.map((a, i) => <li key={i}>{a}</li>)}
                 </ul>
+              </div>
+            )}
+
+            {/* Unknown surgeon prompt */}
+            {unknownSurgeonAmbiguity && unknownSurgeonName && !parsed.fields?.surgeon_id && (
+              <div className="rounded-xl bg-blue-50 dark:bg-blue-900/20 px-4 py-3">
+                <p className="mb-2 text-sm text-blue-800 dark:text-blue-300">
+                  <span className="font-medium">{unknownSurgeonName}</span> isn't in your surgeon list. Add them as a new surgeon?
+                </p>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={handleAddSurgeon}>Add Surgeon</Button>
+                  <Button size="sm" variant="secondary" onClick={() => {}}>Continue Without</Button>
+                </div>
               </div>
             )}
 

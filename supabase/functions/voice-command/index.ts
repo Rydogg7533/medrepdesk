@@ -1,6 +1,9 @@
 // Edge Function: Voice Command Parser
 // Parses voice transcripts into structured actions using Claude
 // Secrets required: ANTHROPIC_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+// NOTE: Surgeon matching requires fuzzy match against the user's account surgeon list.
+// If a spoken surgeon name doesn't match any known surgeon, surgeon_id must be null
+// and an ambiguity must be returned indicating the surgeon was not found.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -44,10 +47,15 @@ DATE RESOLUTION:
 - "tomorrow" = current date + 1 day
 
 NAME MATCHING:
-- Fuzzy match surgeon names against provided surgeons list
+- Fuzzy match surgeon names against provided surgeons list (e.g. "Dr. Smith" matches "Dr. John Smith")
 - Fuzzy match facility names against provided facilities list
 - Fuzzy match distributor names against provided distributors list
 - Return matched IDs when confident, null when uncertain
+- IMPORTANT: If a spoken surgeon name does NOT match any surgeon in the provided list, you MUST:
+  1. Set surgeon_id to null
+  2. Set surgeon_name to the spoken name
+  3. Add an ambiguity: "Surgeon '[spoken name]' not found in your surgeon list. Would you like to add them?"
+- Apply the same rule for facilities: if not matched, set facility_id to null and add an ambiguity
 
 Return ONLY valid JSON (no markdown, no code fences):
 {
@@ -131,11 +139,11 @@ serve(async (req: Request) => {
       supabase
         .from("surgeons")
         .select("id, full_name, specialty")
-        .or(`account_id.eq.${account_id},is_global.eq.true`),
+        .eq("account_id", account_id),
       supabase
         .from("facilities")
         .select("id, name, facility_type, city, state")
-        .or(`account_id.eq.${account_id},is_global.eq.true`),
+        .eq("account_id", account_id),
       supabase
         .from("distributors")
         .select("id, name")

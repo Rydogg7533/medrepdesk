@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, Sparkles, Wand2, Mic } from 'lucide-react';
 import { sanitizeText } from '@/utils/sanitize';
 import { caseInsertSchema } from '@/lib/schemas';
@@ -23,6 +23,8 @@ export default function CaseForm() {
   const { id } = useParams();
   const isEdit = !!id;
   const navigate = useNavigate();
+  const location = useLocation();
+  const prefill = location.state?.prefill;
 
   const { data: existingCase } = useCase(isEdit ? id : null);
   const createCase = useCreateCase();
@@ -84,9 +86,13 @@ export default function CaseForm() {
     }
   }
 
-  // Initial labels for edit mode
-  const surgeonInitialLabel = existingCase?.surgeon?.full_name || '';
-  const facilityInitialLabel = existingCase?.facility?.name || '';
+  // Initial labels for edit mode or voice prefill
+  const surgeonInitialLabel = existingCase?.surgeon?.full_name
+    || prefill?.surgeon_name
+    || '';
+  const facilityInitialLabel = existingCase?.facility?.name
+    || prefill?.facility_name
+    || '';
 
   function convertScheduledTime(time24) {
     if (!time24) return {};
@@ -142,6 +148,25 @@ export default function CaseForm() {
       });
     }
   }, [existingCase, isEdit]);
+
+  // Apply prefill from voice "Edit Manually" flow
+  useEffect(() => {
+    if (!prefill || isEdit) return;
+    const timeFields = convertScheduledTime(prefill.scheduled_time);
+    setForm((prev) => ({
+      ...prev,
+      ...(prefill.surgeon_id ? { surgeon_id: prefill.surgeon_id } : {}),
+      ...(prefill.facility_id ? { facility_id: prefill.facility_id } : {}),
+      ...(prefill.procedure_type ? { procedure_type: prefill.procedure_type } : {}),
+      ...(prefill.scheduled_date ? { scheduled_date: prefill.scheduled_date } : {}),
+      ...(prefill.notes ? { notes: prefill.notes } : {}),
+      ...timeFields,
+    }));
+    if (prefill.surgeon_id || prefill.facility_id || prefill.procedure_type || prefill.scheduled_date) {
+      setEntryMode('manual');
+      setParseBanner('Pre-filled from voice input - review fields below');
+    }
+  }, [prefill, isEdit]);
 
   function onChange(e) {
     const { name, value } = e.target;
