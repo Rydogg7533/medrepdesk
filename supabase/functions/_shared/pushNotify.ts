@@ -122,7 +122,10 @@ async function sendWebPush(
       body: payload,
     });
 
-    return response.ok || response.status === 201;
+    if (response.ok || response.status === 201) return true;
+    // 410 Gone = subscription expired, caller should delete it
+    if (response.status === 410) return false;
+    return false;
   } catch (err) {
     console.error("Web push send failed:", err);
     return false;
@@ -198,7 +201,23 @@ export async function sendNotifications(
         for (const sub of subscriptions) {
           const subData = sub.subscription as PushSubscription;
           if (subData?.endpoint) {
-            await sendWebPush(subData, pushPayload, vapidPublicKey, vapidPrivateKey, vapidSubject);
+            const success = await sendWebPush(subData, pushPayload, vapidPublicKey, vapidPrivateKey, vapidSubject);
+            // Delete expired subscriptions (410 Gone)
+            if (!success) {
+              try {
+                const checkResponse = await fetch(subData.endpoint, { method: "POST", headers: { TTL: "0" } });
+                if (checkResponse.status === 410) {
+                  await supabase
+                    .from("push_subscriptions")
+                    .delete()
+                    .eq("user_id", notification.user_id)
+                    .eq("subscription->>endpoint", subData.endpoint);
+                  console.log("Deleted expired push subscription for user:", notification.user_id);
+                }
+              } catch {
+                // Ignore cleanup errors
+              }
+            }
           }
         }
       }

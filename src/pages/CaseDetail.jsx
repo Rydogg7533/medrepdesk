@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit2, Trash2, CheckCircle, Plus, Phone, Mail, MessageSquare, HelpCircle, CalendarClock, XCircle, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Edit2, Trash2, CheckCircle, Plus, Phone, Mail, MessageSquare, HelpCircle, CalendarClock, XCircle, RotateCcw, Bell, X } from 'lucide-react';
 import { useCase, useUpdateCase, useDeleteCase } from '@/hooks/useCases';
 import { useCasePOs } from '@/hooks/usePOs';
 import { usePoEmailLog } from '@/hooks/usePoEmailLog';
@@ -68,6 +68,8 @@ export default function CaseDetail() {
   const [showCancel, setShowCancel] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [showChase, setShowChase] = useState(false);
+  const [showReminderPicker, setShowReminderPicker] = useState(false);
+  const [customHours, setCustomHours] = useState('');
 
   const procLabel = (type) => getProductLabel(type);
 
@@ -273,6 +275,48 @@ export default function CaseDetail() {
           <InfoRow label="Case Value" value={caseData.case_value ? formatCurrency(caseData.case_value) : 'Pending'} />
         </div>
       </Card>
+
+      {/* Reminders */}
+      {['scheduled', 'confirmed'].includes(caseData.status) && (
+        <Card className="mb-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">
+              <Bell className="mr-1 inline h-3.5 w-3.5" />
+              Reminders
+            </h3>
+            <button
+              onClick={() => setShowReminderPicker(true)}
+              className="flex items-center gap-1 text-xs font-medium text-brand-800 dark:text-brand-400"
+            >
+              <Plus className="h-3.5 w-3.5" /> Add
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {(caseData.reminder_offsets || [24]).sort((a, b) => b - a).map((hours) => (
+              <span
+                key={hours}
+                className="inline-flex items-center gap-1 rounded-full bg-brand-100 px-2.5 py-1 text-xs font-medium text-brand-800 dark:bg-brand-900/30 dark:text-brand-400"
+              >
+                {hours >= 24 ? `${hours / 24}d` : `${hours}hr${hours !== 1 ? 's' : ''}`} before
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const newOffsets = (caseData.reminder_offsets || [24]).filter((h) => h !== hours);
+                    if (newOffsets.length === 0) return;
+                    await updateCase.mutateAsync({ id, reminder_offsets: newOffsets });
+                  }}
+                  className="ml-0.5 rounded-full p-0.5 hover:bg-brand-200 dark:hover:bg-brand-800/50"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+          {(caseData.reminder_offsets || [24]).length === 0 && (
+            <p className="text-xs text-gray-400 dark:text-gray-500">No reminders set</p>
+          )}
+        </Card>
+      )}
 
       {/* Notes */}
       {caseData.notes && (
@@ -573,6 +617,63 @@ export default function CaseDetail() {
         facilityId={caseData.facility_id}
         poId={casePOs[0]?.id}
       />
+
+      {/* Reminder Picker */}
+      <BottomSheet isOpen={showReminderPicker} onClose={() => { setShowReminderPicker(false); setCustomHours(''); }} title="Add Reminder">
+        <div className="flex flex-col gap-3">
+          <p className="text-sm text-gray-500 dark:text-gray-400">How long before surgery?</p>
+          <div className="flex flex-wrap gap-2">
+            {[1, 2, 4, 8, 12, 24, 48, 72].map((hrs) => {
+              const existing = caseData?.reminder_offsets || [24];
+              const alreadySet = existing.includes(hrs);
+              return (
+                <button
+                  key={hrs}
+                  disabled={alreadySet}
+                  onClick={async () => {
+                    const newOffsets = [...(caseData.reminder_offsets || [24]), hrs];
+                    await updateCase.mutateAsync({ id, reminder_offsets: newOffsets });
+                    setShowReminderPicker(false);
+                  }}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    alreadySet
+                      ? 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed'
+                      : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 active:bg-brand-100'
+                  }`}
+                >
+                  {hrs >= 24 ? `${hrs / 24} day${hrs > 24 ? 's' : ''}` : `${hrs} hr${hrs !== 1 ? 's' : ''}`}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+            <input
+              type="number"
+              min="1"
+              max="168"
+              placeholder="Custom hours"
+              value={customHours}
+              onChange={(e) => setCustomHours(e.target.value)}
+              className="flex-1 min-h-touch rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            />
+            <Button
+              size="sm"
+              disabled={!customHours || parseInt(customHours) < 1}
+              onClick={async () => {
+                const hrs = parseInt(customHours);
+                if (!hrs || hrs < 1) return;
+                const existing = caseData.reminder_offsets || [24];
+                if (existing.includes(hrs)) return;
+                await updateCase.mutateAsync({ id, reminder_offsets: [...existing, hrs] });
+                setShowReminderPicker(false);
+                setCustomHours('');
+              }}
+            >
+              Add
+            </Button>
+          </div>
+        </div>
+      </BottomSheet>
 
       {/* Reschedule Sheet */}
       <BottomSheet isOpen={showReschedule} onClose={() => setShowReschedule(false)} title="Reschedule Case">
