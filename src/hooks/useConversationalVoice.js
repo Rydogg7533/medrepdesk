@@ -28,6 +28,8 @@ function reducer(state, action) {
       return { ...state, phase: 'speaking' };
     case 'SET_FIELD':
       return { ...state, collected: { ...state.collected, [action.field]: action.value } };
+    case 'SET_COLLECTED':
+      return { ...state, collected: action.collected };
     case 'ADD_LOG':
       return { ...state, conversationLog: [...state.conversationLog, { role: action.role, text: action.text, time: Date.now() }] };
     case 'CONFIRM_SAVE':
@@ -43,7 +45,7 @@ function reducer(state, action) {
   }
 }
 
-export function useConversationalVoice({ script, onComplete, onCancel }) {
+export function useConversationalVoice({ script, onComplete, onCancel, onAllAnswered }) {
   const { data: prefs = VOICE_DEFAULTS } = useVoicePreferences();
   const { isListening, transcript, startListening, stopListening, isSupported, error: voiceError } = useVoice();
 
@@ -61,8 +63,10 @@ export function useConversationalVoice({ script, onComplete, onCancel }) {
   const mountedRef = useRef(true);
   const onCompleteRef = useRef(onComplete);
   const onCancelRef = useRef(onCancel);
+  const onAllAnsweredRef = useRef(onAllAnswered);
 
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+  useEffect(() => { onAllAnsweredRef.current = onAllAnswered; }, [onAllAnswered]);
   useEffect(() => { onCancelRef.current = onCancel; }, [onCancel]);
 
   useEffect(() => {
@@ -148,7 +152,15 @@ export function useConversationalVoice({ script, onComplete, onCancel }) {
 
   const askStep = useCallback(async (index, currentCollected) => {
     if (index >= script.length) {
-      await doReadBackAndConfirm(currentCollected);
+      let finalCollected = currentCollected;
+      if (onAllAnsweredRef.current) {
+        const result = await onAllAnsweredRef.current(currentCollected, { speak, startListening, dispatch, mountedRef });
+        if (result) {
+          finalCollected = result;
+          dispatch({ type: 'SET_COLLECTED', collected: result });
+        }
+      }
+      await doReadBackAndConfirm(finalCollected);
       return;
     }
 

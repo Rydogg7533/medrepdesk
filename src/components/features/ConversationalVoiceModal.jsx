@@ -1,14 +1,15 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Mic, MicOff, Loader2, Volume2, CheckCircle, ArrowLeft } from 'lucide-react';
 import BottomSheet from '@/components/ui/BottomSheet';
 import Button from '@/components/ui/Button';
 import { useConversationalVoice } from '@/hooks/useConversationalVoice';
 import { useCreateContact } from '@/hooks/useContacts';
 import { useCreateSurgeon } from '@/hooks/useSurgeons';
-import { useCreateFacility } from '@/hooks/useFacilities';
+import { useCreateFacility, useImportGlobalFacility } from '@/hooks/useFacilities';
 import { useFacilities } from '@/hooks/useFacilities';
 import { useToast } from '@/components/ui/Toast';
 import { sanitizeText } from '@/utils/sanitize';
+import { supabase } from '@/lib/supabase';
 
 const FACILITY_TYPES = ['hospital', 'surgery_center', 'clinic', 'office', 'other'];
 
@@ -83,23 +84,22 @@ function buildSurgeonScript() {
 
 function buildFacilityScript() {
   return [
-    { question: "What's the facility name?", field: 'name', required: true },
+    { question: "What is the name of the facility?", field: 'name', required: true },
     {
-      question: `What type of facility is it? Hospital, surgery center, clinic, office, or other?`,
+      question: 'What type of facility is it? Is it a hospital, ambulatory surgery center, clinic, or other?',
       field: 'facility_type',
       required: false,
       validator: (text) => {
         const lower = text.toLowerCase();
         if (lower.includes('hospital')) return { value: 'hospital' };
-        if (lower.includes('surgery') || lower.includes('asc')) return { value: 'surgery_center' };
+        if (lower.includes('ambulatory') || lower.includes('surgery center') || lower.includes('asc')) return { value: 'asc' };
         if (lower.includes('clinic')) return { value: 'clinic' };
-        if (lower.includes('office')) return { value: 'office' };
         return { value: 'other' };
       },
     },
-    { question: "What city is it in?", field: 'city', required: false },
+    { question: "What city is the facility located in?", field: 'city', required: false },
     {
-      question: "What state?",
+      question: "What state is it in?",
       field: 'state',
       required: false,
       validator: (text) => {
@@ -122,6 +122,7 @@ export default function ConversationalVoiceModal({ isOpen, onClose, scriptType =
   const createContact = useCreateContact();
   const createSurgeon = useCreateSurgeon();
   const createFacility = useCreateFacility();
+  const importGlobalFacility = useImportGlobalFacility();
   const { data: facilities = [] } = useFacilities({ activeOnly: true });
 
   const [saving, setSaving] = useState(false);
@@ -164,13 +165,18 @@ export default function ConversationalVoiceModal({ isOpen, onClose, scriptType =
         });
         toast({ message: `Surgeon "${finalCollected.full_name}" added`, type: 'success' });
       } else if (scriptType === 'add_facility') {
-        savedRecord = await createFacility.mutateAsync({
-          name: sanitizeText(finalCollected.name),
-          facility_type: finalCollected.facility_type || null,
-          city: finalCollected.city ? sanitizeText(finalCollected.city) : null,
-          state: finalCollected.state ? sanitizeText(finalCollected.state) : null,
-        });
-        toast({ message: `Facility "${finalCollected.name}" added`, type: 'success' });
+        if (finalCollected._globalMatch) {
+          savedRecord = await importGlobalFacility.mutateAsync(finalCollected._globalMatch.id);
+          toast({ message: `Facility "${finalCollected._globalMatch.name}" imported`, type: 'success' });
+        } else {
+          savedRecord = await createFacility.mutateAsync({
+            name: sanitizeText(finalCollected.name),
+            facility_type: finalCollected.facility_type || null,
+            city: finalCollected.city ? sanitizeText(finalCollected.city) : null,
+            state: finalCollected.state ? sanitizeText(finalCollected.state) : null,
+          });
+          toast({ message: `Facility "${finalCollected.name}" added`, type: 'success' });
+        }
       }
       if (onCompleteProp && savedRecord) {
         onCompleteProp(savedRecord);
@@ -182,7 +188,75 @@ export default function ConversationalVoiceModal({ isOpen, onClose, scriptType =
     } finally {
       setSaving(false);
     }
-  }, [scriptType, facilities, createContact, createSurgeon, createFacility, toast, hasPrefill, prefillName, onCompleteProp]);
+  }, [scriptType, facilities, createContact, createSurgeon, createFacility, importGlobalFacility, toast, hasPrefill, prefillName, onCompleteProp]);
+
+  const globalMatchRef = useRef(null);
+
+  function listenOnce() {
+    return new Promise((resolve) => {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) { resolve(''); return; }
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      recognition.onresult = (e) => resolve(e.results[0]?.[0]?.transcript || '');
+      recognition.onerror = () => resolve('');
+      recognition.onend = () => resolve('');
+      recognition.start();
+    });
+  }
+
+  const handleAllAnswered = useCallback(async (collected, { speak }) => {
+    if (scriptType !== 'add_facility') return null;
+
+    try {
+      let query = supabase
+        .from('facilities')
+        .select('*')
+        .eq('is_global', true)
+        .ilike('name', `%${collected.name}%`);
+
+      if (collected.city) {
+        query = query.ilike('city', `%${collected.city}%`);
+      } else if (collected.state) {
+        query = query.ilike('state', `%${collected.state}%`);
+      }
+
+      const { data } = await query.limit(1);
+      const match = data?.[0];
+
+      if (!match) return null;
+
+      globalMatchRef.current = match;
+
+      const location = [match.city, match.state].filter(Boolean).join(', ');
+      const addressPart = match.address ? ` located at ${match.address} in ${location}` : ` in ${location}`;
+      await speak(`I found ${match.name}${addressPart}. Is this the facility you are looking for?`);
+
+      const response = await listenOnce();
+      const lower = (response || '').toLowerCase().trim();
+
+      const isYes = ['yes', 'yeah', 'yep', 'yup', 'correct', "that's it", 'thats it', "that's right", 'thats right'].some((w) => lower.includes(w));
+
+      if (isYes) {
+        const merged = { ...collected };
+        if (match.address) merged.address = match.address;
+        if (match.city) merged.city = match.city;
+        if (match.state) merged.state = match.state;
+        if (match.phone) merged.phone = match.phone;
+        if (match.facility_type) merged.facility_type = match.facility_type;
+        merged._globalMatch = match;
+        return merged;
+      } else {
+        await speak("No problem, I'll create a new entry with the information you provided.");
+        globalMatchRef.current = null;
+        return null;
+      }
+    } catch {
+      return null;
+    }
+  }, [scriptType]);
 
   const handleCancel = useCallback(() => {
     voice.reset();
@@ -192,6 +266,7 @@ export default function ConversationalVoiceModal({ isOpen, onClose, scriptType =
     script,
     onComplete: handleComplete,
     onCancel: handleCancel,
+    onAllAnswered: handleAllAnswered,
   });
 
   function handleClose() {
