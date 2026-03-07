@@ -6,6 +6,7 @@ import {
   Clock, TrendingUp, Smartphone, Brain, Mic, Palette,
   MessageSquare, Camera, Mail, UserPlus,
 } from 'lucide-react';
+import FeaturesSearch from '@/components/features/FeaturesSearch';
 
 const NAV_LINKS = [
   { label: 'Features', href: '#features' },
@@ -516,6 +517,13 @@ export default function Landing() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ─── Feature Explorer ─────────────────── */}
+      <section className="bg-white/[0.02] px-4 py-20 sm:px-6 sm:py-28">
+        <div className="mx-auto max-w-6xl">
+          <FeaturesSearch />
         </div>
       </section>
 
