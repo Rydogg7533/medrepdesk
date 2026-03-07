@@ -116,9 +116,11 @@ function applyThemeBackground(p) {
 
   if (p.bg_type === 'image' && p.bg_image_url) {
     const overlay = p.overlay_opacity ?? 0.5;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
     bgEl.style.backgroundImage = `linear-gradient(rgba(0,0,0,${overlay}), rgba(0,0,0,${overlay})), url("${p.bg_image_url}")`;
-    bgEl.style.backgroundSize = 'cover';
-    bgEl.style.backgroundPosition = 'center center';
+    bgEl.style.backgroundSize = `${w}px ${h}px`;
+    bgEl.style.backgroundPosition = '0px 0px';
     bgEl.style.backgroundRepeat = 'no-repeat';
     bgEl.style.backgroundColor = '#1a1a2e';
   } else if (p.bg_type === 'gradient' && p.bg_gradient) {
@@ -143,8 +145,8 @@ function applyNavBackground(p) {
   document.querySelectorAll('.themed-nav').forEach((el) => {
     if (p.bg_type === 'image' && p.bg_image_url) {
       el.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url("${p.bg_image_url}")`;
-      el.style.backgroundSize = '100vw 100vh';
-      el.style.backgroundPosition = '0 0';
+      el.style.backgroundSize = `${window.innerWidth}px ${window.innerHeight}px`;
+      el.style.backgroundPosition = '0px 0px';
       el.style.backgroundRepeat = 'no-repeat';
       el.style.backgroundColor = 'transparent';
     } else {
@@ -285,6 +287,19 @@ export function ThemeProvider({ children }) {
       applyCustomTheme(customTheme);
     }
   }, [customTheme, isDark]);
+
+  // Re-apply background sizing on window resize
+  useEffect(() => {
+    function handleResize() {
+      if (customTheme && Object.keys(customTheme).length > 0) {
+        const p = { ...THEME_DEFAULTS, ...customTheme };
+        applyThemeBackground(p);
+        applyNavBackground(p);
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [customTheme]);
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
