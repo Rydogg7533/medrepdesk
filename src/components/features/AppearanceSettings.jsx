@@ -322,7 +322,7 @@ export default function AppearanceSettings() {
         </label>
         <input
           type="range"
-          min="0.3"
+          min="0.1"
           max="1"
           step="0.05"
           value={cardOpacity}
