@@ -120,60 +120,49 @@ function applyCustomTheme(prefs) {
   const resolvedBg = resolveThemeBgColor(p);
   const bgRgb = hexToRgb(resolvedBg);
 
-  // Background — with Safari fallbacks
+  // Background — applied directly to html element
+  // Clear previous bg styles first
+  root.style.backgroundImage = '';
+  root.style.backgroundSize = '';
+  root.style.backgroundPosition = '';
+  root.style.backgroundAttachment = '';
+  root.style.backgroundColor = '';
+
   try {
     if (p.bg_type === 'gradient' && p.bg_gradient) {
       const preset = GRADIENT_PRESETS.find((g) => g.id === p.bg_gradient);
-      root.style.setProperty('--app-bg-color', '#f8fafc');
-      root.style.setProperty('--app-bg-image', 'none');
       if (preset) {
-        root.style.setProperty('--app-bg-gradient', preset.css);
+        root.style.backgroundImage = preset.css;
+        root.style.backgroundAttachment = 'fixed';
       }
+      root.style.backgroundColor = '#f8fafc';
     } else if (p.bg_type === 'image' && p.bg_image_url) {
-      root.style.setProperty('--app-bg-color', '#1a1a2e');
-      root.style.setProperty('--app-bg-gradient', 'none');
-      root.style.setProperty('--app-bg-image', `url(${p.bg_image_url})`);
+      // Combine overlay + image into one background-image so no separate div needed
+      const overlay = p.overlay_opacity ?? 0.5;
+      root.style.backgroundImage = `linear-gradient(rgba(0,0,0,${overlay}), rgba(0,0,0,${overlay})), url(${p.bg_image_url})`;
+      root.style.backgroundSize = 'cover';
+      root.style.backgroundPosition = 'center';
+      root.style.backgroundAttachment = 'fixed';
+      root.style.backgroundColor = '#1a1a2e';
     } else {
-      root.style.setProperty('--app-bg-color', p.bg_color);
-      root.style.setProperty('--app-bg-image', 'none');
-      root.style.setProperty('--app-bg-gradient', 'none');
+      root.style.backgroundColor = p.bg_color || '#f8fafc';
     }
   } catch (e) {
-    root.style.setProperty('--app-bg-color', p.bg_color || '#f8fafc');
-    root.style.setProperty('--app-bg-image', 'none');
-    root.style.setProperty('--app-bg-gradient', 'none');
+    root.style.backgroundColor = p.bg_color || '#f8fafc';
   }
-
-  // Overlay opacity (for image backgrounds)
-  root.style.setProperty('--app-overlay-opacity', String(p.overlay_opacity));
 
   // Card and nav colors depend on bg type
   if (p.bg_type === 'image' && p.bg_image_url) {
-    // Image bg: cards get a dark semi-opaque surface, nav gets image + dark overlay
+    // Image bg: cards get a dark semi-opaque surface, nav gets solid dark bg
     root.style.setProperty('--app-card-rgb', '0, 0, 0');
     root.style.setProperty('--app-card-opacity', String(Math.max(p.card_opacity, 0.6)));
-    root.style.setProperty('--app-nav-bg', 'rgba(0, 0, 0, 0.6)');
-
-    // Apply bg image + dark overlay directly to .themed-nav elements
-    document.querySelectorAll('.themed-nav').forEach((el) => {
-      el.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${p.bg_image_url})`;
-      el.style.backgroundSize = 'cover';
-      el.style.backgroundPosition = 'center';
-      el.style.backgroundAttachment = 'fixed';
-    });
+    // Solid opaque dark bg for nav — background-attachment:fixed doesn't work on position:fixed
+    root.style.setProperty('--app-nav-bg', 'rgb(15, 15, 20)');
   } else {
     // Solid color or gradient: cards use bgColor RGB, nav gets darkened version
     root.style.setProperty('--app-card-rgb', `${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}`);
     root.style.setProperty('--app-card-opacity', String(p.card_opacity));
     root.style.setProperty('--app-nav-bg', applyBlackOverlay(resolvedBg, 0.5));
-
-    // Clear any image bg styles from nav elements
-    document.querySelectorAll('.themed-nav').forEach((el) => {
-      el.style.backgroundImage = '';
-      el.style.backgroundSize = '';
-      el.style.backgroundPosition = '';
-      el.style.backgroundAttachment = '';
-    });
   }
 
   // Recalculate text colors for both bg and card surfaces
@@ -215,13 +204,12 @@ function clearCustomTheme() {
   delete root.dataset.bgType;
   delete root.dataset.customTheme;
 
-  // Clear any inline nav image styles
-  document.querySelectorAll('.themed-nav').forEach((el) => {
-    el.style.backgroundImage = '';
-    el.style.backgroundSize = '';
-    el.style.backgroundPosition = '';
-    el.style.backgroundAttachment = '';
-  });
+  // Clear html element background styles
+  root.style.backgroundImage = '';
+  root.style.backgroundSize = '';
+  root.style.backgroundPosition = '';
+  root.style.backgroundAttachment = '';
+  root.style.backgroundColor = '';
 }
 
 export function ThemeProvider({ children }) {

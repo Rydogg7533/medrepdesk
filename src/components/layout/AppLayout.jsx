@@ -65,53 +65,7 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col" style={customTheme?.bg_type === 'color' && customTheme?.bg_color ? { backgroundColor: customTheme.bg_color } : undefined}>
-      {/* Background image layer */}
-      {customTheme?.bg_type === 'image' && customTheme?.bg_image_url && (
-        <div
-          className="fixed inset-0"
-          style={{
-            zIndex: -2,
-            backgroundImage: `url(${customTheme.bg_image_url})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundAttachment: 'fixed',
-            backgroundColor: '#1a1a2e',
-          }}
-        />
-      )}
-      {/* Overlay for image backgrounds */}
-      {customTheme?.bg_type === 'image' && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: -1,
-            pointerEvents: 'none',
-            background: `rgba(0, 0, 0, ${customTheme?.overlay_opacity ?? 0.5})`,
-          }}
-        />
-      )}
-      {/* Gradient layer */}
-      {customTheme?.bg_type === 'gradient' && customTheme?.bg_gradient && (
-        <div
-          className="fixed inset-0"
-          style={{
-            zIndex: -2,
-            background: (() => {
-              const presets = {
-                ocean: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                sunset: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                forest: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
-                midnight: 'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)',
-                peach: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
-                slate: 'linear-gradient(135deg, #e2e8f0 0%, #94a3b8 100%)',
-              };
-              return presets[customTheme.bg_gradient] || presets.ocean;
-            })(),
-          }}
-        />
-      )}
+    <div className="flex min-h-screen flex-col">
       {/* Header */}
       <header className="themed-nav fixed inset-x-0 top-0 z-30 flex min-h-touch items-center justify-between border-b border-gray-200 bg-white px-4 pt-safe-top dark:border-gray-700 dark:bg-gray-800">
         <span className="text-lg font-bold text-brand-800 dark:text-white">MedRepDesk</span>
