@@ -55,9 +55,9 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Body transparent so #root background shows through */
+/* Body transparent so #app-bg-canvas shows through */
 body {
-  background: transparent !important;
+  background-color: transparent !important;
 }
 
 /* --- Theme surface overrides (outside @layer so they beat Tailwind utilities) --- */

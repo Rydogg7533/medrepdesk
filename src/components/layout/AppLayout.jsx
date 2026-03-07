@@ -69,7 +69,7 @@ export default function AppLayout() {
     <div className="flex min-h-screen flex-col">
       {/* Background canvas — fixed behind everything, styled by ThemeContext */}
       <div
-        id="app-background"
+        id="app-bg-canvas"
         style={{ position: 'fixed', inset: 0, zIndex: -1 }}
       />
       {/* Header */}

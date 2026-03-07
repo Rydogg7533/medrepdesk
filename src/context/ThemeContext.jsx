@@ -109,9 +109,9 @@ function resolveThemeBgColor(p) {
   return p.bg_color || '#f8fafc';
 }
 
-// Apply background to #app-background fixed div (iOS-compatible, no background-attachment)
+// Apply background to #app-bg-canvas fixed div (iOS-compatible, no background-attachment)
 function applyThemeBackground(p) {
-  const bgEl = document.getElementById('app-background');
+  const bgEl = document.getElementById('app-bg-canvas');
   if (!bgEl) return;
 
   if (p.bg_type === 'image' && p.bg_image_url) {
@@ -160,7 +160,7 @@ function applyNavBackground(p) {
 }
 
 function clearThemeBackground() {
-  const bgEl = document.getElementById('app-background');
+  const bgEl = document.getElementById('app-bg-canvas');
   if (bgEl) {
     bgEl.style.backgroundImage = '';
     bgEl.style.backgroundSize = '';
