@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import DOMPurify from 'dompurify';
+import { releaseMicrophoneStream } from '@/hooks/useMicrophonePermission';
 
 const AuthContext = createContext(null);
 
@@ -118,6 +119,7 @@ export function AuthProvider({ children }) {
   };
 
   const signOut = async () => {
+    releaseMicrophoneStream();
     const { error: signOutError } = await supabase.auth.signOut();
     if (signOutError) throw signOutError;
   };

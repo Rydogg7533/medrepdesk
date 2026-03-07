@@ -5,6 +5,7 @@ import { executeToolCall, getInvalidationKeys } from '@/lib/voiceAgentTools';
 import { useQueryClient } from '@tanstack/react-query';
 import { useVoicePreferences, VOICE_DEFAULTS } from '@/hooks/useVoicePreferences';
 import { useAgentMemory } from '@/hooks/useAgentMemory';
+import { useMicrophonePermission } from '@/hooks/useMicrophonePermission';
 
 export function useVoiceAgent() {
   const [status, setStatus] = useState('idle'); // idle | connecting | connected | error
@@ -19,6 +20,7 @@ export function useVoiceAgent() {
   const { data: prefs = VOICE_DEFAULTS } = useVoicePreferences();
   const queryClient = useQueryClient();
   const { memories, saveMemory } = useAgentMemory();
+  const { getStream, muteStream } = useMicrophonePermission();
 
   const pcRef = useRef(null);
   const dcRef = useRef(null);
@@ -46,16 +48,15 @@ export function useVoiceAgent() {
       try { pcRef.current.close(); } catch {}
       pcRef.current = null;
     }
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((t) => t.stop());
-      mediaStreamRef.current = null;
-    }
+    // Mute instead of stopping — keeps mic permission alive
+    muteStream();
+    mediaStreamRef.current = null;
     if (audioElRef.current) {
       audioElRef.current.pause();
       audioElRef.current.srcObject = null;
       audioElRef.current = null;
     }
-  }, []);
+  }, [muteStream]);
 
   const reportMinutes = useCallback(async (durationMinutes) => {
     if (!account?.id || durationMinutes < 0.01) return;
@@ -120,8 +121,8 @@ export function useVoiceAgent() {
       const accountId = data.account_id;
       const userId = data.user_id;
 
-      // 2. Get user media
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // 2. Get user media (reuses persistent stream — no re-prompt)
+      const stream = await getStream();
       mediaStreamRef.current = stream;
 
       // 3. Create RTCPeerConnection

@@ -13,10 +13,15 @@ import ConversationalVoiceModal from '@/components/features/ConversationalVoiceM
 import { useAutoClosePayPeriods } from '@/hooks/useAutoClosePayPeriods';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useTheme } from '@/context/ThemeContext';
+import { useAuth } from '@/context/AuthContext';
+import { useMicrophonePermission } from '@/hooks/useMicrophonePermission';
+import MicPermissionToast from '@/components/ui/MicPermissionToast';
 
 export default function AppLayout() {
   useAutoClosePayPeriods();
   const { customTheme } = useTheme();
+  const { user, account } = useAuth();
+  const { permission, requestPermission } = useMicrophonePermission();
   const [fabOpen, setFabOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
@@ -41,6 +46,16 @@ export default function AppLayout() {
     window.addEventListener('open-dashboard-settings', handler);
     return () => window.removeEventListener('open-dashboard-settings', handler);
   }, []);
+
+  // Proactive mic permission for voice-enabled plans
+  useEffect(() => {
+    if (user && ['assistant', 'distributorship'].includes(account?.plan)) {
+      const timer = setTimeout(() => {
+        requestPermission().catch(() => {});
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [user, account?.plan]);
 
   function handleAction(path) {
     setFabOpen(false);
@@ -251,6 +266,8 @@ export default function AppLayout() {
       )}
 
       <DashboardSettings isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+
+      <MicPermissionToast permission={permission} />
 
       <BottomNav />
     </div>

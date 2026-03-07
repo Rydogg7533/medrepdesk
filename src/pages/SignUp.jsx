@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
+import { CheckCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
@@ -39,6 +41,33 @@ export default function SignUp() {
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState('');
 
+  // Beta access code state
+  const [accessCode, setAccessCode] = useState('');
+  const [codeValid, setCodeValid] = useState(false);
+  const [codeError, setCodeError] = useState('');
+  const [checkingCode, setCheckingCode] = useState(false);
+
+  async function validateCode() {
+    if (!accessCode.trim()) return;
+    setCheckingCode(true);
+    setCodeError('');
+    try {
+      const { data } = await supabase.functions.invoke('validate-beta-code', {
+        body: { code: accessCode.trim().toUpperCase(), email: form.email || '' },
+      });
+      if (data?.valid) {
+        setCodeValid(true);
+      } else {
+        setCodeError(data?.error || 'Invalid access code');
+        setCodeValid(false);
+      }
+    } catch {
+      setCodeError('Could not validate code. Please try again.');
+    } finally {
+      setCheckingCode(false);
+    }
+  }
+
   function onChange(e) {
     const { name, value, type, checked } = e.target;
     setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
@@ -62,12 +91,16 @@ export default function SignUp() {
 
     setLoading(true);
     try {
-      await signUp({
+      const result = await signUp({
         email: form.email,
         password: form.password,
         fullName: form.fullName,
         referralCode: form.referralCode || undefined,
       });
+      // Record beta code usage
+      if (accessCode && codeValid) {
+        supabase.rpc('increment_beta_code_use', { p_code: accessCode.trim().toUpperCase() }).catch(() => {});
+      }
       navigate('/');
     } catch (err) {
       setServerError(err.message);
@@ -100,11 +133,51 @@ export default function SignUp() {
           </div>
         )}
 
+        {/* Beta Access Code */}
+        <div className="mb-4 space-y-2">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-200">
+            Beta Access Code
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={accessCode}
+              onChange={(e) => {
+                setAccessCode(e.target.value.toUpperCase());
+                setCodeValid(false);
+                setCodeError('');
+              }}
+              onBlur={validateCode}
+              placeholder="Enter your access code"
+              className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 font-mono text-sm uppercase outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+              maxLength={20}
+            />
+            {codeValid && (
+              <div className="flex items-center px-3 text-green-500">
+                <CheckCircle className="w-5 h-5" />
+              </div>
+            )}
+          </div>
+          {checkingCode && (
+            <p className="text-xs text-gray-400">Checking code...</p>
+          )}
+          {codeError && (
+            <p className="text-xs text-red-500">{codeError}</p>
+          )}
+          {codeValid && (
+            <p className="text-xs text-green-500">Access code accepted</p>
+          )}
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            MedRepDesk is currently in private beta. Contact us to get access.
+          </p>
+        </div>
+
         <Button
           variant="google"
           fullWidth
           onClick={handleGoogle}
           type="button"
+          disabled={!codeValid}
         >
           Sign up with Google
         </Button>
@@ -182,7 +255,7 @@ export default function SignUp() {
             <p className="-mt-2 text-xs text-red-500">{errors.tosAccepted}</p>
           )}
 
-          <Button type="submit" fullWidth loading={loading}>
+          <Button type="submit" fullWidth loading={loading} disabled={!codeValid}>
             Create Account
           </Button>
         </form>
