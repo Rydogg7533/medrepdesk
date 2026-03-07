@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Upload, RotateCcw, Lock, X, Check } from 'lucide-react';
 import clsx from 'clsx';
@@ -8,21 +8,43 @@ import { GRADIENT_PRESETS, ACCENT_PRESETS } from '@/utils/themePresets';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 
-// Prevents iOS from scrolling the page when dragging inside the color picker.
-// Returns a callback ref that attaches a native non-passive touchmove listener.
-function usePreventTouchScroll() {
-  const elRef = useRef(null);
-  const handlerRef = useRef((e) => e.preventDefault());
+// Wraps HexColorPicker with touch-scroll prevention for iOS.
+// The key issue: ancestor touch-action (pan-y on section) overrides child touch-action (none).
+// So we must use native non-passive touchmove preventDefault to stop scrolling,
+// while NOT blocking touchstart (which react-colorful needs for pointer events).
+function TouchSafeColorPicker({ color, onChange, style }) {
+  const wrapperRef = useRef(null);
 
-  return useCallback((node) => {
-    if (elRef.current) {
-      elRef.current.removeEventListener('touchmove', handlerRef.current);
-    }
-    elRef.current = node;
-    if (node) {
-      node.addEventListener('touchmove', handlerRef.current, { passive: false });
-    }
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+
+    // Only prevent touchmove (stops scroll) — NOT touchstart (needed for pointer events)
+    const preventMove = (e) => {
+      e.preventDefault();
+    };
+
+    wrapper.addEventListener('touchmove', preventMove, { passive: false });
+
+    // Also attach to all interactive children for extra safety
+    const interactives = wrapper.querySelectorAll('.react-colorful__interactive');
+    interactives.forEach((el) => {
+      el.addEventListener('touchmove', preventMove, { passive: false });
+    });
+
+    return () => {
+      wrapper.removeEventListener('touchmove', preventMove);
+      interactives.forEach((el) => {
+        el.removeEventListener('touchmove', preventMove);
+      });
+    };
   }, []);
+
+  return (
+    <div ref={wrapperRef} className="mt-2" style={{ touchAction: 'none', ...style }}>
+      <HexColorPicker color={color} onChange={onChange} style={{ width: '100%', touchAction: 'none' }} />
+    </div>
+  );
 }
 
 function useDebounce(fn, delay) {
@@ -47,8 +69,6 @@ export default function AppearanceSettings() {
   const [bgImageUrl, setBgImageUrl] = useState(prefs.bg_image_url);
   const [accentColor, setAccentColor] = useState(prefs.accent_color || '#0F4C81');
   const [uploading, setUploading] = useState(false);
-  const bgPickerRef = usePreventTouchScroll();
-  const accentPickerRef = usePreventTouchScroll();
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showAccentPicker, setShowAccentPicker] = useState(false);
 
@@ -207,7 +227,7 @@ export default function AppearanceSettings() {
   const isPresetAccent = ACCENT_PRESETS.some((p) => p.color === accentColor);
 
   return (
-    <section className="themed-card touch-pan-y overscroll-x-none rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
+    <section className="themed-card overscroll-x-none rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Appearance</h2>
         <button
@@ -254,9 +274,7 @@ export default function AppearanceSettings() {
             <span className="text-xs text-gray-500 dark:text-gray-400">{bgColor}</span>
           </button>
           {showColorPicker && (
-            <div ref={bgPickerRef} className="mt-2 touch-none" style={{ touchAction: 'none' }}>
-              <HexColorPicker color={bgColor} onChange={handleColorChange} style={{ width: '100%', touchAction: 'none' }} />
-            </div>
+            <TouchSafeColorPicker color={bgColor} onChange={handleColorChange} />
           )}
         </div>
       )}
@@ -390,9 +408,7 @@ export default function AppearanceSettings() {
           )}
         </div>
         {showAccentPicker && (
-          <div ref={accentPickerRef} className="mt-2 touch-none" style={{ touchAction: 'none' }}>
-            <HexColorPicker color={accentColor} onChange={handleAccentChange} style={{ width: '100%', touchAction: 'none' }} />
-          </div>
+          <TouchSafeColorPicker color={accentColor} onChange={handleAccentChange} />
         )}
       </div>
     </section>
