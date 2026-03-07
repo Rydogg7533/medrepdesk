@@ -235,7 +235,46 @@ const TOOLS = [
       required: ["full_name"],
     },
   },
+  {
+    type: "function",
+    name: "save_memory",
+    description: "Save something to remember for future voice sessions. Call this when the rep explicitly says 'remember that...', 'always use...', 'note that...', or when correcting a name you got wrong.",
+    parameters: {
+      type: "object",
+      properties: {
+        key: {
+          type: "string",
+          description: "Short snake_case identifier (e.g. 'garfield_alias', 'default_surgeon')",
+        },
+        value: {
+          type: "string",
+          description: "What to remember (e.g. 'Garfield Medical Center', 'Dr. Anthony Clark')",
+        },
+        memory_type: {
+          type: "string",
+          enum: ["preference", "correction", "shortcut", "workflow"],
+          description: "correction=name alias/fix, shortcut=abbreviation, preference=how they like to work, workflow=process habit",
+        },
+      },
+      required: ["key", "value", "memory_type"],
+    },
+  },
 ];
+
+function buildMemoryBlock(memories: Array<{ key: string; value: string; memory_type: string; source: string }>): string {
+  if (!memories?.length) return "";
+  const lines = memories.slice(0, 20).map((m) => {
+    switch (m.memory_type) {
+      case "correction": return `- When the rep says "${m.key.replace(/_/g, " ")}", they mean: ${m.value}`;
+      case "shortcut":   return `- "${m.key.replace(/_/g, " ")}" refers to: ${m.value}`;
+      case "preference": return `- Rep preference: ${m.value}`;
+      case "pattern":    return `- Known pattern: ${m.value}`;
+      case "workflow":   return `- Workflow habit: ${m.value}`;
+      default:           return `- ${m.key}: ${m.value}`;
+    }
+  });
+  return `\n\nWHAT YOU KNOW ABOUT THIS REP (learned from past sessions):\n${lines.join("\n")}\n\nUse this context to avoid asking for info you already know. If the rep says something that updates or contradicts a memory, call save_memory to update it.`;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -324,13 +363,15 @@ serve(async (req) => {
       );
     }
 
-    // Parse optional voice from request body
+    // Parse optional voice and memories from request body
     let voice = "alloy";
+    let memories: Array<{ key: string; value: string; memory_type: string; source: string }> = [];
     try {
       const body = await req.json();
       if (body?.voice) voice = body.voice;
+      if (body?.memories) memories = body.memories;
     } catch {
-      // No body — use default
+      // No body — use defaults
     }
 
     // Create OpenAI Realtime session with tools
@@ -343,7 +384,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "gpt-4o-realtime-preview-2024-12-17",
         voice,
-        instructions: SYSTEM_PROMPT,
+        instructions: SYSTEM_PROMPT + buildMemoryBlock(memories),
         tools: TOOLS,
         input_audio_transcription: { model: "whisper-1" },
         turn_detection: { type: "server_vad", silence_duration_ms: 800 },

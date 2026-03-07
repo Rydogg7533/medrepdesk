@@ -43,6 +43,8 @@ export function getInvalidationKeys(toolName) {
       return [['communications'], ['dashboard']];
     case 'add_contact':
       return [['contacts']];
+    case 'save_memory':
+      return [['agent-memory']];
     default:
       return [];
   }

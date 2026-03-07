@@ -22,6 +22,7 @@ import InfoTooltip from '@/components/ui/InfoTooltip';
 import { PLAN_LIMITS } from '@/utils/constants';
 import { US_STATES } from '@/utils/usStates';
 import VoiceSettings from '@/components/features/VoiceSettings';
+import VoiceMemorySettings from '@/components/features/VoiceMemorySettings';
 import NotificationSettings from '@/components/features/NotificationSettings';
 import AppearanceSettings from '@/components/features/AppearanceSettings';
 import { useDashboardPreferences, useUpdateDashboardPreferences } from '@/hooks/useDashboardPreferences';
@@ -358,6 +359,11 @@ export default function Settings() {
 
       {/* Voice Assistant */}
       <VoiceSettings />
+
+      {/* Voice Memory */}
+      <section className="themed-card mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
+        <VoiceMemorySettings />
+      </section>
 
       {/* Notifications */}
       <NotificationSettings />

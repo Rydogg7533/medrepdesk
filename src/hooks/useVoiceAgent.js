@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { executeToolCall, getInvalidationKeys } from '@/lib/voiceAgentTools';
 import { useQueryClient } from '@tanstack/react-query';
 import { useVoicePreferences, VOICE_DEFAULTS } from '@/hooks/useVoicePreferences';
+import { useAgentMemory } from '@/hooks/useAgentMemory';
 
 export function useVoiceAgent() {
   const [status, setStatus] = useState('idle'); // idle | connecting | connected | error
@@ -17,6 +18,7 @@ export function useVoiceAgent() {
   const { user, account } = useAuth();
   const { data: prefs = VOICE_DEFAULTS } = useVoicePreferences();
   const queryClient = useQueryClient();
+  const { memories, saveMemory } = useAgentMemory();
 
   const pcRef = useRef(null);
   const dcRef = useRef(null);
@@ -86,7 +88,10 @@ export function useVoiceAgent() {
     try {
       // 1. Get ephemeral session from edge function
       const { data, error: fnError } = await supabase.functions.invoke('realtime-voice-agent', {
-        body: { voice: prefs.voice || 'alloy' },
+        body: {
+          voice: prefs.voice || 'alloy',
+          memories: memories.map((m) => ({ key: m.key, value: m.value, memory_type: m.memory_type, source: m.source })),
+        },
       });
 
       if (fnError) {
@@ -237,8 +242,13 @@ export function useVoiceAgent() {
           args = {};
         }
 
-        // Execute tool async, then send result back
-        executeToolCall(name, args, ctx)
+        // Handle save_memory locally (not a Supabase data tool)
+        const toolPromise = name === 'save_memory'
+          ? saveMemory({ key: args.key, value: args.value, memory_type: args.memory_type || 'preference', source: 'explicit' })
+              .then(() => ({ success: true, message: `I'll remember that: ${args.value}` }))
+          : executeToolCall(name, args, ctx);
+
+        toolPromise
           .then((result) => {
             // Invalidate React Query caches for write operations
             const keys = getInvalidationKeys(name);
