@@ -66,6 +66,12 @@ html[data-custom-theme="true"] .themed-dropdown {
   background-color: rgba(var(--app-card-rgb, 255, 255, 255), var(--app-card-opacity, 1)) !important;
 }
 
+html[data-custom-theme="true"].dark .themed-card,
+html[data-custom-theme="true"].dark .themed-sheet,
+html[data-custom-theme="true"].dark .themed-dropdown {
+  background-color: rgba(31, 41, 55, var(--app-card-opacity, 1)) !important;
+}
+
 html[data-custom-theme="true"] .themed-card {
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.45),
@@ -75,6 +81,10 @@ html[data-custom-theme="true"] .themed-card {
 
 html[data-custom-theme="true"] .themed-sheet-solid {
   background-color: rgba(var(--app-card-rgb, 255, 255, 255), 1) !important;
+}
+
+html[data-custom-theme="true"].dark .themed-sheet-solid {
+  background-color: rgb(17 24 39) !important;
 }
 
 /* --- Themed text colors — scoped to cards only --- */

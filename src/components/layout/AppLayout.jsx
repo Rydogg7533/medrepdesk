@@ -159,28 +159,28 @@ export default function AppLayout() {
         <div className="flex flex-col gap-1">
           <button
             onClick={() => handleAction('/cases/new')}
-            className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800"
           >
             <Briefcase className="h-5 w-5 text-brand-800 dark:text-brand-400" />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-200">New Case</span>
           </button>
           <button
             onClick={() => handleAction('/po/new')}
-            className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800"
           >
             <FileText className="h-5 w-5 text-brand-800 dark:text-brand-400" />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Log PO</span>
           </button>
           <button
             onClick={() => handleAction('/communications/new')}
-            className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800"
           >
             <MessageSquare className="h-5 w-5 text-brand-800 dark:text-brand-400" />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Log Communication</span>
           </button>
           <button
             onClick={() => handleAction('/contacts/new')}
-            className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800"
           >
             <UserPlus className="h-5 w-5 text-brand-800 dark:text-brand-400" />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Add Contact</span>
@@ -192,28 +192,28 @@ export default function AppLayout() {
               <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Voice</p>
               <button
                 onClick={() => { setFabOpen(false); canAccessAssistant ? setVoiceAgentOpen(true) : setVoiceOpen(true); }}
-                className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800"
               >
                 <Mic className="h-5 w-5 text-brand-800 dark:text-brand-400" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{canAccessAssistant ? 'Voice Agent' : 'Voice Log'}</span>
               </button>
               <button
                 onClick={() => { setFabOpen(false); setConvoVoice({ scriptType: 'add_contact' }); }}
-                className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800"
               >
                 <UserRound className="h-5 w-5 text-brand-800 dark:text-brand-400" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Voice: Add Contact</span>
               </button>
               <button
                 onClick={() => { setFabOpen(false); setConvoVoice({ scriptType: 'add_surgeon' }); }}
-                className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800"
               >
                 <Stethoscope className="h-5 w-5 text-brand-800 dark:text-brand-400" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Voice: Add Surgeon</span>
               </button>
               <button
                 onClick={() => { setFabOpen(false); setConvoVoice({ scriptType: 'add_facility' }); }}
-                className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800"
               >
                 <Building2 className="h-5 w-5 text-brand-800 dark:text-brand-400" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Voice: Add Facility</span>

@@ -31,7 +31,7 @@ export default function BottomSheet({ isOpen, onClose, title, fullHeight, childr
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/40"
+        className="fixed inset-0 z-40 bg-black/60"
         onClick={onClose}
       />
 
@@ -40,7 +40,7 @@ export default function BottomSheet({ isOpen, onClose, title, fullHeight, childr
         ref={sheetRef}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="themed-sheet-solid fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-white pb-safe-bottom shadow-xl dark:bg-gray-800"
+        className="themed-sheet-solid fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-white pb-safe-bottom shadow-xl dark:bg-gray-900"
       >
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-2">
@@ -48,7 +48,7 @@ export default function BottomSheet({ isOpen, onClose, title, fullHeight, childr
         </div>
 
         {title && (
-          <h2 className="px-5 pb-3 text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="px-5 pb-3 text-lg font-semibold text-gray-900 dark:text-gray-400">
             {title}
           </h2>
         )}
