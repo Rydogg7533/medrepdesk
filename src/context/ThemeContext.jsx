@@ -74,14 +74,11 @@ function recalculateTextColors(bgColor, cardOverlay, isDark) {
   root.style.setProperty('--app-bg-text-color', bgText);
   root.style.setProperty('--app-bg-text-secondary', getMuted(bgText, 0.6));
 
-  // Card surface text — blend card base (white=255 or dark=31) with #2a2a2a overlay
+  // Card surface text — bg color darkened by card overlay
   const overlay = parseFloat(cardOverlay ?? 0);
-  const baseR = isDark ? 31 : 255;
-  const baseG = isDark ? 41 : 255;
-  const baseB = isDark ? 55 : 255;
-  const sr = Math.round(baseR * (1 - overlay) + 42 * overlay);
-  const sg = Math.round(baseG * (1 - overlay) + 42 * overlay);
-  const sb = Math.round(baseB * (1 - overlay) + 42 * overlay);
+  const sr = Math.round(bg.r * (1 - overlay));
+  const sg = Math.round(bg.g * (1 - overlay));
+  const sb = Math.round(bg.b * (1 - overlay));
   const cardText = getContrastText(sr, sg, sb);
   root.style.setProperty('--app-text-color', cardText);
   root.style.setProperty('--app-text-secondary', getMuted(cardText, 0.55));
@@ -164,6 +161,41 @@ function applyNavBackground(p) {
   });
 }
 
+// Cards — same image with adjustable dark overlay, or darkened solid bg
+function applyCardBackground(p) {
+  const cardOverlay = p.card_opacity ?? 0;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+
+  document.querySelectorAll('.themed-card').forEach((el) => {
+    if (p.bg_type === 'image' && p.bg_image_url) {
+      el.style.backgroundImage = `linear-gradient(rgba(0,0,0,${cardOverlay}), rgba(0,0,0,${cardOverlay})), url("${p.bg_image_url}")`;
+      el.style.backgroundSize = `${w}px ${h}px`;
+      el.style.backgroundPosition = '0px 0px';
+      el.style.backgroundRepeat = 'no-repeat';
+      el.style.backgroundColor = 'transparent';
+    } else {
+      const resolvedBg = resolveThemeBgColor(p);
+      const { r, g, b } = hexToRgb(resolvedBg);
+      el.style.backgroundImage = 'none';
+      el.style.backgroundColor = `rgb(${Math.round(r * (1 - cardOverlay))}, ${Math.round(g * (1 - cardOverlay))}, ${Math.round(b * (1 - cardOverlay))})`;
+      el.style.backgroundSize = '';
+      el.style.backgroundPosition = '';
+      el.style.backgroundRepeat = '';
+    }
+  });
+}
+
+function clearCardBackground() {
+  document.querySelectorAll('.themed-card').forEach((el) => {
+    el.style.backgroundImage = '';
+    el.style.backgroundColor = '';
+    el.style.backgroundSize = '';
+    el.style.backgroundPosition = '';
+    el.style.backgroundRepeat = '';
+  });
+}
+
 function clearThemeBackground() {
   const bgEl = document.getElementById('app-bg-canvas');
   if (bgEl) {
@@ -193,14 +225,12 @@ function applyCustomTheme(prefs) {
   const resolvedBg = resolveThemeBgColor(p);
   const bgRgb = hexToRgb(resolvedBg);
 
-  // Apply background to #root and nav elements
+  // Apply background to canvas, nav, and card elements
   applyThemeBackground(p);
   applyNavBackground(p);
+  applyCardBackground(p);
 
-  // Card overlay and nav background
-  const cardOverlay = p.card_opacity ?? 0;
-  root.style.setProperty('--app-card-overlay', String(cardOverlay));
-
+  // Nav background variable
   if (p.bg_type === 'image' && p.bg_image_url) {
     root.style.setProperty('--app-nav-bg', 'transparent');
   } else {
@@ -208,6 +238,7 @@ function applyCustomTheme(prefs) {
   }
 
   // Recalculate text colors for both bg and card surfaces
+  const cardOverlay = p.card_opacity ?? 0;
   recalculateTextColors(resolvedBg, cardOverlay, isDark);
 
   // Accent color
@@ -227,7 +258,6 @@ function applyCustomTheme(prefs) {
 
 function clearCustomTheme() {
   const root = document.documentElement;
-  root.style.removeProperty('--app-card-overlay');
   root.style.removeProperty('--app-nav-bg');
   root.style.removeProperty('--app-accent-rgb');
   root.style.removeProperty('--app-accent-light-rgb');
@@ -241,6 +271,7 @@ function clearCustomTheme() {
   delete root.dataset.customTheme;
 
   clearThemeBackground();
+  clearCardBackground();
 }
 
 export function ThemeProvider({ children }) {
@@ -268,12 +299,13 @@ export function ThemeProvider({ children }) {
     }
   }, []);
 
-  // Re-apply background + nav styles (call on route changes)
+  // Re-apply background + nav + card styles (call on route changes)
   const reapplyBackground = useCallback(() => {
     if (customTheme && Object.keys(customTheme).length > 0) {
       const p = { ...THEME_DEFAULTS, ...customTheme };
       applyThemeBackground(p);
       applyNavBackground(p);
+      applyCardBackground(p);
     }
   }, [customTheme]);
 
@@ -295,10 +327,25 @@ export function ThemeProvider({ children }) {
         const p = { ...THEME_DEFAULTS, ...customTheme };
         applyThemeBackground(p);
         applyNavBackground(p);
+        applyCardBackground(p);
       }
     }
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, [customTheme]);
+
+  // MutationObserver — apply card backgrounds to newly added .themed-card elements
+  useEffect(() => {
+    if (!customTheme || Object.keys(customTheme).length === 0) return;
+    const main = document.querySelector('main');
+    if (!main) return;
+
+    const observer = new MutationObserver(() => {
+      const p = { ...THEME_DEFAULTS, ...customTheme };
+      applyCardBackground(p);
+    });
+    observer.observe(main, { childList: true, subtree: true });
+    return () => observer.disconnect();
   }, [customTheme]);
 
   useEffect(() => {

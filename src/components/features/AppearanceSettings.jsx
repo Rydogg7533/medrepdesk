@@ -361,13 +361,13 @@ export default function AppearanceSettings() {
       <div className="mb-4">
         <label className="mb-1 flex items-center justify-between text-xs font-medium text-gray-600 dark:text-gray-300">
           <span>Card Darkness</span>
-          <span className="text-gray-400">{Math.round(cardOpacity * 100)}%</span>
+          <span className="text-gray-400">{Math.round((cardOpacity / 0.6) * 100)}%</span>
         </label>
         <input
           type="range"
           min="0"
-          max="1"
-          step="0.05"
+          max="0.6"
+          step="0.03"
           value={cardOpacity}
           onChange={handleCardOpacityChange}
           className="w-full accent-brand-800"

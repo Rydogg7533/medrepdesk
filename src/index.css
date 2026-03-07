@@ -3,7 +3,6 @@
 @tailwind utilities;
 
 :root {
-  --app-card-overlay: 0;
 }
 
 @layer base {
@@ -62,34 +61,7 @@ body {
 
 /* --- Theme surface overrides (outside @layer so they beat Tailwind utilities) --- */
 
-/* Cards: dark overlay controlled by --app-card-overlay */
-html[data-custom-theme="true"] .themed-card,
-html[data-custom-theme="true"] .themed-sheet,
-html[data-custom-theme="true"] .themed-dropdown {
-  position: relative;
-  overflow: hidden;
-}
-
-html[data-custom-theme="true"] .themed-card::after,
-html[data-custom-theme="true"] .themed-sheet::after,
-html[data-custom-theme="true"] .themed-dropdown::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-color: #2a2a2a;
-  opacity: var(--app-card-overlay, 0);
-  pointer-events: none;
-  border-radius: inherit;
-  z-index: 0;
-}
-
-html[data-custom-theme="true"] .themed-card > *,
-html[data-custom-theme="true"] .themed-sheet > *,
-html[data-custom-theme="true"] .themed-dropdown > * {
-  position: relative;
-  z-index: 1;
-}
-
+/* Cards: background applied via JS in ThemeContext (inline styles) */
 html[data-custom-theme="true"] .themed-card {
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.45),
