@@ -122,42 +122,43 @@ export default function AppLayout() {
 
       <OfflineBanner />
 
+      {/* Subscription banners — fixed below header */}
+      {checkoutSuccess && (
+        <div className="fixed inset-x-0 top-[calc(44px+env(safe-area-inset-top))] z-30 flex items-center justify-between gap-2 bg-green-50 px-4 py-2 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 flex-shrink-0" />
+            Subscription activated successfully!
+          </div>
+          <button onClick={() => setCheckoutSuccess(false)} className="p-0.5">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+      {isPastDue && (
+        <div className="fixed inset-x-0 top-[calc(44px+env(safe-area-inset-top))] z-30 flex items-center justify-between gap-2 bg-red-50 px-4 py-2 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+            Payment failed — update your payment method to avoid interruption.
+          </div>
+          <button onClick={handleManageBilling} className="whitespace-nowrap font-medium underline">
+            Update payment
+          </button>
+        </div>
+      )}
+      {isTrialing && trialDaysLeft !== null && (
+        <div className="fixed inset-x-0 top-[calc(44px+env(safe-area-inset-top))] z-30 flex items-center justify-center gap-2 bg-blue-50 px-4 py-1.5 text-sm text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
+          <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+          {trialDaysLeft === 0
+            ? 'Your trial ends today.'
+            : `${trialDaysLeft} day${trialDaysLeft !== 1 ? 's' : ''} left in your free trial.`}
+          <button onClick={() => navigate('/pricing')} className="ml-1 font-medium underline">
+            Choose a plan
+          </button>
+        </div>
+      )}
+
       {/* Content */}
-      <main ref={mainRef} className="relative z-[1] flex-1 overflow-x-hidden overflow-y-auto pt-[calc(44px+env(safe-area-inset-top))] pb-[calc(68px+env(safe-area-inset-bottom))]">
-        {/* Subscription banners — sticky inside scroll area */}
-        {checkoutSuccess && (
-          <div className="sticky top-0 z-20 flex items-center justify-between gap-2 bg-green-50 px-4 py-2 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 flex-shrink-0" />
-              Subscription activated successfully!
-            </div>
-            <button onClick={() => setCheckoutSuccess(false)} className="p-0.5">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-        {isPastDue && (
-          <div className="sticky top-0 z-20 flex items-center justify-between gap-2 bg-red-50 px-4 py-2 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-              Payment failed — update your payment method to avoid interruption.
-            </div>
-            <button onClick={handleManageBilling} className="whitespace-nowrap font-medium underline">
-              Update payment
-            </button>
-          </div>
-        )}
-        {isTrialing && trialDaysLeft !== null && (
-          <div className="sticky top-0 z-20 flex items-center justify-center gap-2 bg-blue-50 px-4 py-1.5 text-sm text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
-            <Clock className="h-3.5 w-3.5 flex-shrink-0" />
-            {trialDaysLeft === 0
-              ? 'Your trial ends today.'
-              : `${trialDaysLeft} day${trialDaysLeft !== 1 ? 's' : ''} left in your free trial.`}
-            <button onClick={() => navigate('/pricing')} className="ml-1 font-medium underline">
-              Choose a plan
-            </button>
-          </div>
-        )}
+      <main ref={mainRef} className={`relative z-[1] flex-1 overflow-x-hidden overflow-y-auto pb-[calc(68px+env(safe-area-inset-bottom))] ${(checkoutSuccess || isPastDue || (isTrialing && trialDaysLeft !== null)) ? 'pt-[calc(44px+env(safe-area-inset-top)+36px)]' : 'pt-[calc(44px+env(safe-area-inset-top))]'}`}>
         <PageTransition>
           <Outlet />
         </PageTransition>
