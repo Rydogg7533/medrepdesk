@@ -32,8 +32,7 @@ export default function AppLayout() {
   const location = useLocation();
   const mainRef = useRef(null);
   const isDashboard = location.pathname === '/dashboard';
-  const showVoiceFab = ['/dashboard', '/cases', '/money', '/contacts'].includes(location.pathname)
-    || location.pathname.startsWith('/cases/');
+  const isVoiceActive = voiceOpen || voiceAgentOpen || !!convoVoice;
 
   // Scroll to top on route change
   useEffect(() => {
@@ -135,15 +134,13 @@ export default function AppLayout() {
       </main>
 
       {/* Voice FAB */}
-      {showVoiceFab && (
-        <button
-          onClick={() => canAccessAssistant ? setVoiceAgentOpen(true) : setVoiceOpen(true)}
-          className="fixed bottom-[calc(68px+env(safe-area-inset-bottom)+82px)] right-5 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-brand-800 text-white opacity-50 shadow-md transition-transform active:scale-95"
-          aria-label="Voice input"
-        >
-          <Mic className="h-5 w-5" />
-        </button>
-      )}
+      <button
+        onClick={() => canAccessAssistant ? setVoiceAgentOpen(true) : setVoiceOpen(true)}
+        className={`fixed bottom-[calc(68px+env(safe-area-inset-bottom)+82px)] right-5 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-brand-800 text-white shadow-md transition-opacity duration-150 transition-transform active:scale-95 active:opacity-100 ${isVoiceActive ? 'opacity-100' : 'opacity-50'}`}
+        aria-label="Voice input"
+      >
+        <Mic className="h-5 w-5" />
+      </button>
 
       {/* FAB */}
       <button
