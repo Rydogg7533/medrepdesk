@@ -8,6 +8,23 @@ import { GRADIENT_PRESETS, ACCENT_PRESETS } from '@/utils/themePresets';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 
+// Prevents iOS from scrolling the page when dragging inside the color picker.
+// Returns a callback ref that attaches a native non-passive touchmove listener.
+function usePreventTouchScroll() {
+  const elRef = useRef(null);
+  const handlerRef = useRef((e) => e.preventDefault());
+
+  return useCallback((node) => {
+    if (elRef.current) {
+      elRef.current.removeEventListener('touchmove', handlerRef.current);
+    }
+    elRef.current = node;
+    if (node) {
+      node.addEventListener('touchmove', handlerRef.current, { passive: false });
+    }
+  }, []);
+}
+
 function useDebounce(fn, delay) {
   const timer = useRef(null);
   return useCallback((...args) => {
@@ -30,6 +47,8 @@ export default function AppearanceSettings() {
   const [bgImageUrl, setBgImageUrl] = useState(prefs.bg_image_url);
   const [accentColor, setAccentColor] = useState(prefs.accent_color || '#0F4C81');
   const [uploading, setUploading] = useState(false);
+  const bgPickerRef = usePreventTouchScroll();
+  const accentPickerRef = usePreventTouchScroll();
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showAccentPicker, setShowAccentPicker] = useState(false);
 
@@ -235,11 +254,7 @@ export default function AppearanceSettings() {
             <span className="text-xs text-gray-500 dark:text-gray-400">{bgColor}</span>
           </button>
           {showColorPicker && (
-            <div
-              className="mt-2 touch-none"
-              onTouchStart={(e) => e.stopPropagation()}
-              onTouchMove={(e) => e.stopPropagation()}
-            >
+            <div ref={bgPickerRef} className="mt-2 touch-none">
               <HexColorPicker color={bgColor} onChange={handleColorChange} style={{ width: '100%' }} />
             </div>
           )}
@@ -375,11 +390,7 @@ export default function AppearanceSettings() {
           )}
         </div>
         {showAccentPicker && (
-          <div
-            className="mt-2 touch-none"
-            onTouchStart={(e) => e.stopPropagation()}
-            onTouchMove={(e) => e.stopPropagation()}
-          >
+          <div ref={accentPickerRef} className="mt-2 touch-none">
             <HexColorPicker color={accentColor} onChange={handleAccentChange} style={{ width: '100%' }} />
           </div>
         )}
