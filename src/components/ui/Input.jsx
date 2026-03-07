@@ -29,7 +29,7 @@ const Input = forwardRef(function Input(
           type={type}
           onChange={onChange}
           className={clsx(
-            'block min-h-touch w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors',
+            'block min-h-touch w-full rounded-lg border px-3 py-2.5 text-base outline-none transition-colors',
             'placeholder:text-gray-400 dark:placeholder:text-gray-500',
             'focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20',
             'dark:bg-gray-700 dark:text-white',

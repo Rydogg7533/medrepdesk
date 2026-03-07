@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bell, Clock, Calendar, CheckCircle } from 'lucide-react';
+import { Bell, Clock, Calendar, CheckCircle, Smartphone } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import { useAuth } from '@/context/AuthContext';
@@ -28,44 +28,34 @@ const NOTIFICATION_TOGGLES = [
   { key: 'notify_pay_period_close', label: 'Pay Period Close', desc: 'Reminder when pay period is about to close' },
 ];
 
-function Toggle({ checked, onChange, disabled }) {
+function Toggle({ checked, onChange }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
-      disabled={disabled}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${
-        disabled
-          ? 'bg-gray-200 dark:bg-gray-700 cursor-not-allowed'
-          : checked
-            ? 'bg-brand-800'
-            : 'bg-gray-300 dark:bg-gray-600'
+        checked ? 'bg-brand-800' : 'bg-gray-300 dark:bg-gray-600'
       }`}
     >
       <span
         className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
           checked ? 'translate-x-6' : 'translate-x-1'
-        } ${disabled ? 'opacity-50' : ''}`}
+        }`}
       />
     </button>
   );
 }
 
-function HourPicker({ value, onChange, label, disabled }) {
+function HourPicker({ value, onChange, label }) {
   return (
     <div className="flex items-center justify-between">
-      <span className={`text-sm ${disabled ? 'text-gray-400 dark:text-gray-600' : 'text-gray-700 dark:text-gray-300'}`}>{label}</span>
+      <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
       <select
         value={value}
-        disabled={disabled}
         onChange={(e) => onChange(parseInt(e.target.value, 10))}
-        className={`rounded-lg border px-2 py-1.5 text-sm ${
-          disabled
-            ? 'border-gray-200 bg-gray-50 text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-600 cursor-not-allowed'
-            : 'border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700 dark:text-white'
-        }`}
+        className="rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
       >
         {HOUR_OPTIONS.map((o) => (
           <option key={o.value} value={o.value}>{o.label}</option>
@@ -75,35 +65,29 @@ function HourPicker({ value, onChange, label, disabled }) {
   );
 }
 
-function NumberStepper({ value, onChange, label, suffix, min = 0, max = 30, disabled }) {
+function NumberStepper({ value, onChange, label, suffix, min = 0, max = 30 }) {
   return (
     <div className="flex items-center justify-between">
-      <span className={`text-sm ${disabled ? 'text-gray-400 dark:text-gray-600' : 'text-gray-700 dark:text-gray-300'}`}>{label}</span>
+      <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
       <div className="flex items-center gap-2">
         <button
           type="button"
-          disabled={disabled}
           onClick={() => onChange(Math.max(min, value - 1))}
-          className={`flex h-7 w-7 items-center justify-center rounded-md text-sm font-medium ${
-            disabled ? 'bg-gray-50 text-gray-300 dark:bg-gray-800 dark:text-gray-600 cursor-not-allowed' : 'bg-gray-100 dark:bg-gray-700'
-          }`}
+          className="flex h-7 w-7 items-center justify-center rounded-md bg-gray-100 text-sm font-medium dark:bg-gray-700"
         >
           -
         </button>
-        <span className={`w-8 text-center text-sm font-medium ${disabled ? 'text-gray-400 dark:text-gray-600' : 'text-gray-900 dark:text-gray-100'}`}>
+        <span className="w-8 text-center text-sm font-medium text-gray-900 dark:text-gray-100">
           {value}
         </span>
         <button
           type="button"
-          disabled={disabled}
           onClick={() => onChange(Math.min(max, value + 1))}
-          className={`flex h-7 w-7 items-center justify-center rounded-md text-sm font-medium ${
-            disabled ? 'bg-gray-50 text-gray-300 dark:bg-gray-800 dark:text-gray-600 cursor-not-allowed' : 'bg-gray-100 dark:bg-gray-700'
-          }`}
+          className="flex h-7 w-7 items-center justify-center rounded-md bg-gray-100 text-sm font-medium dark:bg-gray-700"
         >
           +
         </button>
-        {suffix && <span className={`text-xs ${disabled ? 'text-gray-300 dark:text-gray-600' : 'text-gray-400'}`}>{suffix}</span>}
+        {suffix && <span className="text-xs text-gray-400">{suffix}</span>}
       </div>
     </div>
   );
@@ -115,18 +99,16 @@ export default function NotificationSettings() {
   const updateAccount = useUpdateAccount();
   const toast = useToast();
 
-  const pushEnabled = isSubscribed;
-
   async function handleEnablePush() {
     const sub = await subscribe();
     if (sub) {
-      toast({ message: 'Push notifications enabled', type: 'success' });
+      toast({ message: 'Push notifications enabled on this device', type: 'success' });
     }
   }
 
   async function handleDisablePush() {
     await unsubscribe();
-    toast({ message: 'Push notifications disabled', type: 'info' });
+    toast({ message: 'Push notifications disabled on this device', type: 'info' });
   }
 
   const [form, setForm] = useState({
@@ -183,57 +165,60 @@ export default function NotificationSettings() {
   }
 
   return (
-    <section className="mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
+    <section className="themed-card mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
       <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Notifications</h2>
 
       <div className="flex flex-col gap-5">
-        {/* SECTION 1 — Push Notifications Master Toggle */}
+        {/* SECTION 1 — Push Notifications on This Device */}
         <div className={`rounded-xl border p-4 ${
-          pushEnabled
+          isSubscribed
             ? 'border-green-200 bg-green-50/50 dark:border-green-900/50 dark:bg-green-900/10'
             : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50'
         }`}>
           <div className="flex items-center gap-3">
             <div className={`flex h-10 w-10 items-center justify-center rounded-full ${
-              pushEnabled
+              isSubscribed
                 ? 'bg-green-100 dark:bg-green-900/30'
                 : 'bg-gray-200 dark:bg-gray-700'
             }`}>
-              {pushEnabled
+              {isSubscribed
                 ? <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                : <Bell className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                : <Smartphone className="h-5 w-5 text-gray-400 dark:text-gray-500" />
               }
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  Push Notifications
+                  Push on This Device
                 </p>
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                  pushEnabled
+                  isSubscribed
                     ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
                     : 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
                 }`}>
-                  {pushEnabled ? 'Enabled' : 'Disabled'}
+                  {isSubscribed ? 'Enabled' : 'Off'}
                 </span>
               </div>
-              {!pushEnabled && (
-                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                  Enable push notifications to receive alerts on this device
-                </p>
-              )}
+              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                {isSubscribed
+                  ? 'This device will receive push alerts'
+                  : !pushSupported
+                    ? 'Add to Home Screen to enable push notifications on iOS'
+                    : 'Receive real-time alerts on this device'
+                }
+              </p>
             </div>
           </div>
           <div className="mt-3">
-            {pushEnabled ? (
+            {isSubscribed ? (
               <button
                 onClick={handleDisablePush}
                 disabled={pushLoading}
                 className="text-xs text-gray-500 underline hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
               >
-                {pushLoading ? 'Disabling...' : 'Disable push notifications'}
+                {pushLoading ? 'Disabling...' : 'Disable on this device'}
               </button>
-            ) : (
+            ) : pushSupported ? (
               <Button
                 variant="primary"
                 fullWidth
@@ -243,6 +228,12 @@ export default function NotificationSettings() {
                 <Bell className="h-4 w-4" />
                 Enable Push Notifications
               </Button>
+            ) : (
+              <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 px-3 py-2">
+                <p className="text-xs text-amber-700 dark:text-amber-400">
+                  To enable push notifications on iOS, tap the Share button in Safari and select "Add to Home Screen", then open MedRepDesk from your home screen.
+                </p>
+              </div>
             )}
             {pushError && (
               <p className="mt-2 text-xs text-red-500 dark:text-red-400">{pushError}</p>
@@ -250,15 +241,8 @@ export default function NotificationSettings() {
           </div>
         </div>
 
-        {/* Disabled overlay message */}
-        {!pushEnabled && (
-          <p className="text-center text-xs text-gray-400 dark:text-gray-500">
-            Enable push notifications above to activate alerts
-          </p>
-        )}
-
         {/* SECTION 2 — Timing */}
-        <div className={`border-t border-gray-100 pt-4 dark:border-gray-700 ${!pushEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className={`border-t border-gray-100 pt-4 dark:border-gray-700 transition-opacity ${isSubscribed ? '' : 'pointer-events-none opacity-50'}`}>
           <div className="mb-3 flex items-center gap-2">
             <Clock className="h-4 w-4 text-gray-400" />
             <span className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Timing</span>
@@ -268,19 +252,17 @@ export default function NotificationSettings() {
               label="Nightly Reminder"
               value={form.reminder_hour}
               onChange={(v) => set('reminder_hour', v)}
-              disabled={!pushEnabled}
             />
             <HourPicker
               label="Morning Check"
               value={form.morning_check_hour}
               onChange={(v) => set('morning_check_hour', v)}
-              disabled={!pushEnabled}
             />
           </div>
         </div>
 
         {/* SECTION 3 — Weekly Digest */}
-        <div className={`border-t border-gray-100 pt-4 dark:border-gray-700 ${!pushEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className={`border-t border-gray-100 pt-4 dark:border-gray-700 transition-opacity ${isSubscribed ? '' : 'pointer-events-none opacity-50'}`}>
           <div className="mb-3 flex items-center gap-2">
             <Calendar className="h-4 w-4 text-gray-400" />
             <span className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Weekly Digest</span>
@@ -288,9 +270,9 @@ export default function NotificationSettings() {
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-700 dark:text-gray-300">Enable Digest</span>
-              <Toggle checked={form.notify_weekly_digest} onChange={(v) => set('notify_weekly_digest', v)} disabled={!pushEnabled} />
+              <Toggle checked={form.notify_weekly_digest} onChange={(v) => set('notify_weekly_digest', v)} />
             </div>
-            {form.notify_weekly_digest && pushEnabled && (
+            {form.notify_weekly_digest && (
               <>
                 <div>
                   <span className="mb-2 block text-sm text-gray-700 dark:text-gray-300">Day</span>
@@ -321,8 +303,8 @@ export default function NotificationSettings() {
           </div>
         </div>
 
-        {/* SECTION 4 — Alert Settings (toggles + thresholds) */}
-        <div className={`border-t border-gray-100 pt-4 dark:border-gray-700 ${!pushEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
+        {/* SECTION 4 — Alert Settings */}
+        <div className={`border-t border-gray-100 pt-4 dark:border-gray-700 transition-opacity ${isSubscribed ? '' : 'pointer-events-none opacity-50'}`}>
           <span className="mb-3 block text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">
             Alert Settings
           </span>
@@ -333,7 +315,7 @@ export default function NotificationSettings() {
                   <p className="text-sm text-gray-700 dark:text-gray-300">{toggle.label}</p>
                   <p className="text-[11px] text-gray-400 dark:text-gray-500">{toggle.desc}</p>
                 </div>
-                <Toggle checked={form[toggle.key] ?? true} onChange={(v) => set(toggle.key, v)} disabled={!pushEnabled} />
+                <Toggle checked={form[toggle.key] ?? true} onChange={(v) => set(toggle.key, v)} />
               </div>
             ))}
           </div>
@@ -350,28 +332,24 @@ export default function NotificationSettings() {
                 onChange={(v) => set('case_tomorrow_hours_before', v)}
                 suffix="hrs"
                 max={72}
-                disabled={!pushEnabled}
               />
               <NumberStepper
                 label="Promised Date Grace"
                 value={form.promised_date_grace_days}
                 onChange={(v) => set('promised_date_grace_days', v)}
                 suffix="days"
-                disabled={!pushEnabled}
               />
               <NumberStepper
                 label="PO Overdue Grace"
                 value={form.po_overdue_grace_days}
                 onChange={(v) => set('po_overdue_grace_days', v)}
                 suffix="days"
-                disabled={!pushEnabled}
               />
               <NumberStepper
                 label="Commission Overdue Grace"
                 value={form.commission_overdue_grace_days}
                 onChange={(v) => set('commission_overdue_grace_days', v)}
                 suffix="days"
-                disabled={!pushEnabled}
               />
               <NumberStepper
                 label="Escalation Threshold"
@@ -380,14 +358,13 @@ export default function NotificationSettings() {
                 suffix="attempts"
                 min={1}
                 max={10}
-                disabled={!pushEnabled}
               />
             </div>
           </div>
         </div>
 
         {/* Save */}
-        {dirty && pushEnabled && (
+        {dirty && (
           <Button
             variant="primary"
             fullWidth

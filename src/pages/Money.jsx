@@ -10,6 +10,8 @@ import { useCommissions, useUpdateCommission } from '@/hooks/useCommissions';
 import { usePayPeriods, useEnsurePayPeriods } from '@/hooks/usePayPeriods';
 import { useBillSheets } from '@/hooks/useBillSheets';
 import ChaseBottomSheet from '@/components/features/ChaseBottomSheet';
+import ChaseTimeline from '@/components/features/ChaseTimeline';
+import { useChaseLog } from '@/hooks/useChaseLog';
 import { useSendPOEmail } from '@/hooks/usePOEmail';
 import { useAuth } from '@/context/AuthContext';
 import { useDistributor } from '@/hooks/useDistributors';
@@ -41,7 +43,6 @@ const PO_FILTERS = [
 const COMM_FILTERS = [
   { key: 'all', label: 'All' },
   { key: 'pending', label: 'Pending' },
-  { key: 'confirmed', label: 'Confirmed' },
   { key: 'received', label: 'Received' },
   { key: 'disputed', label: 'Disputed' },
   { key: 'written_off', label: 'Written Off' },
@@ -56,6 +57,7 @@ export default function Money() {
   const [billSheetView, setBillSheetView] = useState('active');
   const [chaseTarget, setChaseTarget] = useState(null); // bill sheet object for chase bottom sheet
   const [recordTarget, setRecordTarget] = useState(null); // bill sheet object for record PO bottom sheet
+  const [billSheetDetail, setBillSheetDetail] = useState(null); // bill sheet object for detail bottom sheet
   const [showSendPrompt, setShowSendPrompt] = useState(false);
   const [pendingPOData, setPendingPOData] = useState(null); // deferred PO data
   const [pendingRecordTarget, setPendingRecordTarget] = useState(null); // bill sheet for deferred PO
@@ -70,8 +72,8 @@ export default function Money() {
   const [commActionTarget, setCommActionTarget] = useState(null); // commission object
   const [showCommConfirm, setShowCommConfirm] = useState(false);
   const [commConfirmAmount, setCommConfirmAmount] = useState('');
+  const [commConfirmDate, setCommConfirmDate] = useState('');
   const [showCommDispute, setShowCommDispute] = useState(false);
-  const [commDisputeAmount, setCommDisputeAmount] = useState('');
   const [commDisputeNote, setCommDisputeNote] = useState('');
 
   // Unified dispute resolve/write-off state — works from PO or Commission entry
@@ -103,6 +105,7 @@ export default function Money() {
   const ensurePayPeriods = useEnsurePayPeriods(distributorId, paySchedule);
   const createPO = useCreatePO();
   const sendPOEmail = useSendPOEmail();
+  const { data: detailChaseEntries = [] } = useChaseLog(billSheetDetail?.caseId);
 
   // Auto-generate missing pay periods on mount when schedule is configured
   useEffect(() => {
@@ -116,14 +119,18 @@ export default function Money() {
     : poFilter === 'archive'
       ? allPOs.filter((p) => p.status === 'paid')
       : allPOs.filter((p) => p.status === poFilter);
-  const filteredComms = commFilter === 'all' ? allCommissions : allCommissions.filter((c) => c.status === commFilter);
+  const filteredComms = commFilter === 'all'
+    ? allCommissions
+    : commFilter === 'pending'
+      ? allCommissions.filter((c) => c.status === 'pending' || c.status === 'confirmed')
+      : allCommissions.filter((c) => c.status === commFilter);
 
   // PO summary
   const outstandingPOs = allPOs.filter((p) => !['paid', 'disputed'].includes(p.status));
   const totalOutstanding = outstandingPOs.reduce((sum, p) => sum + (p.amount || 0), 0);
 
   // Commission summary
-  const pendingComms = allCommissions.filter((c) => c.status === 'pending');
+  const pendingComms = allCommissions.filter((c) => c.status === 'pending' || c.status === 'confirmed');
   const totalPending = pendingComms.reduce((sum, c) => sum + (c.expected_amount || 0), 0);
   const thisMonth = new Date().toISOString().slice(0, 7);
   const thisYear = new Date().getFullYear().toString();
@@ -232,79 +239,50 @@ export default function Money() {
     queryClient.invalidateQueries({ queryKey: ['cases'] });
   }
 
-  // Commission Confirm: pending → confirmed, PO → paid, case → paid
-  async function handleCommConfirm() {
+  // Mark as Received: pending/confirmed → received
+  async function handleMarkReceived() {
     if (!commActionTarget) return;
     setActionSubmitting(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
       const amount = commConfirmAmount ? Number(commConfirmAmount) : commActionTarget.expected_amount;
+      const receivedDate = commConfirmDate || new Date().toISOString().split('T')[0];
 
       await updateCommission.mutateAsync({
         id: commActionTarget.id,
-        status: 'confirmed',
+        status: 'received',
         received_amount: amount,
-        received_date: today,
+        received_date: receivedDate,
       });
-
-      const { data: pos } = await supabase
-        .from(TABLES.PURCHASE_ORDERS)
-        .select('id')
-        .eq('case_id', commActionTarget.case_id);
-      if (pos?.length) {
-        await supabase
-          .from(TABLES.PURCHASE_ORDERS)
-          .update({ status: 'paid', paid_date: today, updated_at: new Date().toISOString() })
-          .in('id', pos.map((p) => p.id));
-      }
-
-      await supabase
-        .from(TABLES.CASES)
-        .update({ status: 'paid', updated_at: new Date().toISOString() })
-        .eq('id', commActionTarget.case_id);
 
       invalidateAll();
       setShowCommConfirm(false);
       setCommActionTarget(null);
-      toast({ message: 'Commission confirmed — PO and case marked paid', type: 'success' });
+      toast({ message: 'Commission marked as received', type: 'success' });
     } catch (err) {
-      toast({ message: err.message || 'Failed to confirm commission', type: 'error' });
+      toast({ message: err.message || 'Failed to mark commission received', type: 'error' });
     } finally {
       setActionSubmitting(false);
     }
   }
 
-  // Commission Dispute: pending → disputed, PO(received) → disputed
+  // Commission Dispute: received → disputed
   async function handleCommDispute() {
     if (!commActionTarget) return;
+    if (!commDisputeNote.trim()) return;
     setActionSubmitting(true);
     try {
-      const amount = commDisputeAmount ? Number(commDisputeAmount) : null;
       const notes = [commActionTarget.notes, commDisputeNote].filter(Boolean).join('\n---\n');
 
       await updateCommission.mutateAsync({
         id: commActionTarget.id,
         status: 'disputed',
-        ...(amount != null && { received_amount: amount }),
         ...(notes && { notes }),
       });
-
-      const { data: pos } = await supabase
-        .from(TABLES.PURCHASE_ORDERS)
-        .select('id, status')
-        .eq('case_id', commActionTarget.case_id);
-      const receivedPOs = pos?.filter((p) => p.status === 'received') || [];
-      if (receivedPOs.length) {
-        await supabase
-          .from(TABLES.PURCHASE_ORDERS)
-          .update({ status: 'disputed', updated_at: new Date().toISOString() })
-          .in('id', receivedPOs.map((p) => p.id));
-      }
 
       invalidateAll();
       setShowCommDispute(false);
       setCommActionTarget(null);
-      toast({ message: 'Commission disputed — PO moved to Disputed', type: 'success' });
+      toast({ message: 'Commission disputed — follow up with your distributor', type: 'success' });
     } catch (err) {
       toast({ message: err.message || 'Failed to dispute commission', type: 'error' });
     } finally {
@@ -619,15 +597,15 @@ export default function Money() {
           <Card className="mb-4">
             <div className="grid grid-cols-3 gap-3 text-center">
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Pending<InfoTooltip text="Commissions awaiting PO payment from distributors." /></p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Pending<InfoTooltip text="Cases completed but not yet paid by your distributor." /></p>
                 <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatCurrency(totalPending)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">This Month<InfoTooltip text="Commission payments received this calendar month." /></p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">This Month<InfoTooltip text="Payment received from your distributor this calendar month." /></p>
                 <p className="text-lg font-bold text-green-600">{formatCurrency(receivedThisMonth)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">YTD<InfoTooltip text="Total commissions received year-to-date." /></p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">YTD<InfoTooltip text="Total payment received from your distributor year-to-date." /></p>
                 <p className="text-lg font-bold text-green-600">{formatCurrency(receivedYTD)}</p>
               </div>
             </div>
@@ -694,16 +672,20 @@ export default function Money() {
                       <ChevronRight className="h-4 w-4 text-gray-300 dark:text-gray-600" />
                     </div>
                   </div>
-                  {comm.status === 'pending' && (
-                    <div className="mt-3 flex gap-2 border-t border-gray-100 pt-3 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
+                  {(comm.status === 'pending' || comm.status === 'confirmed') && (
+                    <div className="mt-3 flex border-t border-gray-100 pt-3 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
                       <button
-                        onClick={() => { setCommActionTarget(comm); setCommConfirmAmount(''); setShowCommConfirm(true); }}
+                        onClick={() => { setCommActionTarget(comm); setCommConfirmAmount(comm.expected_amount ? String(comm.expected_amount) : ''); setCommConfirmDate(new Date().toISOString().split('T')[0]); setShowCommConfirm(true); }}
                         className="flex-1 rounded-lg bg-green-600 py-2 text-xs font-medium text-white"
                       >
-                        Confirm Commission
+                        Mark as Received
                       </button>
+                    </div>
+                  )}
+                  {comm.status === 'received' && (
+                    <div className="mt-3 flex border-t border-gray-100 pt-3 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
                       <button
-                        onClick={() => { setCommActionTarget(comm); setCommDisputeAmount(''); setCommDisputeNote(''); setShowCommDispute(true); }}
+                        onClick={() => { setCommActionTarget(comm); setCommDisputeNote(''); setShowCommDispute(true); }}
                         className="flex-1 rounded-lg border border-red-300 py-2 text-xs font-medium text-red-600 dark:border-red-700 dark:text-red-400"
                       >
                         Dispute
@@ -716,7 +698,7 @@ export default function Money() {
                         onClick={() => openResolveFlow({ type: 'commission', commission: comm, case_id: comm.case_id })}
                         className="flex-1 rounded-lg bg-green-600 py-2 text-xs font-medium text-white"
                       >
-                        Dispute Resolved
+                        Resolve
                       </button>
                       <button
                         onClick={() => openWriteOffFlow({ type: 'commission', commission: comm, case_id: comm.case_id })}
@@ -735,6 +717,68 @@ export default function Money() {
 
       {activeTab === 'bill_sheets' && (
         <>
+          {/* Bill Sheet Detail Bottom Sheet */}
+          <BottomSheet
+            isOpen={!!billSheetDetail}
+            onClose={() => setBillSheetDetail(null)}
+            title={billSheetDetail?.caseNumber || 'Bill Sheet'}
+            fullHeight
+          >
+            {billSheetDetail && (
+              <div className="flex flex-col gap-4">
+                {/* Header info */}
+                <div className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-gray-700/50">
+                  {billSheetDetail.surgeon && (
+                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{billSheetDetail.surgeon}</p>
+                  )}
+                  {billSheetDetail.facility && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{billSheetDetail.facility}</p>
+                  )}
+                  <div className="mt-1 flex items-center gap-3">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      {formatCurrency(billSheetDetail.totalValue)}
+                    </span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
+                      {formatDate(billSheetDetail.scheduledDate)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                {!billSheetDetail.hasPO && !billSheetDetail.isArchived && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setBillSheetDetail(null); setTimeout(() => setChaseTarget(billSheetDetail), 150); }}
+                      className="flex-1 rounded-lg bg-gray-100 py-2.5 text-sm font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+                    >
+                      Chase PO
+                    </button>
+                    <button
+                      onClick={() => { setBillSheetDetail(null); setTimeout(() => { setRecordTarget(billSheetDetail); setPOForm({ po_number: '', amount: '', received_date: new Date().toISOString().split('T')[0] }); }, 150); }}
+                      className="flex-1 rounded-lg bg-brand-800 py-2.5 text-sm font-medium text-white"
+                    >
+                      Record PO
+                    </button>
+                  </div>
+                )}
+
+                {/* Chase Activity Timeline */}
+                <div>
+                  <h3 className="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Chase Activity</h3>
+                  <ChaseTimeline entries={detailChaseEntries} />
+                </div>
+
+                {/* View Full Bill Sheet link */}
+                <button
+                  onClick={() => { setBillSheetDetail(null); navigate(`/bill-sheets/${billSheetDetail.caseId}`); }}
+                  className="text-sm font-medium text-brand-800 dark:text-brand-400"
+                >
+                  View Full Bill Sheet
+                </button>
+              </div>
+            )}
+          </BottomSheet>
+
           {/* Chase PO Bottom Sheet */}
           <ChaseBottomSheet
             isOpen={!!chaseTarget}
@@ -881,7 +925,7 @@ export default function Money() {
                       <Card
                         key={bs.caseId}
                         className="cursor-pointer active:bg-gray-50 dark:active:bg-gray-700"
-                        onClick={() => navigate(`/bill-sheets/${bs.caseId}`)}
+                        onClick={() => setBillSheetDetail(bs)}
                       >
                         <div className="flex items-center justify-between">
                           <div className="min-w-0 flex-1">
@@ -1081,8 +1125,8 @@ export default function Money() {
         </>
       )}
 
-      {/* Commission Confirm Bottom Sheet */}
-      <BottomSheet isOpen={showCommConfirm} onClose={() => { setShowCommConfirm(false); setCommActionTarget(null); }} title="Confirm Commission">
+      {/* Mark as Received Bottom Sheet */}
+      <BottomSheet isOpen={showCommConfirm} onClose={() => { setShowCommConfirm(false); setCommActionTarget(null); }} title="Mark as Received">
         <div className="flex flex-col gap-3">
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Amount Received</label>
@@ -1095,11 +1139,18 @@ export default function Money() {
               className="min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            Leave blank to use expected amount ({formatCurrency(commActionTarget?.expected_amount)})
-          </p>
-          <Button fullWidth loading={actionSubmitting} className="bg-green-600 hover:bg-green-700" onClick={handleCommConfirm}>
-            Confirm Commission
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Date Received</label>
+            <input
+              type="date"
+              value={commConfirmDate}
+              onChange={(e) => setCommConfirmDate(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              className="min-h-touch w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+          <Button fullWidth loading={actionSubmitting} className="bg-green-600 hover:bg-green-700" onClick={handleMarkReceived}>
+            Confirm Receipt
           </Button>
         </div>
       </BottomSheet>
@@ -1107,19 +1158,11 @@ export default function Money() {
       {/* Commission Dispute Bottom Sheet */}
       <BottomSheet isOpen={showCommDispute} onClose={() => { setShowCommDispute(false); setCommActionTarget(null); }} title="Dispute Commission">
         <div className="flex flex-col gap-3">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Payment amount didn't match expected — follow up with your distributor.
+          </p>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Amount Actually Received</label>
-            <input
-              type="number"
-              step="0.01"
-              placeholder="0.00"
-              value={commDisputeAmount}
-              onChange={(e) => setCommDisputeAmount(e.target.value)}
-              className="min-h-touch w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Dispute Note (optional)</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">What's wrong?</label>
             <textarea
               rows={3}
               placeholder="Describe the discrepancy..."
@@ -1128,7 +1171,7 @@ export default function Money() {
               className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
           </div>
-          <Button fullWidth loading={actionSubmitting} className="bg-red-600 hover:bg-red-700 text-white" onClick={handleCommDispute}>
+          <Button fullWidth loading={actionSubmitting} className="bg-red-600 hover:bg-red-700 text-white" onClick={handleCommDispute} disabled={!commDisputeNote.trim()}>
             Submit Dispute
           </Button>
         </div>

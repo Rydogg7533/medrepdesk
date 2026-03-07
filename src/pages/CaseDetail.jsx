@@ -5,7 +5,7 @@ import { useCase, useUpdateCase, useDeleteCase } from '@/hooks/useCases';
 import { useCasePOs } from '@/hooks/usePOs';
 import { usePoEmailLog } from '@/hooks/usePoEmailLog';
 import { useCaseCommission, useCreateCommission } from '@/hooks/useCommissions';
-import { useCaseCommunications, useCreateCommunication } from '@/hooks/useCommunications';
+import { useCaseCommunications, useCreateCommunication, useUpdateCommunication } from '@/hooks/useCommunications';
 import { useChaseLog, useCreateChaseEntry } from '@/hooks/useChaseLog';
 import { useAuth } from '@/context/AuthContext';
 import { useDistributors } from '@/hooks/useDistributors';
@@ -22,9 +22,11 @@ import TimeWheelPicker from '@/components/ui/TimeWheelPicker';
 import { useToast } from '@/components/ui/Toast';
 import POSentConfirmation from '@/components/features/POSentConfirmation';
 import ChaseBottomSheet from '@/components/features/ChaseBottomSheet';
+import ChaseTimeline from '@/components/features/ChaseTimeline';
 import { formatDate, formatTime, formatCurrency } from '@/utils/formatters';
 import { CASE_STATUSES } from '@/utils/constants';
 import { getProductLabel } from '@/utils/productCatalog';
+import { canMarkComplete } from '@/utils/caseLogic';
 
 const STATUS_ORDER = [
   'scheduled', 'completed',
@@ -59,6 +61,7 @@ export default function CaseDetail() {
   const toast = useToast();
   const createCommission = useCreateCommission();
   const createCommunication = useCreateCommunication();
+  const updateCommunication = useUpdateCommunication();
   const createChase = useCreateChaseEntry();
   const [showDelete, setShowDelete] = useState(false);
   const [showAddCommission, setShowAddCommission] = useState(false);
@@ -391,6 +394,22 @@ export default function CaseDetail() {
         </Card>
       )}
 
+      {/* Chase Activity Timeline */}
+      {chaseEntries.length > 0 && (
+        <Card className="mb-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Chase Activity</h3>
+            <button
+              onClick={() => setShowChase(true)}
+              className="flex items-center gap-1 text-xs font-medium text-brand-800 dark:text-brand-400"
+            >
+              <Plus className="h-3.5 w-3.5" /> Log Chase
+            </button>
+          </div>
+          <ChaseTimeline entries={chaseEntries} />
+        </Card>
+      )}
+
       {/* PO Sent to Manufacturer */}
       {sentPO && emailLog && (
         <POSentConfirmation
@@ -457,6 +476,9 @@ export default function CaseDetail() {
           <div className="space-y-2">
             {caseCommunications.slice(0, 5).map((comm) => {
               const Icon = COMM_TYPE_ICONS[comm.comm_type] || MessageSquare;
+              const today = new Date().toISOString().split('T')[0];
+              const hasFollowUp = !comm.follow_up_done && comm.follow_up_date;
+              const isOverdue = hasFollowUp && comm.follow_up_date <= today;
               return (
                 <div key={comm.id} className="flex items-start gap-2 rounded-lg bg-slate-50 dark:bg-gray-700/50 px-3 py-2">
                   <Icon className="mt-0.5 h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" />
@@ -467,6 +489,25 @@ export default function CaseDetail() {
                       </p>
                       <span className="text-xs text-gray-400 dark:text-gray-500">{formatDate(comm.created_at)}</span>
                     </div>
+                    {hasFollowUp && (
+                      <div className="mt-0.5 flex items-center gap-2">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                          isOverdue
+                            ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                            : 'bg-gray-100 text-gray-500 dark:bg-gray-600 dark:text-gray-400'
+                        }`}>
+                          {isOverdue ? `Follow-up due ${formatDate(comm.follow_up_date)}` : `Follow-up ${formatDate(comm.follow_up_date)}`}
+                        </span>
+                        {isOverdue && (
+                          <button
+                            onClick={() => updateCommunication.mutate({ id: comm.id, follow_up_done: true })}
+                            className="rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-600 active:bg-gray-200 dark:bg-gray-600 dark:text-gray-300"
+                          >
+                            Mark Done
+                          </button>
+                        )}
+                      </div>
+                    )}
                     {comm.outcome && (
                       <p className="truncate text-xs text-gray-500 dark:text-gray-400">{comm.outcome}</p>
                     )}
@@ -509,9 +550,19 @@ export default function CaseDetail() {
       <div className="space-y-2">
         {['scheduled', 'confirmed'].includes(caseData.status) && (
           <>
-            <Button fullWidth loading={updateCase.isPending} onClick={() => advanceStatus('completed')}>
+            <Button
+              fullWidth
+              loading={updateCase.isPending}
+              onClick={() => advanceStatus('completed')}
+              disabled={!canMarkComplete(caseData.scheduled_date)}
+            >
               Mark Completed
             </Button>
+            {!canMarkComplete(caseData.scheduled_date) && (
+              <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                This case is scheduled for {formatDate(caseData.scheduled_date)} — it can be marked complete on or after the day of surgery.
+              </p>
+            )}
             <Button
               variant="outline"
               fullWidth

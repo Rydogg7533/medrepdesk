@@ -6,6 +6,7 @@ const SECTIONS = [
   { key: 'show_upcoming_cases', label: 'Upcoming Cases' },
   { key: 'show_po_pipeline', label: 'PO Pipeline' },
   { key: 'show_metrics', label: 'Metrics' },
+  { key: 'show_chase_summary', label: 'Chase Summary' },
   { key: 'show_action_items', label: 'Action Items' },
   { key: 'show_recent_activity', label: 'Recent Activity' },
 ];

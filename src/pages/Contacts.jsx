@@ -341,7 +341,7 @@ function PeopleTab({ contacts, filterMode, onToggle, onDeleteAsync, onArchiveAsy
       {contacts.length === 0 ? (
         <p className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">No contacts found</p>
       ) : (
-        <div className="space-y-1">
+        <div className="themed-card divide-y divide-gray-100 dark:divide-gray-700 rounded-xl bg-white shadow-sm dark:bg-gray-800">
           {contacts.map((c) => (
             <SwipeableRow
               key={c.id}
@@ -351,7 +351,7 @@ function PeopleTab({ contacts, filterMode, onToggle, onDeleteAsync, onArchiveAsy
             >
               <div
                 onClick={() => navigate(`/contacts/${c.id}`)}
-                className="flex min-h-touch cursor-pointer items-center gap-3 rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800"
+                className="flex min-h-touch cursor-pointer items-center gap-3 px-3 py-3 active:bg-gray-50 dark:active:bg-gray-700"
               >
                 {!isArchived && (
                   <ActiveToggle isActive={c.is_active !== false} onToggle={(val) => onToggle(c.id, val)} />
@@ -472,7 +472,7 @@ function FacilitiesTab({ facilities, filterMode, onToggle, onDeleteAsync, onArch
       {facilities.length === 0 ? (
         <p className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">No facilities found</p>
       ) : (
-        <div className="space-y-1">
+        <div className="themed-card divide-y divide-gray-100 dark:divide-gray-700 rounded-xl bg-white shadow-sm dark:bg-gray-800">
           {facilities.map((f) => (
             <SwipeableRow
               key={f.id}
@@ -482,7 +482,7 @@ function FacilitiesTab({ facilities, filterMode, onToggle, onDeleteAsync, onArch
             >
               <div
                 onClick={() => navigate(`/facilities/${f.id}/edit?returnTab=facilities`)}
-                className="flex min-h-touch cursor-pointer items-center gap-3 rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800"
+                className="flex min-h-touch cursor-pointer items-center gap-3 px-3 py-3 active:bg-gray-50 dark:active:bg-gray-700"
               >
                 {!isArchived && (
                   <ActiveToggle isActive={f.is_active !== false} onToggle={(val) => onToggle(f.id, val)} />
@@ -567,7 +567,7 @@ function ManufacturersTab({ manufacturers, filterMode, onToggle, onDeleteAsync, 
       {manufacturers.length === 0 ? (
         <p className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">No manufacturers found</p>
       ) : (
-        <div className="space-y-1">
+        <div className="themed-card divide-y divide-gray-100 dark:divide-gray-700 rounded-xl bg-white shadow-sm dark:bg-gray-800">
           {manufacturers.map((m) => (
             <SwipeableRow
               key={m.id}
@@ -577,7 +577,7 @@ function ManufacturersTab({ manufacturers, filterMode, onToggle, onDeleteAsync, 
             >
               <div
                 onClick={() => navigate(`/manufacturers/${m.id}?returnTab=manufacturers`)}
-                className="flex min-h-touch cursor-pointer items-center gap-3 rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800"
+                className="flex min-h-touch cursor-pointer items-center gap-3 px-3 py-3 active:bg-gray-50 dark:active:bg-gray-700"
               >
                 {!isArchived && (
                   <ActiveToggle isActive={m.is_active !== false} onToggle={(val) => onToggle(m.id, val)} />
@@ -685,7 +685,7 @@ function SurgeonsTab({ surgeons, filterMode, onToggle, onDeleteAsync, onArchiveA
       {surgeons.length === 0 ? (
         <p className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">No surgeons found</p>
       ) : (
-        <div className="space-y-1">
+        <div className="themed-card divide-y divide-gray-100 dark:divide-gray-700 rounded-xl bg-white shadow-sm dark:bg-gray-800">
           {surgeons.map((s) => (
             <SwipeableRow
               key={s.id}
@@ -695,7 +695,7 @@ function SurgeonsTab({ surgeons, filterMode, onToggle, onDeleteAsync, onArchiveA
             >
               <div
                 onClick={() => navigate(`/surgeons/${s.id}/edit?returnTab=surgeons`)}
-                className="flex min-h-touch cursor-pointer items-center gap-3 rounded-lg px-3 py-3 active:bg-gray-100 dark:active:bg-gray-800"
+                className="flex min-h-touch cursor-pointer items-center gap-3 px-3 py-3 active:bg-gray-50 dark:active:bg-gray-700"
               >
                 {!isArchived && (
                   <ActiveToggle isActive={s.is_active !== false} onToggle={(val) => onToggle(s.id, val)} />

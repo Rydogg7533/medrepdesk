@@ -23,6 +23,18 @@ import { PLAN_LIMITS } from '@/utils/constants';
 import { US_STATES } from '@/utils/usStates';
 import VoiceSettings from '@/components/features/VoiceSettings';
 import NotificationSettings from '@/components/features/NotificationSettings';
+import AppearanceSettings from '@/components/features/AppearanceSettings';
+import { useDashboardPreferences, useUpdateDashboardPreferences } from '@/hooks/useDashboardPreferences';
+
+const DASHBOARD_SECTIONS = [
+  { key: 'show_todays_cases', label: "Today's Cases" },
+  { key: 'show_upcoming_cases', label: 'Upcoming Cases' },
+  { key: 'show_po_pipeline', label: 'PO Pipeline' },
+  { key: 'show_metrics', label: 'Metrics' },
+  { key: 'show_chase_summary', label: 'Chase Summary' },
+  { key: 'show_action_items', label: 'Action Items' },
+  { key: 'show_recent_activity', label: 'Recent Activity' },
+];
 
 const SUB_STATUS_DISPLAY = {
   active: { label: 'Active', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
@@ -39,6 +51,8 @@ export default function Settings() {
   const { plan, status, isActive, isPastDue, isCanceled, isTrialing, hasStripeCustomer } = useSubscription();
   const portalSession = useCreatePortalSession();
   const updateAccount = useUpdateAccount();
+  const dashPrefs = useDashboardPreferences();
+  const updateDashPrefs = useUpdateDashboardPreferences();
 
   const [selectedStates, setSelectedStates] = useState(() => account?.rep_states || []);
   const [statesOpen, setStatesOpen] = useState(false);
@@ -109,8 +123,41 @@ export default function Settings() {
         </div>
       )}
 
+      {/* Appearance */}
+      <AppearanceSettings />
+
+      {/* Dashboard */}
+      <section className="themed-card mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
+        <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Dashboard</h2>
+        <div className="space-y-1">
+          {DASHBOARD_SECTIONS.map(({ key, label }) => (
+            <label
+              key={key}
+              className="flex min-h-touch items-center justify-between rounded-lg px-2 py-3"
+            >
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{label}</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={dashPrefs[key]}
+                onClick={() => updateDashPrefs.mutate({ [key]: !dashPrefs[key] })}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  dashPrefs[key] ? 'bg-brand-800' : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                    dashPrefs[key] ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </label>
+          ))}
+        </div>
+      </section>
+
       {/* Account Info */}
-      <section className="rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
+      <section className="themed-card mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
         <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Account</h2>
         <div className="space-y-3">
           <div className="flex items-center gap-3">
@@ -126,7 +173,7 @@ export default function Settings() {
       </section>
 
       {/* My States */}
-      <section className="mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
+      <section className="themed-card mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
         <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">My States</h2>
         <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
           Select the states you operate in for better search filtering.
@@ -229,7 +276,7 @@ export default function Settings() {
       </section>
 
       {/* Subscription */}
-      <section className="mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
+      <section className="themed-card mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
         <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Subscription</h2>
 
         <div className="flex items-center justify-between">

@@ -1,32 +1,43 @@
 import { useState, useEffect } from 'react';
-import { Mic, MicOff, Lock, Loader2 } from 'lucide-react';
+import { Mic, MicOff, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import { useVoice } from '@/hooks/useVoice';
-import { useSubscription } from '@/hooks/useSubscription';
-import { useNavigate } from 'react-router-dom';
 
-export default function VoiceButton({ onTranscript, size = 56, className, processing = false }) {
-  const { isListening, transcript, startListening, stopListening, isSupported, error } = useVoice();
-  const { canAccessAssistant } = useSubscription();
-  const navigate = useNavigate();
+export default function VoiceButton({ onTranscript, size = 56, className, processing: externalProcessing = false }) {
+  const {
+    isListening,
+    isProcessing,
+    transcript,
+    startListening,
+    stopListening,
+    isSupported,
+    error,
+    minutesUsed,
+    minutesLimit,
+    useOpenAI,
+  } = useVoice();
   const [showError, setShowError] = useState(false);
+
+  const processing = externalProcessing || isProcessing;
+  const nearLimit = useOpenAI && minutesLimit > 0 && minutesUsed / minutesLimit > 0.8;
+  const atLimit = useOpenAI && minutesLimit > 0 && minutesUsed >= minutesLimit;
 
   useEffect(() => {
     if (error) {
       setShowError(true);
-      const timer = setTimeout(() => setShowError(false), 3000);
+      const timer = setTimeout(() => setShowError(false), 4000);
       return () => clearTimeout(timer);
     }
   }, [error]);
 
   useEffect(() => {
-    if (!isListening && transcript && onTranscript) {
+    if (!isListening && !isProcessing && transcript && onTranscript) {
       onTranscript(transcript);
     }
-  }, [isListening, transcript, onTranscript]);
+  }, [isListening, isProcessing, transcript, onTranscript]);
 
   function handleClick() {
-    // TESTING ONLY — re-gate before launch: if (!canAccessAssistant) { navigate('/pricing'); return; }
+    if (atLimit) return;
     if (isListening) {
       stopListening();
     } else {
@@ -60,29 +71,29 @@ export default function VoiceButton({ onTranscript, size = 56, className, proces
       <button
         type="button"
         onClick={handleClick}
-        disabled={processing}
+        disabled={processing || atLimit}
         style={sizeStyle}
         className={clsx(
           'relative flex items-center justify-center rounded-full shadow-md transition-all active:scale-95',
-          // TESTING ONLY — re-gate before launch (was: !canAccessAssistant checks)
-          isIdle && 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+          atLimit && 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-600 dark:text-gray-400',
+          !atLimit && isIdle && !nearLimit && 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+          !atLimit && isIdle && nearLimit && 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
           isListening && 'bg-brand-800 text-white',
-          processing && 'bg-brand-800/70 text-white',
-          processing && 'cursor-wait'
+          processing && 'bg-brand-800/70 text-white cursor-wait',
         )}
         aria-label={
-          // TESTING ONLY — re-gate before launch (was: !canAccessAssistant check)
-          isListening ? 'Stop listening'
+          atLimit ? 'Voice limit reached'
+            : isListening ? 'Stop listening'
             : processing ? 'Processing voice input'
             : 'Start voice input'
         }
+        title={atLimit ? `Voice limit reached (${Math.round(minutesUsed)}/${minutesLimit} min)` : undefined}
       >
         {/* Pulse ring while listening */}
         {isListening && (
           <span className="absolute inset-0 animate-ping rounded-full bg-brand-800/30" />
         )}
 
-        {/* TESTING ONLY — re-gate before launch (was: !canAccessAssistant lock icon) */}
         {processing ? (
           <Loader2 className="h-6 w-6 animate-spin" />
         ) : isListening ? (
@@ -91,6 +102,16 @@ export default function VoiceButton({ onTranscript, size = 56, className, proces
           <Mic className="h-6 w-6" />
         )}
       </button>
+
+      {/* Minutes indicator for OpenAI users */}
+      {useOpenAI && minutesLimit > 0 && !isListening && !processing && (
+        <span className={clsx(
+          'mt-1 text-[9px] font-medium',
+          atLimit ? 'text-red-500' : nearLimit ? 'text-amber-500' : 'text-gray-400 dark:text-gray-500'
+        )}>
+          {Math.round(minutesUsed)}/{minutesLimit}m
+        </span>
+      )}
     </div>
   );
 }

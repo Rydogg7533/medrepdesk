@@ -8,21 +8,27 @@ import NotificationBell from '@/components/ui/NotificationBell';
 import OfflineBanner from '@/components/ui/OfflineBanner';
 import PageTransition from '@/components/ui/PageTransition';
 import VoiceQuickLog from '@/components/features/VoiceQuickLog';
+import VoiceAgent from '@/components/features/VoiceAgent';
 import ConversationalVoiceModal from '@/components/features/ConversationalVoiceModal';
 import { useAutoClosePayPeriods } from '@/hooks/useAutoClosePayPeriods';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function AppLayout() {
   useAutoClosePayPeriods();
+  const { customTheme } = useTheme();
   const [fabOpen, setFabOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [voiceAgentOpen, setVoiceAgentOpen] = useState(false);
   const [convoVoice, setConvoVoice] = useState(null); // { scriptType, prefillName?, caseData? } | null
   const { canAccessAssistant } = useSubscription();
   const navigate = useNavigate();
   const location = useLocation();
   const mainRef = useRef(null);
   const isDashboard = location.pathname === '/dashboard';
+  const showVoiceFab = ['/dashboard', '/cases', '/money', '/contacts'].includes(location.pathname)
+    || location.pathname.startsWith('/cases/');
 
   // Scroll to top on route change
   useEffect(() => {
@@ -42,9 +48,54 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-gray-900">
+    <div className="flex min-h-screen flex-col">
+      {/* Background image layer */}
+      {customTheme?.bg_type === 'image' && customTheme?.bg_image_url && (
+        <div
+          className="fixed inset-0"
+          style={{
+            zIndex: -2,
+            backgroundImage: `url(${customTheme.bg_image_url})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundColor: '#1a1a2e',
+          }}
+        />
+      )}
+      {/* Overlay for image backgrounds */}
+      {customTheme?.bg_type === 'image' && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: -1,
+            pointerEvents: 'none',
+            background: `rgba(0, 0, 0, ${customTheme?.overlay_opacity ?? 0.5})`,
+          }}
+        />
+      )}
+      {/* Gradient layer */}
+      {customTheme?.bg_type === 'gradient' && customTheme?.bg_gradient && (
+        <div
+          className="fixed inset-0"
+          style={{
+            zIndex: -2,
+            background: (() => {
+              const presets = {
+                ocean: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                sunset: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                forest: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+                midnight: 'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)',
+                peach: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
+                slate: 'linear-gradient(135deg, #e2e8f0 0%, #94a3b8 100%)',
+              };
+              return presets[customTheme.bg_gradient] || presets.ocean;
+            })(),
+          }}
+        />
+      )}
       {/* Header */}
-      <header className="fixed inset-x-0 top-0 z-30 flex min-h-touch items-center justify-between border-b border-gray-200 bg-white px-4 pt-safe-top dark:border-gray-700 dark:bg-gray-800">
+      <header className="themed-nav fixed inset-x-0 top-0 z-30 flex min-h-touch items-center justify-between border-b border-gray-200 bg-white px-4 pt-safe-top dark:border-gray-700 dark:bg-gray-800">
         <span className="text-lg font-bold text-brand-800 dark:text-brand-400">MedRepDesk</span>
         <div className="flex items-center gap-3">
           {isDashboard && (
@@ -62,16 +113,27 @@ export default function AppLayout() {
       <OfflineBanner />
 
       {/* Content */}
-      <main ref={mainRef} className="flex-1 overflow-y-auto pt-[calc(44px+env(safe-area-inset-top))] pb-[calc(68px+env(safe-area-inset-bottom))]">
+      <main ref={mainRef} className="relative z-[1] flex-1 overflow-y-auto pt-[calc(44px+env(safe-area-inset-top))] pb-[calc(68px+env(safe-area-inset-bottom))]">
         <PageTransition>
           <Outlet />
         </PageTransition>
       </main>
 
+      {/* Voice FAB */}
+      {showVoiceFab && (
+        <button
+          onClick={() => canAccessAssistant ? setVoiceAgentOpen(true) : setVoiceOpen(true)}
+          className="themed-fab fixed bottom-[calc(68px+env(safe-area-inset-bottom)+82px)] right-[22px] z-30 flex h-12 w-12 items-center justify-center rounded-full bg-gray-200 text-gray-600 shadow-md transition-transform active:scale-95 dark:bg-gray-700 dark:text-gray-300"
+          aria-label="Voice input"
+        >
+          <Mic className="h-5 w-5" />
+        </button>
+      )}
+
       {/* FAB */}
       <button
         onClick={() => setFabOpen(true)}
-        className="fixed bottom-[calc(68px+env(safe-area-inset-bottom)+12px)] right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-brand-800 text-white shadow-lg transition-transform active:scale-95"
+        className="themed-fab fixed bottom-[calc(68px+env(safe-area-inset-bottom)+12px)] right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-brand-800 text-white shadow-lg transition-transform active:scale-95"
       >
         <Plus className="h-6 w-6" />
       </button>
@@ -113,11 +175,11 @@ export default function AppLayout() {
               <div className="my-1 border-t border-gray-100 dark:border-gray-700" />
               <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase text-gray-400 dark:text-gray-500">Voice</p>
               <button
-                onClick={() => { setFabOpen(false); setVoiceOpen(true); }}
+                onClick={() => { setFabOpen(false); canAccessAssistant ? setVoiceAgentOpen(true) : setVoiceOpen(true); }}
                 className="flex min-h-touch items-center gap-3 rounded-lg px-3 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 <Mic className="h-5 w-5 text-brand-800 dark:text-brand-400" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Voice Log</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{canAccessAssistant ? 'Voice Agent' : 'Voice Log'}</span>
               </button>
               <button
                 onClick={() => { setFabOpen(false); setConvoVoice({ scriptType: 'add_contact' }); }}
@@ -145,6 +207,7 @@ export default function AppLayout() {
         </div>
       </BottomSheet>
 
+      <VoiceAgent isOpen={voiceAgentOpen} onClose={() => setVoiceAgentOpen(false)} />
       <VoiceQuickLog
         isOpen={voiceOpen}
         onClose={() => setVoiceOpen(false)}

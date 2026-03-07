@@ -49,15 +49,61 @@ serve(async (req: Request) => {
         const accountId = session.metadata?.account_id;
         const plan = session.metadata?.plan;
 
+        console.log("checkout.session.completed metadata:", JSON.stringify(session.metadata));
+        console.log("customer:", session.customer, "subscription:", session.subscription);
+
         if (!accountId) {
-          console.error("No account_id in checkout session metadata");
+          // Fallback: look up account by customer ID
+          const customerId = session.customer as string;
+          if (customerId) {
+            const { data: acct } = await supabase
+              .from("accounts")
+              .select("id")
+              .eq("stripe_customer_id", customerId)
+              .single();
+            if (acct) {
+              console.log("Found account by customer ID:", acct.id);
+              // Still update what we can
+              const subId = session.subscription as string;
+              const updates: Record<string, unknown> = {
+                stripe_sub_id: subId,
+                updated_at: new Date().toISOString(),
+              };
+              // Get subscription to check status
+              if (subId) {
+                const sub = await stripe.subscriptions.retrieve(subId);
+                updates.sub_status = mapSubStatus(sub.status);
+                const priceId = sub.items?.data?.[0]?.price?.id;
+                if (priceId) {
+                  const detectedPlan = priceIdToPlan(priceId);
+                  if (detectedPlan) updates.plan = detectedPlan;
+                }
+              }
+              await supabase.from("accounts").update(updates).eq("id", acct.id);
+              console.log("Updated account via customer fallback:", acct.id);
+              break;
+            }
+          }
+          console.error("No account_id in checkout session metadata and no customer match");
           break;
+        }
+
+        // Get subscription status (may be trialing if trial_period_days was set)
+        let subStatus = "active";
+        const subId = session.subscription as string;
+        if (subId) {
+          try {
+            const sub = await stripe.subscriptions.retrieve(subId);
+            subStatus = mapSubStatus(sub.status);
+          } catch (e) {
+            console.error("Failed to retrieve subscription:", e.message);
+          }
         }
 
         const updates: Record<string, unknown> = {
           stripe_customer_id: session.customer as string,
-          stripe_sub_id: session.subscription as string,
-          sub_status: "active",
+          stripe_sub_id: subId,
+          sub_status: subStatus,
           updated_at: new Date().toISOString(),
         };
 
@@ -65,12 +111,16 @@ serve(async (req: Request) => {
           updates.plan = plan;
         }
 
-        await supabase
+        const { error: updateError } = await supabase
           .from("accounts")
           .update(updates)
           .eq("id", accountId);
 
-        console.log(`Checkout complete: account=${accountId} plan=${plan}`);
+        if (updateError) {
+          console.error("Failed to update account:", updateError.message);
+        }
+
+        console.log(`Checkout complete: account=${accountId} plan=${plan} status=${subStatus}`);
         break;
       }
 

@@ -87,7 +87,7 @@ export default function Referrals() {
       )}
 
       {/* Referral Code Card */}
-      <section className="rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
+      <section className="themed-card rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
         <div className="flex items-center gap-2 mb-3">
           <Gift className="h-5 w-5 text-brand-800 dark:text-brand-400" />
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Your Referral Code<InfoTooltip text="Your unique referral code. When a rep signs up using your link, they're linked to your account for commission tracking." /></h2>
@@ -145,7 +145,7 @@ export default function Referrals() {
 
       {/* Stats */}
       <div className="mt-4 grid grid-cols-2 gap-3">
-        <div className="rounded-xl bg-white p-3 shadow-sm dark:bg-gray-800">
+        <div className="themed-card rounded-xl bg-white p-3 shadow-sm dark:bg-gray-800">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-gray-400" />
             <span className="text-[11px] text-gray-500 dark:text-gray-400">Referred<InfoTooltip text="Number of reps you've successfully referred to MedRepDesk." /></span>
@@ -153,7 +153,7 @@ export default function Referrals() {
           <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100">{stats.totalReferred}</p>
           <p className="text-[11px] text-gray-400">{stats.activeReferrals} active</p>
         </div>
-        <div className="rounded-xl bg-white p-3 shadow-sm dark:bg-gray-800">
+        <div className="themed-card rounded-xl bg-white p-3 shadow-sm dark:bg-gray-800">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-gray-400" />
             <span className="text-[11px] text-gray-500 dark:text-gray-400">Total Earned<InfoTooltip text="Total commission earned from all referrals. Earn 25% of every referred rep's subscription for 12 months." /></span>
@@ -196,7 +196,7 @@ export default function Referrals() {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100 rounded-xl bg-white shadow-sm dark:divide-gray-700 dark:bg-gray-800">
+            <div className="themed-card divide-y divide-gray-100 rounded-xl bg-white shadow-sm dark:divide-gray-700 dark:bg-gray-800">
               {referrals.map((ref) => {
                 const status = REFERRAL_STATUS[ref.status] || REFERRAL_STATUS.active;
                 const referred = ref.referred;
@@ -242,7 +242,7 @@ export default function Referrals() {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100 rounded-xl bg-white shadow-sm dark:divide-gray-700 dark:bg-gray-800">
+            <div className="themed-card divide-y divide-gray-100 rounded-xl bg-white shadow-sm dark:divide-gray-700 dark:bg-gray-800">
               {payouts.map((payout) => {
                 const status = PAYOUT_STATUS[payout.status] || PAYOUT_STATUS.pending;
 

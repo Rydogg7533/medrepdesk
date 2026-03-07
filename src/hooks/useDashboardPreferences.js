@@ -8,6 +8,7 @@ const DEFAULTS = {
   show_upcoming_cases: true,
   show_po_pipeline: true,
   show_metrics: true,
+  show_chase_summary: true,
   show_action_items: true,
   show_recent_activity: true,
 };

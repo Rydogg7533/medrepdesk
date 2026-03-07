@@ -22,7 +22,7 @@ export const PO_STATUSES = {
 
 export const COMMISSION_STATUSES = {
   pending: { label: 'Pending', bg: 'bg-yellow-100', text: 'text-yellow-700' },
-  confirmed: { label: 'Confirmed', bg: 'bg-blue-100', text: 'text-blue-700' },
+  confirmed: { label: 'Pending', bg: 'bg-yellow-100', text: 'text-yellow-700' },
   received: { label: 'Received', bg: 'bg-green-100', text: 'text-green-700' },
   disputed: { label: 'Disputed', bg: 'bg-red-100', text: 'text-red-700' },
   written_off: { label: 'Written Off', bg: 'bg-gray-100', text: 'text-gray-700' },
@@ -42,6 +42,7 @@ export const PLAN_LIMITS = {
     maxUsers: 1,
     aiExtractions: 50,
     aiDigests: 4,
+    voiceMinutes: 0,
   },
   assistant: {
     label: 'Rep + Assistant',
@@ -49,6 +50,7 @@ export const PLAN_LIMITS = {
     maxUsers: 2,
     aiExtractions: 100,
     aiDigests: 8,
+    voiceMinutes: 60,
   },
   distributorship: {
     label: 'Distributorship',
@@ -56,6 +58,7 @@ export const PLAN_LIMITS = {
     maxUsers: 5,
     aiExtractions: 500,
     aiDigests: -1, // unlimited
+    voiceMinutes: 200,
   },
 };
 

@@ -30,7 +30,7 @@ export default function ForgotPassword() {
     try {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email,
-        { redirectTo: `${window.location.origin}/auth/callback` }
+        { redirectTo: 'https://www.medrepdesk.io/reset-password' }
       );
       if (resetError) throw resetError;
       setSent(true);

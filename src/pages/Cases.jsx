@@ -193,7 +193,7 @@ export default function Cases() {
               <div
                 key={c.id}
                 onClick={() => navigate(`/cases/${c.id}`)}
-                className="cursor-pointer rounded-xl bg-white p-4 shadow-sm active:bg-gray-50 dark:bg-gray-800 dark:active:bg-gray-700"
+                className="themed-card cursor-pointer rounded-xl bg-white p-4 shadow-sm active:bg-gray-50 dark:bg-gray-800 dark:active:bg-gray-700"
               >
                 <div className="flex items-start justify-between">
                   <div className="min-w-0 flex-1">

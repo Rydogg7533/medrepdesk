@@ -14,6 +14,7 @@ import Button from '@/components/ui/Button';
 import SearchableSelect from '@/components/ui/SearchableSelect';
 import { formatCurrency } from '@/utils/formatters';
 import { groupProductsByCategory, getProductLabel } from '@/utils/productCatalog';
+import { canSubmitBillSheet } from '@/utils/caseLogic';
 
 const emptyItem = () => ({
   distributor_product_id: '',
@@ -152,6 +153,22 @@ export default function BillSheetForm() {
 
   if (!caseId) {
     return <div className="p-4 text-center text-gray-500">No case specified</div>;
+  }
+
+  if (caseData && !canSubmitBillSheet(caseData.status)) {
+    return (
+      <div className="p-4">
+        <div className="mb-4 flex items-center gap-3">
+          <button onClick={() => navigate(-1)} className="min-h-touch p-1">
+            <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+          </button>
+          <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">Bill Sheet</h1>
+        </div>
+        <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+          A bill sheet can't be submitted until the case is marked complete. Mark the case complete first, then come back to submit the bill sheet.
+        </div>
+      </div>
+    );
   }
 
   return (

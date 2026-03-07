@@ -36,7 +36,7 @@ export default function Distributors() {
             <div
               key={d.id}
               onClick={() => navigate(`/distributors/${d.id}`)}
-              className="cursor-pointer rounded-xl bg-white dark:bg-gray-800 p-4 shadow-sm active:bg-gray-50 dark:active:bg-gray-700"
+              className="themed-card cursor-pointer rounded-xl bg-white dark:bg-gray-800 p-4 shadow-sm active:bg-gray-50 dark:active:bg-gray-700"
             >
               <p className="font-medium text-gray-800 dark:text-gray-200">{d.name}</p>
               <div className="mt-1 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">

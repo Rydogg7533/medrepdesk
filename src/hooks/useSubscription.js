@@ -31,6 +31,7 @@ export function useSubscription() {
 export function useCreateCheckout() {
   return useMutation({
     mutationFn: async ({ plan }) => {
+      console.log('useCreateCheckout mutationFn called, plan:', plan);
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
           plan,
@@ -38,7 +39,14 @@ export function useCreateCheckout() {
           cancel_url: `${window.location.origin}/pricing?checkout=cancel`,
         },
       });
-      if (error) throw error;
+      console.log('create-checkout response data:', data);
+      console.log('create-checkout response error:', error);
+      if (error) {
+        // Try to extract message from FunctionsHttpError
+        const msg = error?.context?.body ? await error.context.text?.() : error.message;
+        console.error('create-checkout error detail:', msg);
+        throw new Error(msg || error.message);
+      }
       if (data?.error) throw new Error(data.error);
       return data;
     },

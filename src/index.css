@@ -2,10 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --app-bg-color: #f8fafc;
+  --app-bg-gradient: none;
+  --app-bg-image: none;
+  --app-overlay-opacity: 0.5;
+  --app-card-opacity: 1;
+  --app-nav-opacity: 1;
+  --app-text-color: #111827;
+}
+
 @layer base {
   body {
-    @apply bg-slate-50 text-gray-900 antialiased dark:bg-gray-900 dark:text-gray-100;
+    @apply antialiased;
     -webkit-tap-highlight-color: transparent;
+    background-color: var(--app-bg-color);
+    color: var(--app-text-color) !important;
+  }
+
+  /* Prevent iOS Safari auto-zoom on input focus (requires >= 16px) */
+  select, textarea {
+    font-size: 16px;
   }
 
   /* Prevent native date/time picker from expanding inputs beyond w-full */
@@ -44,4 +61,20 @@
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Theme surface overrides (outside @layer so they beat Tailwind utilities) --- */
+html[data-custom-theme="true"] .themed-card,
+html[data-custom-theme="true"] .themed-sheet,
+html[data-custom-theme="true"] .themed-dropdown {
+  background-color: rgba(var(--app-card-rgb, 255, 255, 255), var(--app-card-opacity, 1)) !important;
+}
+
+html[data-custom-theme="true"] .themed-fab,
+html[data-custom-theme="true"] .themed-sheet-solid {
+  background-color: rgba(var(--app-card-rgb, 255, 255, 255), 1) !important;
+}
+
+html[data-custom-theme="true"] .themed-nav {
+  background-color: rgba(var(--app-card-rgb, 255, 255, 255), var(--app-nav-opacity, 1)) !important;
 }

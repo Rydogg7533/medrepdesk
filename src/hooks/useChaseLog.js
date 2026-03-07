@@ -90,6 +90,34 @@ export function useOverdueFollowUps() {
   });
 }
 
+export function useChaseStats() {
+  const { account } = useAuth();
+  const accountId = account?.id;
+  const today = new Date().toISOString().split('T')[0];
+
+  return useQuery({
+    queryKey: ['chase_log', 'stats', accountId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from(TABLES.PO_CHASE_LOG)
+        .select('id, next_follow_up, promised_date, follow_up_done, created_at')
+        .eq('account_id', accountId)
+        .eq('follow_up_done', false)
+        .not('next_follow_up', 'is', null)
+        .order('next_follow_up', { ascending: true });
+      if (error) throw error;
+
+      const activeCount = data.length;
+      const overduePromisedCount = data.filter((e) => e.promised_date && e.promised_date < today).length;
+      const dueTodayCount = data.filter((e) => e.next_follow_up === today).length;
+      const nextFollowUp = data.find((e) => e.next_follow_up >= today)?.next_follow_up || null;
+
+      return { activeCount, overduePromisedCount, dueTodayCount, nextFollowUp };
+    },
+    enabled: !!accountId,
+  });
+}
+
 export function useOverduePromisedDates() {
   const { account } = useAuth();
   const accountId = account?.id;

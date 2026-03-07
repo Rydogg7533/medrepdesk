@@ -13,25 +13,23 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const PRICE_MAP: Record<string, string> = {
-  solo: Deno.env.get("STRIPE_PRICE_SOLO") || "",
-  assistant: Deno.env.get("STRIPE_PRICE_ASSISTANT") || "",
-  distributorship: Deno.env.get("STRIPE_PRICE_DISTRIBUTORSHIP") || "",
-};
-
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  const respond = (body: Record<string, unknown>, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
   try {
     // 1. Validate auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Missing authorization header" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.error("No authorization header");
+      return respond({ error: "Missing authorization header" }, 401);
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -44,69 +42,72 @@ serve(async (req: Request) => {
     );
     const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
     if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.error("Auth failed:", authError?.message);
+      return respond({ error: "Unauthorized" }, 401);
     }
+    console.log("Authenticated user:", user.id, user.email);
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // 2. Parse request
-    const { plan, success_url, cancel_url } = await req.json();
+    const body = await req.json();
+    const { plan, success_url, cancel_url } = body;
+    console.log("Request body:", JSON.stringify(body));
 
-    if (!plan || !PRICE_MAP[plan]) {
-      return new Response(
-        JSON.stringify({ error: "Invalid plan. Must be solo, assistant, or distributorship." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // 3. Map plan to price ID
+    const PRICE_IDS: Record<string, string> = {
+      solo: Deno.env.get("STRIPE_PRICE_SOLO") || "",
+      assistant: Deno.env.get("STRIPE_PRICE_ASSISTANT") || "",
+      distributorship: Deno.env.get("STRIPE_PRICE_DISTRIBUTORSHIP") || "",
+    };
+
+    const priceId = PRICE_IDS[plan];
+    console.log("Plan:", plan, "Price ID:", priceId ? `${priceId.slice(0, 10)}...` : "MISSING");
+
+    if (!plan || !priceId) {
+      return respond({ error: `No price ID configured for plan: ${plan}` }, 400);
     }
 
-    const priceId = PRICE_MAP[plan];
-    if (!priceId) {
-      return new Response(
-        JSON.stringify({ error: `Price ID not configured for plan: ${plan}` }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // 3. Get account
-    const { data: userData } = await supabase
+    // 4. Get account
+    const { data: userData, error: userError } = await supabase
       .from("users")
       .select("account_id")
       .eq("id", user.id)
       .single();
 
-    if (!userData) {
-      return new Response(
-        JSON.stringify({ error: "User account not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (userError || !userData) {
+      console.error("User lookup failed:", userError?.message);
+      return respond({ error: "User account not found" }, 404);
     }
 
-    const { data: account } = await supabase
+    const { data: account, error: accountError } = await supabase
       .from("accounts")
       .select("id, stripe_customer_id, email, name")
       .eq("id", userData.account_id)
       .single();
 
-    if (!account) {
-      return new Response(
-        JSON.stringify({ error: "Account not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (accountError || !account) {
+      console.error("Account lookup failed:", accountError?.message);
+      return respond({ error: "Account not found" }, 404);
+    }
+    console.log("Account:", account.id, "email:", account.email, "stripe_customer:", account.stripe_customer_id || "none");
+
+    // 5. Create Stripe Checkout
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      console.error("STRIPE_SECRET_KEY not set");
+      return respond({ error: "Stripe not configured" }, 500);
     }
 
-    // 4. Create Stripe Checkout
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
+    const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
 
-    const sessionParams: Stripe.Checkout.SessionCreateParams = {
+    const sessionParams: Record<string, unknown> = {
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: success_url || `${req.headers.get("origin")}/settings?checkout=success`,
-      cancel_url: cancel_url || `${req.headers.get("origin")}/pricing?checkout=cancel`,
+      success_url: success_url || "https://www.medrepdesk.io/settings?checkout=success",
+      cancel_url: cancel_url || "https://www.medrepdesk.io/pricing?checkout=cancel",
       subscription_data: {
         metadata: { account_id: account.id, plan },
         trial_period_days: 14,
@@ -119,20 +120,22 @@ serve(async (req: Request) => {
     if (account.stripe_customer_id) {
       sessionParams.customer = account.stripe_customer_id;
     } else {
-      sessionParams.customer_email = account.email;
+      sessionParams.customer_email = account.email || user.email;
     }
 
-    const session = await stripe.checkout.sessions.create(sessionParams);
+    console.log("Creating Stripe session with params:", JSON.stringify({
+      mode: sessionParams.mode,
+      priceId,
+      customer: sessionParams.customer || "new",
+      customer_email: sessionParams.customer_email || "n/a",
+    }));
 
-    return new Response(
-      JSON.stringify({ url: session.url, session_id: session.id }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    const session = await stripe.checkout.sessions.create(sessionParams as Stripe.Checkout.SessionCreateParams);
+    console.log("Stripe session created:", session.id, "url:", session.url?.slice(0, 50));
+
+    return respond({ url: session.url, session_id: session.id });
   } catch (err) {
-    console.error("create-checkout error:", err);
-    return new Response(
-      JSON.stringify({ error: err.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error("create-checkout error:", err.message, err.stack);
+    return respond({ error: err.message }, 500);
   }
 });

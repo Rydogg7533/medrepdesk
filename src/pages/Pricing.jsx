@@ -2,6 +2,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, Zap, Users, Building2 } from 'lucide-react';
 import clsx from 'clsx';
 import Button from '@/components/ui/Button';
+import { useToast } from '@/components/ui/Toast';
 import { useSubscription, useCreateCheckout, useCreatePortalSession } from '@/hooks/useSubscription';
 import { PLAN_LIMITS } from '@/utils/constants';
 
@@ -60,19 +61,33 @@ export default function Pricing() {
   const { plan: currentPlan, isActive, isTrialing, hasStripeCustomer } = useSubscription();
   const checkout = useCreateCheckout();
   const portalSession = useCreatePortalSession();
+  const toast = useToast();
 
   const cancelMsg = searchParams.get('checkout') === 'cancel';
 
   async function handleSelect(planKey) {
-    if (planKey === currentPlan && isActive) return;
+    console.log('SWITCH PLAN CLICKED', planKey, { currentPlan, isActive, isTrialing });
+    if (planKey === currentPlan && isActive) {
+      console.log('Same plan, skipping');
+      return;
+    }
+    console.log('Calling checkout.mutateAsync...');
+
+    // Open window synchronously to preserve Safari user gesture context
+    const stripeWindow = window.open('', '_self');
 
     try {
       const result = await checkout.mutateAsync({ plan: planKey });
+      console.log('Checkout result:', result);
       if (result?.url) {
-        window.location.href = result.url;
+        if (stripeWindow) stripeWindow.location.href = result.url;
+        else window.location.href = result.url;
+      } else {
+        toast({ message: 'No checkout URL returned. Please try again.', type: 'error' });
       }
     } catch (err) {
       console.error('Checkout error:', err);
+      toast({ message: `Checkout failed: ${err.message}`, type: 'error' });
     }
   }
 

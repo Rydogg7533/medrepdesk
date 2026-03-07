@@ -14,6 +14,7 @@ import SignUp from '@/pages/SignUp';
 import SignIn from '@/pages/SignIn';
 import ForgotPassword from '@/pages/ForgotPassword';
 import AuthCallback from '@/pages/AuthCallback';
+import ResetPassword from '@/pages/ResetPassword';
 
 // App pages
 import Dashboard from '@/pages/Dashboard';
@@ -54,6 +55,7 @@ import Onboarding from '@/pages/Onboarding';
 import TermsOfService from '@/pages/legal/TermsOfService';
 import PrivacyPolicy from '@/pages/legal/PrivacyPolicy';
 import SubscriptionGate from '@/components/SubscriptionGate';
+import ThemeLoader from '@/components/ThemeLoader';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -121,22 +123,28 @@ function App() {
         <AuthProvider>
           <ThemeProvider>
           <ToastProvider>
+          <ThemeLoader />
           <Routes>
             {/* Auth routes (no AppLayout) */}
             <Route path="/signin" element={<PublicRoute><SignIn /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><SignUp /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/join" element={<JoinReferral />} />
             <Route path="/" element={<LandingRoute />} />
 
             {/* Public pages (no auth) */}
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/pricing" element={<Pricing />} />
 
             {/* Onboarding (protected, no AppLayout) */}
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+
+            {/* Pricing — protected with AppLayout but outside SubscriptionGate so canceled users can reach it */}
+            <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+              <Route path="/pricing" element={<Pricing />} />
+            </Route>
 
             {/* Protected routes with AppLayout */}
             <Route element={<ProtectedRoute><SubscriptionGate><AppLayout /></SubscriptionGate></ProtectedRoute>}>

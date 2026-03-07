@@ -12,7 +12,7 @@ const tabs = [
 
 export default function BottomNav() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white pb-safe-bottom dark:border-gray-700 dark:bg-gray-800">
+    <nav className="themed-nav fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white pb-safe-bottom dark:border-gray-700 dark:bg-gray-800">
       <div className="flex items-center justify-around">
         {tabs.map(({ to, icon: Icon, label }) => (
           <NavLink

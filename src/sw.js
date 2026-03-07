@@ -1,7 +1,16 @@
-import { precacheAndRoute } from 'workbox-precaching';
+import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
 import { NetworkFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
+
+// ─── Activate immediately on update ───────────────────
+self.skipWaiting();
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
+// ─── Clean up old caches from previous versions ──────
+cleanupOutdatedCaches();
 
 // ─── Workbox precaching (injected by VitePWA) ─────────
 precacheAndRoute(self.__WB_MANIFEST);

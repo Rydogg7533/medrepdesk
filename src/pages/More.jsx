@@ -82,12 +82,12 @@ export default function More() {
     <div className="p-4">
       <h1 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">More</h1>
 
-      <div className="mb-4 rounded-xl bg-white shadow-sm dark:bg-gray-800">
+      <div className="themed-card mb-4 rounded-xl bg-white shadow-sm dark:bg-gray-800">
         <MenuItem icon={Building2} label="My Distributor" path="/my-distributor" />
       </div>
 
       <RoleGate allowedRoles={['owner']}>
-        <div className="rounded-xl bg-white shadow-sm dark:bg-gray-800">
+        <div className="themed-card rounded-xl bg-white shadow-sm dark:bg-gray-800">
           {ownerItems.map((item) => (
             <MenuItem key={item.path} {...item} />
           ))}
@@ -95,7 +95,7 @@ export default function More() {
       </RoleGate>
 
       {/* Theme Toggle */}
-      <div className="mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
+      <div className="themed-card mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
         <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Appearance</h2>
         <div className="flex gap-2">
           {themeOptions.map(({ key, label, icon: Icon }) => (
@@ -117,7 +117,7 @@ export default function More() {
       </div>
 
       {/* Subscription */}
-      <div className="mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
+      <div className="themed-card mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
         <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Subscription</h2>
         <button
           onClick={handleManageSubscription}
@@ -151,7 +151,7 @@ export default function More() {
         )}
       </div>
 
-      <div className="mt-4 rounded-xl bg-white shadow-sm dark:bg-gray-800">
+      <div className="themed-card mt-4 rounded-xl bg-white shadow-sm dark:bg-gray-800">
         {bottomItems.map((item) => (
           <MenuItem key={item.path} {...item} />
         ))}

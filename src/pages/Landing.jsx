@@ -148,7 +148,7 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-[#09090B] font-outfit text-white">
       {/* ─── Nav ─────────────────────────────── */}
-      <nav className="sticky top-0 z-50 border-b border-white/5 bg-[#09090B]/80 backdrop-blur-xl">
+      <nav className="sticky top-0 z-50 border-b border-white/5 bg-[#09090B]/80 pt-safe-top backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <Link to="/" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500 font-bold text-white text-sm">

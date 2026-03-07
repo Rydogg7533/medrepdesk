@@ -17,6 +17,7 @@ import { useSearchSurgeons, useCreateSurgeon, useImportGlobalSurgeon } from '@/h
 import { useCreateContact } from '@/hooks/useContacts';
 import { useCreateManufacturer } from '@/hooks/useManufacturers';
 import { useCreateCase } from '@/hooks/useCases';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -1191,10 +1192,12 @@ export default function Onboarding() {
 
   // ── STEP 10: PUSH NOTIFICATIONS ──────────────────────────────────────
   function Step10() {
+    const { supported: pushSupported, isSubscribed, subscribe, loading: pushLoading, error: pushError } = usePushNotifications();
+
     async function handleAllow() {
-      try {
-        await Notification.requestPermission();
-      } catch { /* silent */ }
+      if (pushSupported) {
+        await subscribe();
+      }
       await goToStep(11);
     }
 
@@ -1211,13 +1214,36 @@ export default function Onboarding() {
           </p>
 
           <div className="w-full space-y-3">
-            <Button fullWidth onClick={handleAllow}>Allow Notifications</Button>
-            <button
-              onClick={() => goToStep(11)}
-              className="w-full text-center text-sm text-gray-400 dark:text-gray-500"
-            >
-              Skip for now
-            </button>
+            {isSubscribed ? (
+              <Button fullWidth onClick={() => goToStep(11)}>
+                <CheckCircle className="h-4 w-4" />
+                Notifications Enabled — Continue
+              </Button>
+            ) : pushSupported ? (
+              <Button fullWidth loading={pushLoading} onClick={handleAllow}>
+                Allow Notifications
+              </Button>
+            ) : (
+              <>
+                <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-left">
+                  <p className="text-xs text-amber-700 dark:text-amber-400">
+                    To enable push notifications on iOS, tap the Share button in Safari and select "Add to Home Screen", then open MedRepDesk from your home screen.
+                  </p>
+                </div>
+                <Button fullWidth onClick={() => goToStep(11)}>Continue</Button>
+              </>
+            )}
+            {pushError && (
+              <p className="text-xs text-red-500 dark:text-red-400">{pushError}</p>
+            )}
+            {!isSubscribed && pushSupported && (
+              <button
+                onClick={() => goToStep(11)}
+                className="w-full text-center text-sm text-gray-400 dark:text-gray-500"
+              >
+                Skip for now
+              </button>
+            )}
           </div>
         </div>
       </StepWrapper>

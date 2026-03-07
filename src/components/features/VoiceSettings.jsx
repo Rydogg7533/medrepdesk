@@ -60,7 +60,7 @@ export default function VoiceSettings() {
   if (!hasSpeechSynthesis) return null;
 
   return (
-    <section className="mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
+    <section className="themed-card mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
       <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Voice Assistant</h2>
 
       <div className="flex flex-col gap-4">

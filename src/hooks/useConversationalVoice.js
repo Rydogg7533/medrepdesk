@@ -47,7 +47,7 @@ function reducer(state, action) {
 
 export function useConversationalVoice({ script, onComplete, onCancel, onAllAnswered }) {
   const { data: prefs = VOICE_DEFAULTS } = useVoicePreferences();
-  const { isListening, transcript, startListening, stopListening, isSupported, error: voiceError } = useVoice();
+  const { isListening, transcript, startListening, stopListening, isSupported, error: voiceError } = useVoice({ forceWebSpeech: true });
 
   const [state, dispatch] = useReducer(reducer, initialState);
   // isSpeaking needs to trigger re-renders, so keep it as a ref + forceUpdate

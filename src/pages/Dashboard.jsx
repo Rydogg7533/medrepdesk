@@ -7,11 +7,11 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { useCases } from '@/hooks/useCases';
 import { usePOs } from '@/hooks/usePOs';
-import { useOverdueFollowUps, useOverduePromisedDates } from '@/hooks/useChaseLog';
+import { useOverdueFollowUps, useOverduePromisedDates, useChaseStats } from '@/hooks/useChaseLog';
 import { useCommissions } from '@/hooks/useCommissions';
 import { usePayPeriods } from '@/hooks/usePayPeriods';
 import { useDistributor } from '@/hooks/useDistributors';
-import { useOverdueCommunications } from '@/hooks/useCommunications';
+import { useOverdueCommunications, useUpdateCommunication } from '@/hooks/useCommunications';
 import { useCaseIdsWithBillSheet } from '@/hooks/useBillSheetCounts';
 import { useDashboardPreferences } from '@/hooks/useDashboardPreferences';
 import Card from '@/components/ui/Card';
@@ -49,11 +49,13 @@ export default function Dashboard() {
   const { data: allPOs = [] } = usePOs();
   const { data: overdueFollowUps = [] } = useOverdueFollowUps();
   const { data: overduePromised = [] } = useOverduePromisedDates();
+  const { data: chaseStats } = useChaseStats();
   const { data: allCommissions = [] } = useCommissions();
   const distributorId = account?.primary_distributor_id;
   const { data: distributor } = useDistributor(distributorId);
   const { data: allPayPeriods = [] } = usePayPeriods(distributorId);
   const { data: overdueComms = [] } = useOverdueCommunications();
+  const updateCommunication = useUpdateCommunication();
   const { data: billSheetCaseIds = new Set() } = useCaseIdsWithBillSheet();
 
 
@@ -302,6 +304,48 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* F2. Chase Summary */}
+      {prefs.show_chase_summary && chaseStats && (chaseStats.activeCount > 0 || overduePromised.length > 0) && (
+        <Card>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Chase Summary
+              <InfoTooltip text="Overview of active PO chases, overdue promised dates, and upcoming follow-ups." />
+            </h2>
+            <button
+              className="min-h-touch p-2 text-gray-400 dark:text-gray-500"
+              onClick={() => navigate('/money?tab=bill_sheets')}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-gray-700/50">
+              <p className="text-xs text-gray-500 dark:text-gray-400">Active Chases</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{chaseStats.activeCount}</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-gray-700/50">
+              <p className="text-xs text-gray-500 dark:text-gray-400">Overdue Promised</p>
+              <p className={`text-xl font-bold ${chaseStats.overduePromisedCount > 0 ? 'text-red-600' : 'text-gray-900 dark:text-gray-100'}`}>
+                {chaseStats.overduePromisedCount}
+              </p>
+            </div>
+            <div className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-gray-700/50">
+              <p className="text-xs text-gray-500 dark:text-gray-400">Due Today</p>
+              <p className={`text-xl font-bold ${chaseStats.dueTodayCount > 0 ? 'text-amber-600' : 'text-gray-900 dark:text-gray-100'}`}>
+                {chaseStats.dueTodayCount}
+              </p>
+            </div>
+            <div className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-gray-700/50">
+              <p className="text-xs text-gray-500 dark:text-gray-400">Next Follow-Up</p>
+              <p className="text-sm font-semibold text-brand-800 dark:text-brand-400">
+                {chaseStats.nextFollowUp ? formatDate(chaseStats.nextFollowUp) : '—'}
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* G. Action Items */}
       {prefs.show_action_items && (
         <Card>
@@ -333,18 +377,31 @@ export default function Dashboard() {
               actionItems.slice(0, 5).map((item) => {
                 const Icon = item.icon;
                 return (
-                  <button
+                  <div
                     key={item.id}
-                    onClick={() => item.link && navigate(item.link)}
-                    className="flex w-full items-center gap-3 rounded-lg px-1 py-1.5 text-left active:bg-gray-50 dark:active:bg-gray-700"
+                    className="flex w-full items-center gap-3 rounded-lg px-1 py-1.5 text-left"
                   >
-                    <Icon className={`h-4 w-4 flex-shrink-0 ${item.color}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-700 dark:text-gray-300">{item.text}</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{item.subtitle}</p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-300 dark:text-gray-600" />
-                  </button>
+                    <button
+                      onClick={() => item.link && navigate(item.link)}
+                      className="flex flex-1 items-center gap-3 min-w-0 active:bg-gray-50 dark:active:bg-gray-700 rounded-lg"
+                    >
+                      <Icon className={`h-4 w-4 flex-shrink-0 ${item.color}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-700 dark:text-gray-300">{item.text}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{item.subtitle}</p>
+                      </div>
+                    </button>
+                    {item.commId ? (
+                      <button
+                        onClick={() => updateCommunication.mutate({ id: item.commId, follow_up_done: true })}
+                        className="shrink-0 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 active:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:active:bg-gray-600"
+                      >
+                        Done
+                      </button>
+                    ) : (
+                      <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-300 dark:text-gray-600" />
+                    )}
+                  </div>
                 );
               })
             )}

@@ -24,13 +24,22 @@ const SYSTEM_PROMPT = `You are a voice command parser for MedRepDesk, a mobile a
 INTENT TYPES:
 - schedule_case: scheduling a new surgical case
 - update_case: updating existing case status or details
-- log_chase: logging a PO chase attempt
+- log_chase: logging a PO chase attempt (chase activity is visible on the case detail page between Purchase Orders and Communications, in the bill sheet detail view in Money, and summarized on the dashboard)
 - log_po_received: marking a PO as received
-- log_commission: logging commission received or disputed
+- log_commission: rep received a commission payment from their distributor. Extract case_id or case_reference to find the commission, received_amount (required), received_date (defaults to today), and optional notes. Maps to PATCH commission → status: "received". Example phrases: "I got paid for case 0007", "XS Medical paid me $2000 for the knee case", "log commission received for MRD-3A14-2026-0007, $2000". There is NO "confirmed" status — commissions go from "pending" directly to "received".
+- dispute_commission: rep says a received commission amount was wrong or short. Extract case_id or case_reference, notes (what's wrong, required), and received_amount (what they actually got, if stated). Maps to PATCH commission → status: "disputed". Example: "dispute commission for case 0007, they shorted me $200".
 - log_communication: logging a call, email, text, or visit
 - add_contact: adding a new contact
 - status_query: asking about cases, POs, or commissions
 - quick_status: one-word status updates (case done, bill sheet in, etc.)
+
+COMMISSION WORKFLOW:
+- Commissions are auto-created when a case is completed (status: "pending")
+- "Pending" = distributor owes the rep but has not paid yet
+- There is NO "confirmed" status — it does not exist
+- Rep receives payment → "mark as received" (log_commission intent)
+- Received amount wrong → "dispute" (dispute_commission intent)
+- Dispute resolved → status back to "received" with corrected amount
 
 MEDICAL SHORTHAND:
 - THA/THR = total hip arthroplasty (procedure_type: "hip")
@@ -81,6 +90,8 @@ Return ONLY valid JSON (no markdown, no code fences):
     "next_follow_up": null,
     "action_taken": null,
     "amount": null,
+    "received_amount": null,
+    "received_date": null,
     "status": null,
     "comm_type": null,
     "direction": null,
@@ -180,7 +191,7 @@ ${distributorList || "None registered yet"}
 Voice transcript: "${transcript}"`;
 
     // Call Claude
-    console.log("Calling Anthropic with key prefix:", anthropicKey?.substring(0, 10));
+    console.log("voice-command: calling Anthropic, key prefix:", anthropicKey?.substring(0, 10), "transcript length:", transcript.length, "account_id:", account_id);
     const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -198,9 +209,9 @@ Voice transcript: "${transcript}"`;
 
     if (!anthropicResponse.ok) {
       const errBody = await anthropicResponse.text();
-      console.error("Anthropic API error:", errBody);
+      console.error("voice-command: Anthropic API error, status:", anthropicResponse.status, "body:", errBody);
       return new Response(
-        JSON.stringify({ error: "AI parsing failed" }),
+        JSON.stringify({ error: "AI parsing failed", detail: errBody }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -236,9 +247,9 @@ Voice transcript: "${transcript}"`;
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
-    console.error("Anthropic API error:", err.message, err.stack);
+    console.error("voice-command: uncaught error:", err.message, err.stack);
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: err.message, stack: err.stack }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

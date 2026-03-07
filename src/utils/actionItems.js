@@ -87,14 +87,17 @@ export function buildActionItems({
 
   overdueComms.forEach((c) => {
     const days = daysOverdue(c.follow_up_date);
+    const label = c.contact_name ? `Follow up with ${c.contact_name}` : 'Follow up';
+    const dueLabel = days === 0 ? 'due today' : `${days}d overdue`;
     items.push({
       id: `comm-${c.id}`,
+      commId: c.id,
       type: 'overdue_comm',
       icon: MessageSquare,
       color: 'text-amber-500',
       urgency: days + 60,
-      text: 'Overdue communication follow-up',
-      subtitle: `Case #${c.case?.case_number || '—'} · ${days}d overdue`,
+      text: label,
+      subtitle: `Case #${c.case?.case_number || '—'} · ${dueLabel}`,
       link: c.case_id ? `/cases/${c.case_id}` : null,
     });
   });

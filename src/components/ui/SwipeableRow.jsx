@@ -232,7 +232,7 @@ export default function SwipeableRow({ children, onSwipe, mode = 'delete', disab
       {/* Foreground content */}
       <div
         ref={innerRef}
-        className="relative z-10 bg-white dark:bg-gray-900"
+        className="relative z-10"
         style={{ willChange: 'transform', touchAction: 'pan-y' }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}

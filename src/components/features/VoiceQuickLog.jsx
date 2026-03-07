@@ -48,7 +48,7 @@ export default function VoiceQuickLog({ isOpen, onClose, onConversationalRedirec
   const navigate = useNavigate();
   const toast = useToast();
   const queryClient = useQueryClient();
-  const { isListening, transcript, startListening, stopListening, isSupported, error: voiceError } = useVoice();
+  const { isListening, transcript, startListening, stopListening, isSupported, error: voiceError } = useVoice({ forceWebSpeech: true });
 
   const [step, setStep] = useState('idle'); // idle | listening | processing | result | saving | error
   const [capturedTranscript, setCapturedTranscript] = useState('');
@@ -64,8 +64,12 @@ export default function VoiceQuickLog({ isOpen, onClose, onConversationalRedirec
           context: { currentDate: new Date().toISOString().split('T')[0] },
         },
       });
-      if (error) throw new Error(error.message || 'Parsing failed');
-      if (data?.error) throw new Error(data.error);
+      if (error) {
+        console.error('voice-command invoke error:', error);
+        const msg = error?.context?.body ? await error.context.text?.() : error.message;
+        throw new Error(msg || 'Parsing failed');
+      }
+      if (data?.error) throw new Error(data.error + (data.detail ? ': ' + data.detail : ''));
       return data;
     },
   });

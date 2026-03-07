@@ -40,7 +40,7 @@ export default function BottomSheet({ isOpen, onClose, title, fullHeight, childr
         ref={sheetRef}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-white pb-safe-bottom shadow-xl dark:bg-gray-800"
+        className="themed-sheet-solid fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-white pb-safe-bottom shadow-xl dark:bg-gray-800"
       >
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-2">
