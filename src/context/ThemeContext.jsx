@@ -147,12 +147,35 @@ function applyCustomTheme(prefs) {
   // Overlay opacity (for image backgrounds)
   root.style.setProperty('--app-overlay-opacity', String(p.overlay_opacity));
 
-  // Card color: use bgColor RGB so cards at 100% match the background
-  root.style.setProperty('--app-card-rgb', `${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}`);
-  root.style.setProperty('--app-card-opacity', String(p.card_opacity));
+  // Card and nav colors depend on bg type
+  if (p.bg_type === 'image' && p.bg_image_url) {
+    // Image bg: cards get a dark semi-opaque surface, nav gets image + dark overlay
+    root.style.setProperty('--app-card-rgb', '0, 0, 0');
+    root.style.setProperty('--app-card-opacity', String(Math.max(p.card_opacity, 0.6)));
+    root.style.setProperty('--app-nav-bg', 'rgba(0, 0, 0, 0.6)');
 
-  // Nav/header: 50% black overlay on bgColor for darkened surface
-  root.style.setProperty('--app-nav-bg', applyBlackOverlay(resolvedBg, 0.5));
+    // Apply bg image + dark overlay directly to .themed-nav elements
+    const navImageBg = `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${p.bg_image_url})`;
+    document.querySelectorAll('.themed-nav').forEach((el) => {
+      el.style.background = navImageBg;
+      el.style.backgroundSize = 'cover';
+      el.style.backgroundPosition = 'center';
+      el.style.backgroundAttachment = 'fixed';
+    });
+  } else {
+    // Solid color or gradient: cards use bgColor RGB, nav gets darkened version
+    root.style.setProperty('--app-card-rgb', `${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}`);
+    root.style.setProperty('--app-card-opacity', String(p.card_opacity));
+    root.style.setProperty('--app-nav-bg', applyBlackOverlay(resolvedBg, 0.5));
+
+    // Clear any image bg styles from nav elements
+    document.querySelectorAll('.themed-nav').forEach((el) => {
+      el.style.background = '';
+      el.style.backgroundSize = '';
+      el.style.backgroundPosition = '';
+      el.style.backgroundAttachment = '';
+    });
+  }
 
   // Recalculate text colors for both bg and card surfaces
   const cardRgbStr = `${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}`;
@@ -192,6 +215,14 @@ function clearCustomTheme() {
   root.style.removeProperty('--app-text-muted');
   delete root.dataset.bgType;
   delete root.dataset.customTheme;
+
+  // Clear any inline nav image styles
+  document.querySelectorAll('.themed-nav').forEach((el) => {
+    el.style.background = '';
+    el.style.backgroundSize = '';
+    el.style.backgroundPosition = '';
+    el.style.backgroundAttachment = '';
+  });
 }
 
 export function ThemeProvider({ children }) {
