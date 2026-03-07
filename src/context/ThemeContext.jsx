@@ -108,20 +108,29 @@ function applyCustomTheme(prefs) {
 
   root.dataset.bgType = p.bg_type;
 
-  // Background
-  if (p.bg_type === 'gradient' && p.bg_gradient) {
-    const preset = GRADIENT_PRESETS.find((g) => g.id === p.bg_gradient);
-    if (preset) {
-      root.style.setProperty('--app-bg-gradient', preset.css);
+  // Background — with Safari fallbacks
+  try {
+    if (p.bg_type === 'gradient' && p.bg_gradient) {
+      const preset = GRADIENT_PRESETS.find((g) => g.id === p.bg_gradient);
+      // Set color fallback first (Safari needs this before gradient)
+      root.style.setProperty('--app-bg-color', '#f8fafc');
+      root.style.setProperty('--app-bg-image', 'none');
+      if (preset) {
+        root.style.setProperty('--app-bg-gradient', preset.css);
+      }
+    } else if (p.bg_type === 'image' && p.bg_image_url) {
+      // Always set color fallback before image
+      root.style.setProperty('--app-bg-color', '#1a1a2e');
+      root.style.setProperty('--app-bg-gradient', 'none');
+      root.style.setProperty('--app-bg-image', `url(${p.bg_image_url})`);
+    } else {
+      root.style.setProperty('--app-bg-color', p.bg_color);
+      root.style.setProperty('--app-bg-image', 'none');
+      root.style.setProperty('--app-bg-gradient', 'none');
     }
-    root.style.setProperty('--app-bg-color', '#f8fafc');
-    root.style.setProperty('--app-bg-image', 'none');
-  } else if (p.bg_type === 'image' && p.bg_image_url) {
-    root.style.setProperty('--app-bg-color', '#1a1a2e');
-    root.style.setProperty('--app-bg-image', `url(${p.bg_image_url})`);
-    root.style.setProperty('--app-bg-gradient', 'none');
-  } else {
-    root.style.setProperty('--app-bg-color', p.bg_color);
+  } catch (e) {
+    // Fallback: just set a solid color
+    root.style.setProperty('--app-bg-color', p.bg_color || '#f8fafc');
     root.style.setProperty('--app-bg-image', 'none');
     root.style.setProperty('--app-bg-gradient', 'none');
   }

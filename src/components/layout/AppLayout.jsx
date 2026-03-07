@@ -33,6 +33,9 @@ export default function AppLayout() {
   const mainRef = useRef(null);
   const isDashboard = location.pathname === '/dashboard';
   const isVoiceActive = voiceOpen || voiceAgentOpen || !!convoVoice;
+  const accentRgb = typeof window !== 'undefined'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--app-accent-rgb').trim() || '15 76 129'
+    : '15 76 129';
 
   // Scroll to top on route change
   useEffect(() => {
@@ -136,7 +139,8 @@ export default function AppLayout() {
       {/* Voice FAB */}
       <button
         onClick={() => canAccessAssistant ? setVoiceAgentOpen(true) : setVoiceOpen(true)}
-        className={`fixed bottom-[calc(68px+env(safe-area-inset-bottom)+82px)] right-5 z-30 flex h-12 w-12 items-center justify-center rounded-full border-2 border-white text-white shadow-md transition-all duration-150 active:scale-95 ${isVoiceActive ? 'bg-brand-800' : 'bg-brand-800/75 active:bg-brand-800'}`}
+        className="fixed bottom-[calc(68px+env(safe-area-inset-bottom)+82px)] right-5 z-30 flex h-12 w-12 items-center justify-center rounded-full border-2 border-white text-white shadow-md transition-all duration-150 active:scale-95"
+        style={{ backgroundColor: `rgba(${accentRgb.replace(/ /g, ', ')}, ${isVoiceActive ? 1 : 0.75})` }}
         aria-label="Voice input"
       >
         <Mic className="h-5 w-5" />
