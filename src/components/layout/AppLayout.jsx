@@ -19,7 +19,7 @@ import MicPermissionToast from '@/components/ui/MicPermissionToast';
 
 export default function AppLayout() {
   useAutoClosePayPeriods();
-  const { customTheme } = useTheme();
+  const { customTheme, reapplyBackground } = useTheme();
   const { user, account } = useAuth();
   const { permission, requestPermission } = useMicrophonePermission();
   const [fabOpen, setFabOpen] = useState(false);
@@ -37,11 +37,12 @@ export default function AppLayout() {
     ? getComputedStyle(document.documentElement).getPropertyValue('--app-accent-rgb').trim() || '15 76 129'
     : '15 76 129';
 
-  // Scroll to top on route change
+  // Scroll to top on route change + re-apply theme backgrounds
   useEffect(() => {
     mainRef.current?.scrollTo(0, 0);
     window.scrollTo(0, 0);
-  }, [location.pathname]);
+    reapplyBackground();
+  }, [location.pathname, reapplyBackground]);
 
   useEffect(() => {
     const handler = () => setSettingsOpen(true);

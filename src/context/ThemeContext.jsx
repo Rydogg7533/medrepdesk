@@ -109,6 +109,80 @@ function resolveThemeBgColor(p) {
   return p.bg_color || '#f8fafc';
 }
 
+// Apply background to #root element (not body — Tailwind bg class overrides body inline styles)
+function applyThemeBackground(p) {
+  const rootEl = document.getElementById('root');
+  if (!rootEl) return;
+
+  if (p.bg_type === 'image' && p.bg_image_url) {
+    const overlay = p.overlay_opacity ?? 0.5;
+    rootEl.style.backgroundImage = `linear-gradient(rgba(0,0,0,${overlay}), rgba(0,0,0,${overlay})), url(${p.bg_image_url})`;
+    rootEl.style.backgroundSize = 'cover';
+    rootEl.style.backgroundPosition = 'center center';
+    rootEl.style.backgroundAttachment = 'fixed';
+    rootEl.style.backgroundRepeat = 'no-repeat';
+    rootEl.style.backgroundColor = '#1a1a2e';
+  } else if (p.bg_type === 'gradient' && p.bg_gradient) {
+    const preset = GRADIENT_PRESETS.find((g) => g.id === p.bg_gradient);
+    rootEl.style.backgroundImage = preset ? preset.css : 'none';
+    rootEl.style.backgroundAttachment = 'fixed';
+    rootEl.style.backgroundSize = '100% 100%';
+    rootEl.style.backgroundColor = p.bg_color || '#f8fafc';
+    rootEl.style.backgroundRepeat = 'no-repeat';
+    rootEl.style.backgroundPosition = '';
+  } else {
+    rootEl.style.backgroundImage = 'none';
+    rootEl.style.backgroundColor = p.bg_color || '#f8fafc';
+    rootEl.style.backgroundAttachment = '';
+    rootEl.style.backgroundSize = '';
+    rootEl.style.backgroundPosition = '';
+    rootEl.style.backgroundRepeat = '';
+  }
+}
+
+// Apply nav/header background — same image with dark overlay for image bg, darkened solid for others
+function applyNavBackground(p) {
+  document.querySelectorAll('.themed-nav').forEach((el) => {
+    if (p.bg_type === 'image' && p.bg_image_url) {
+      el.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${p.bg_image_url})`;
+      el.style.backgroundSize = 'cover';
+      el.style.backgroundPosition = 'center center';
+      el.style.backgroundAttachment = 'fixed';
+      el.style.backgroundRepeat = 'no-repeat';
+      el.style.backgroundColor = 'transparent';
+    } else {
+      const resolvedBg = resolveThemeBgColor(p);
+      const { r, g, b } = hexToRgb(resolvedBg);
+      el.style.backgroundImage = 'none';
+      el.style.backgroundColor = `rgb(${Math.round(r * 0.5)}, ${Math.round(g * 0.5)}, ${Math.round(b * 0.5)})`;
+      el.style.backgroundSize = '';
+      el.style.backgroundPosition = '';
+      el.style.backgroundAttachment = '';
+      el.style.backgroundRepeat = '';
+    }
+  });
+}
+
+function clearThemeBackground() {
+  const rootEl = document.getElementById('root');
+  if (rootEl) {
+    rootEl.style.backgroundImage = '';
+    rootEl.style.backgroundSize = '';
+    rootEl.style.backgroundPosition = '';
+    rootEl.style.backgroundAttachment = '';
+    rootEl.style.backgroundRepeat = '';
+    rootEl.style.backgroundColor = '';
+  }
+  document.querySelectorAll('.themed-nav').forEach((el) => {
+    el.style.backgroundImage = '';
+    el.style.backgroundSize = '';
+    el.style.backgroundPosition = '';
+    el.style.backgroundAttachment = '';
+    el.style.backgroundRepeat = '';
+    el.style.backgroundColor = '';
+  });
+}
+
 function applyCustomTheme(prefs) {
   const root = document.documentElement;
   const p = { ...THEME_DEFAULTS, ...prefs };
@@ -120,46 +194,16 @@ function applyCustomTheme(prefs) {
   const resolvedBg = resolveThemeBgColor(p);
   const bgRgb = hexToRgb(resolvedBg);
 
-  // Background — applied directly to html element
-  // Clear previous bg styles first
-  root.style.backgroundImage = '';
-  root.style.backgroundSize = '';
-  root.style.backgroundPosition = '';
-  root.style.backgroundAttachment = '';
-  root.style.backgroundColor = '';
+  // Apply background to #root and nav elements
+  applyThemeBackground(p);
+  applyNavBackground(p);
 
-  try {
-    if (p.bg_type === 'gradient' && p.bg_gradient) {
-      const preset = GRADIENT_PRESETS.find((g) => g.id === p.bg_gradient);
-      if (preset) {
-        root.style.backgroundImage = preset.css;
-        root.style.backgroundAttachment = 'fixed';
-      }
-      root.style.backgroundColor = '#f8fafc';
-    } else if (p.bg_type === 'image' && p.bg_image_url) {
-      // Combine overlay + image into one background-image so no separate div needed
-      const overlay = p.overlay_opacity ?? 0.5;
-      root.style.backgroundImage = `linear-gradient(rgba(0,0,0,${overlay}), rgba(0,0,0,${overlay})), url(${p.bg_image_url})`;
-      root.style.backgroundSize = 'cover';
-      root.style.backgroundPosition = 'center';
-      root.style.backgroundAttachment = 'fixed';
-      root.style.backgroundColor = '#1a1a2e';
-    } else {
-      root.style.backgroundColor = p.bg_color || '#f8fafc';
-    }
-  } catch (e) {
-    root.style.backgroundColor = p.bg_color || '#f8fafc';
-  }
-
-  // Card and nav colors depend on bg type
+  // Card and nav CSS variable colors depend on bg type
   if (p.bg_type === 'image' && p.bg_image_url) {
-    // Image bg: cards get a dark semi-opaque surface, nav gets solid dark bg
     root.style.setProperty('--app-card-rgb', '0, 0, 0');
     root.style.setProperty('--app-card-opacity', String(Math.max(p.card_opacity, 0.6)));
-    // Solid opaque dark bg for nav — background-attachment:fixed doesn't work on position:fixed
-    root.style.setProperty('--app-nav-bg', 'rgb(15, 15, 20)');
+    root.style.setProperty('--app-nav-bg', 'transparent');
   } else {
-    // Solid color or gradient: cards use bgColor RGB, nav gets darkened version
     root.style.setProperty('--app-card-rgb', `${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}`);
     root.style.setProperty('--app-card-opacity', String(p.card_opacity));
     root.style.setProperty('--app-nav-bg', applyBlackOverlay(resolvedBg, 0.5));
@@ -186,10 +230,6 @@ function applyCustomTheme(prefs) {
 
 function clearCustomTheme() {
   const root = document.documentElement;
-  root.style.removeProperty('--app-bg-color');
-  root.style.removeProperty('--app-bg-gradient');
-  root.style.removeProperty('--app-bg-image');
-  root.style.removeProperty('--app-overlay-opacity');
   root.style.removeProperty('--app-card-opacity');
   root.style.removeProperty('--app-card-rgb');
   root.style.removeProperty('--app-nav-bg');
@@ -204,12 +244,7 @@ function clearCustomTheme() {
   delete root.dataset.bgType;
   delete root.dataset.customTheme;
 
-  // Clear html element background styles
-  root.style.backgroundImage = '';
-  root.style.backgroundSize = '';
-  root.style.backgroundPosition = '';
-  root.style.backgroundAttachment = '';
-  root.style.backgroundColor = '';
+  clearThemeBackground();
 }
 
 export function ThemeProvider({ children }) {
@@ -237,6 +272,15 @@ export function ThemeProvider({ children }) {
     }
   }, []);
 
+  // Re-apply background + nav styles (call on route changes)
+  const reapplyBackground = useCallback(() => {
+    if (customTheme && Object.keys(customTheme).length > 0) {
+      const p = { ...THEME_DEFAULTS, ...customTheme };
+      applyThemeBackground(p);
+      applyNavBackground(p);
+    }
+  }, [customTheme]);
+
   useLayoutEffect(() => {
     setIsDark(applyTheme(theme));
   }, [theme]);
@@ -260,7 +304,7 @@ export function ThemeProvider({ children }) {
   }, [theme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, isDark, customTheme, applyUserTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, isDark, customTheme, applyUserTheme, reapplyBackground }}>
       {children}
     </ThemeContext.Provider>
   );
