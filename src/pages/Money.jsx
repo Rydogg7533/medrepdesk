@@ -475,7 +475,7 @@ export default function Money() {
     <div className="p-4">
       <h1 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">Money<InfoTooltip text="Purchase orders track the billing lifecycle after a case is completed. Chase POs until received, then track payment." /></h1>
 
-      <div className="mb-4 flex gap-0 overflow-x-auto border-b border-gray-200 dark:border-gray-700">
+      <div className="mb-4 flex border-b border-gray-700">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -486,10 +486,10 @@ export default function Money() {
               setShowSendPrompt(false);
             }}
             className={clsx(
-              'shrink-0 flex-1 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px',
+              'flex-1 text-center py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px',
               activeTab === tab.key
-                ? 'border-brand-600 text-gray-900 dark:text-white font-semibold'
-                : 'border-transparent text-gray-400 dark:text-gray-500'
+                ? 'border-brand-600 text-white font-semibold'
+                : 'border-transparent text-gray-400'
             )}
           >
             {tab.label}
@@ -870,10 +870,10 @@ export default function Money() {
           </BottomSheet>
 
           {/* Active / Archived toggle */}
-          <div className="relative mb-3 flex rounded-xl border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-white/5">
+          <div className="relative mb-3 flex rounded-xl border border-gray-700 bg-white/5 p-[3px]">
             <div
-              className="absolute top-1 bottom-1 rounded-lg bg-white shadow-sm transition-all duration-200 dark:bg-gray-700"
-              style={{ width: 'calc(50% - 4px)', left: billSheetView === 'active' ? '4px' : 'calc(50%)' }}
+              className="absolute top-[3px] bottom-[3px] rounded-lg bg-gray-600 transition-all duration-200"
+              style={{ width: 'calc(50% - 2px)', left: billSheetView === 'active' ? '3px' : 'calc(50% + 1px)' }}
             />
             {['active', 'archived'].map((view) => (
               <button
@@ -881,7 +881,7 @@ export default function Money() {
                 onClick={() => setBillSheetView(view)}
                 className={clsx(
                   'relative z-10 flex-1 py-1.5 text-center text-xs font-medium capitalize transition-colors',
-                  billSheetView === view ? 'text-gray-900 font-semibold dark:text-white' : 'text-gray-400'
+                  billSheetView === view ? 'text-white font-semibold' : 'text-gray-400'
                 )}
               >
                 {view}

@@ -203,9 +203,9 @@ export default function Contacts() {
         </div>
       </div>
 
-      {/* Controls: search + filter segmented control + CSV import */}
-      <div className="flex items-center gap-2 px-4 pt-3 pb-2">
-        <div className="relative flex-1">
+      {/* Search */}
+      <div className="px-4 pt-3 pb-2">
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
             type="text"
@@ -215,37 +215,46 @@ export default function Contacts() {
             className="min-h-touch w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2.5 pl-10 pr-3 text-sm text-gray-900 dark:text-gray-100 outline-none focus:border-gray-500 focus:ring-0"
           />
         </div>
-        <div className="relative flex min-h-touch items-center rounded-xl border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-white/5">
-          <div
-            className="absolute top-1 bottom-1 rounded-lg bg-white shadow-sm transition-all duration-200 dark:bg-gray-700"
-            style={{
-              width: 'calc(33.333% - 3px)',
-              left: filterMode === 'active' ? '4px' : filterMode === 'inactive' ? 'calc(33.333%)' : 'calc(66.666%)',
-            }}
-          />
-          {FILTER_OPTIONS.map((opt) => (
-            <button
-              key={opt.key}
-              onClick={() => setFilterMode(opt.key)}
-              className={clsx(
-                'relative z-10 flex-1 py-1.5 text-center text-xs font-medium transition-colors',
-                filterMode === opt.key ? 'text-gray-900 font-semibold dark:text-white' : 'text-gray-400'
-              )}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-        {activeTab === 'people' && (
+      </div>
+
+      {/* Divider */}
+      <div className="border-b border-gray-700" />
+
+      {/* Filter segmented control */}
+      <div className="relative flex rounded-xl border border-gray-700 bg-white/5 p-[3px] mx-4 mb-3 mt-3">
+        <div
+          className="absolute top-[3px] bottom-[3px] rounded-lg bg-gray-600 transition-all duration-200"
+          style={{
+            width: 'calc(33.333% - 2px)',
+            left: filterMode === 'active' ? '3px' : filterMode === 'inactive' ? 'calc(33.333% + 1px)' : 'calc(66.666% - 1px)',
+          }}
+        />
+        {FILTER_OPTIONS.map((opt) => (
+          <button
+            key={opt.key}
+            onClick={() => setFilterMode(opt.key)}
+            className={clsx(
+              'relative z-10 flex-1 py-1.5 text-center text-xs font-medium transition-colors',
+              filterMode === opt.key ? 'text-white font-semibold' : 'text-gray-400'
+            )}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
+      {/* CSV import button */}
+      {activeTab === 'people' && (
+        <div className="px-4 mb-2">
           <button
             onClick={() => navigate('/contacts/import')}
-            className="flex min-h-touch items-center gap-1.5 rounded-lg bg-brand-50 dark:bg-brand-800/20 px-3 py-2.5 text-sm font-medium text-brand-800 dark:text-brand-400"
+            className="flex items-center gap-1.5 rounded-lg bg-brand-50 dark:bg-brand-800/20 px-3 py-2.5 text-sm font-medium text-brand-800 dark:text-brand-400"
           >
             <Upload className="h-4 w-4" />
             CSV
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Tab content */}
       <div className="px-4">

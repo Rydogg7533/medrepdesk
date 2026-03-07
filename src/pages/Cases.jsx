@@ -160,7 +160,7 @@ export default function Cases() {
           <HelpCircle className="h-3.5 w-3.5" />
         </button>
       </div>
-      <div className="mb-4 flex gap-0 overflow-x-auto border-b border-gray-200 dark:border-gray-700">
+      <div className="mb-4 flex overflow-x-auto border-b border-gray-700">
         {FILTER_TABS.map((tab) => (
           <button
             key={tab.key}
@@ -168,8 +168,8 @@ export default function Cases() {
             className={clsx(
               'shrink-0 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px',
               activeTab === tab.key
-                ? 'border-brand-600 text-gray-900 dark:text-white font-semibold'
-                : 'border-transparent text-gray-400 dark:text-gray-500'
+                ? 'border-brand-600 text-white font-semibold'
+                : 'border-transparent text-gray-400 hover:text-gray-300'
             )}
           >
             {tab.label}
