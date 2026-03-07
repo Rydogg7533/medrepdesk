@@ -37,6 +37,11 @@ export default function AppLayout() {
     ? getComputedStyle(document.documentElement).getPropertyValue('--app-accent-rgb').trim() || '15 76 129'
     : '15 76 129';
 
+  // Apply theme background on mount (canvas div now exists in DOM)
+  useEffect(() => {
+    reapplyBackground();
+  }, []);
+
   // Scroll to top on route change + re-apply theme backgrounds
   useEffect(() => {
     mainRef.current?.scrollTo(0, 0);
@@ -70,6 +75,7 @@ export default function AppLayout() {
       {/* Background canvas — fixed behind everything, styled by ThemeContext */}
       <div
         id="app-bg-canvas"
+        ref={(el) => { if (el) console.log('bg-canvas mounted'); }}
         style={{ position: 'fixed', inset: 0, zIndex: -1 }}
       />
       {/* Header */}
