@@ -71,8 +71,7 @@ function applyCustomTheme(prefs) {
   // Card color: always white, variable opacity
   root.style.setProperty('--app-card-rgb', '255, 255, 255');
   root.style.setProperty('--app-card-opacity', String(p.card_opacity));
-  // Nav always matches card opacity
-  root.style.setProperty('--app-nav-opacity', String(p.card_opacity));
+
 
   // Text color (always auto)
   let bgHex = p.bg_color || '#f8fafc';
@@ -119,7 +118,6 @@ function clearCustomTheme() {
   root.style.removeProperty('--app-overlay-opacity');
   root.style.removeProperty('--app-card-opacity');
   root.style.removeProperty('--app-card-rgb');
-  root.style.removeProperty('--app-nav-opacity');
   root.style.removeProperty('--app-text-color');
   root.style.removeProperty('--app-text-secondary');
   root.style.removeProperty('--app-text-muted');

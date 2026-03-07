@@ -77,9 +77,6 @@ html[data-custom-theme="true"] .themed-sheet-solid {
   background-color: rgba(var(--app-card-rgb, 255, 255, 255), 1) !important;
 }
 
-html[data-custom-theme="true"] .themed-nav {
-  background-color: rgba(var(--app-card-rgb, 255, 255, 255), var(--app-nav-opacity, 1)) !important;
-}
 
 /* --- Text color overrides for custom themes --- */
 html[data-custom-theme="true"] .text-gray-900,
