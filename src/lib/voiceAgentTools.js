@@ -103,22 +103,26 @@ async function getContext({ data_type, filters = {} }, { supabase, accountId }) 
       return { contacts: data };
     }
     case 'surgeons': {
-      const { data, error } = await supabase
+      let q = supabase
         .from(TABLES.SURGEONS)
         .select('id, full_name, specialty, phone, primary_facility:facilities(name)')
-        .eq('account_id', accountId)
+        .or(`account_id.eq.${accountId},is_global.eq.true`)
         .order('full_name')
         .limit(limit);
+      if (filters.name_search) q = q.ilike('full_name', `%${filters.name_search}%`);
+      const { data, error } = await q;
       if (error) return { error: error.message };
       return { surgeons: data };
     }
     case 'facilities': {
-      const { data, error } = await supabase
+      let q = supabase
         .from(TABLES.FACILITIES)
         .select('id, name, facility_type, city, state, address, phone')
-        .eq('account_id', accountId)
+        .or(`account_id.eq.${accountId},is_global.eq.true`)
         .order('name')
         .limit(limit);
+      if (filters.name_search) q = q.ilike('name', `%${filters.name_search}%`);
+      const { data, error } = await q;
       if (error) return { error: error.message };
       return { facilities: data };
     }

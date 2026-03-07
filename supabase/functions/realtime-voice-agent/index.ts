@@ -76,7 +76,7 @@ const TOOLS = [
   {
     type: "function",
     name: "get_context",
-    description: "Fetch the rep's current data to answer questions or fill in details. Call this when you need to look up cases, surgeons, facilities, distributors, POs, commissions, contacts, or chase log entries. Always call this before writing data so you can match names to IDs.",
+    description: "Fetch the rep's data. IMPORTANT: When scheduling a case, call with data_type='surgeons' and filters.name_search='[surname]' to find surgeon ID, then call with data_type='facilities' and filters.name_search='[partial name]' to find facility ID. Always resolve names to IDs before calling schedule_case.",
     parameters: {
       type: "object",
       properties: {
@@ -91,6 +91,7 @@ const TOOLS = [
             status: { type: "string", description: "Filter by status" },
             case_id: { type: "string", description: "Filter by specific case ID" },
             case_number_search: { type: "string", description: "Partial case number to search for (e.g. '0008' or '8')" },
+            name_search: { type: "string", description: "Partial name to search for when looking up surgeons or facilities (e.g. 'Clark' or 'Garfield')" },
             limit: { type: "number", description: "Max records to return (default 20)" },
           },
         },
