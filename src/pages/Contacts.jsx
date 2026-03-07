@@ -243,18 +243,6 @@ export default function Contacts() {
         ))}
       </div>
 
-      {/* CSV import button */}
-      {activeTab === 'people' && (
-        <div className="px-4 mb-2">
-          <button
-            onClick={() => navigate('/contacts/import')}
-            className="flex items-center gap-1.5 rounded-lg bg-brand-50 dark:bg-brand-800/20 px-3 py-2.5 text-sm font-medium text-brand-800 dark:text-brand-400"
-          >
-            <Upload className="h-4 w-4" />
-            CSV
-          </button>
-        </div>
-      )}
 
       {/* Tab content */}
       <div className="px-4">
@@ -348,12 +336,21 @@ function PeopleTab({ contacts, filterMode, onToggle, onDeleteAsync, onArchiveAsy
 
   return (
     <>
-      <button
-        onClick={() => navigate('/contacts/new')}
-        className="mb-2 flex w-full min-h-touch items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 py-2.5 text-sm font-medium text-brand-800 dark:text-brand-400 active:bg-gray-50 dark:active:bg-gray-800"
-      >
-        <Plus className="h-4 w-4" /> Add Contact
-      </button>
+      <div className="flex items-center gap-2 mb-2">
+        <button
+          onClick={() => navigate('/contacts/new')}
+          className="flex-1 min-h-touch flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 py-2.5 text-sm font-medium text-brand-800 dark:text-brand-400 active:bg-gray-50 dark:active:bg-gray-800"
+        >
+          <Plus className="h-4 w-4" /> Add Contact
+        </button>
+        <button
+          onClick={() => navigate('/contacts/import')}
+          className="flex items-center gap-1.5 rounded-lg bg-brand-50 dark:bg-brand-800/20 px-3 py-2.5 text-sm font-medium text-brand-800 dark:text-brand-400"
+        >
+          <Upload className="h-4 w-4" />
+          CSV
+        </button>
+      </div>
       {contacts.length === 0 ? (
         <p className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">No contacts found</p>
       ) : (
