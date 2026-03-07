@@ -14,11 +14,11 @@ const plans = [
     price: PLAN_LIMITS.solo.price,
     features: [
       '1 user',
-      `${PLAN_LIMITS.solo.aiExtractions} AI extractions/mo`,
-      `${PLAN_LIMITS.solo.aiDigests} AI digests/mo`,
-      'Unlimited cases & POs',
-      'Push notifications',
-      'Commission tracking',
+      'AI smart case entry (50/mo)',
+      'Voice commands (listen only / browser TTS)',
+      'Basic theming (solid colors)',
+      'Weekly digest (plain text)',
+      'CSV contact import',
     ],
   },
   {
@@ -28,13 +28,14 @@ const plans = [
     price: PLAN_LIMITS.assistant.price,
     popular: true,
     features: [
-      'Up to 2 users',
-      `${PLAN_LIMITS.assistant.aiExtractions} AI extractions/mo`,
-      `${PLAN_LIMITS.assistant.aiDigests} AI digests/mo`,
-      'Unlimited cases & POs',
-      'Push notifications',
-      'Commission tracking',
-      'Assistant role access',
+      '2 users — owner + 1 assistant',
+      'Everything in Solo',
+      'AI smart case entry (100/mo)',
+      'Full voice agent — voice in & out (60 min/mo)',
+      'Background image & full theming',
+      'AI chase email drafting',
+      'AI commission discrepancy detection',
+      'Full AI weekly briefing',
     ],
   },
   {
@@ -44,13 +45,13 @@ const plans = [
     price: PLAN_LIMITS.distributorship.price,
     features: [
       'Up to 5 users',
-      `${PLAN_LIMITS.distributorship.aiExtractions} AI extractions/mo`,
-      'Unlimited AI digests',
-      'Unlimited cases & POs',
-      'Push notifications',
-      'Commission tracking',
-      'Team management',
-      'Priority support',
+      'Everything in AI Pro',
+      'AI smart case entry (500/mo)',
+      '200 voice minutes/mo',
+      'Cross-rep case & commission visibility',
+      'My Manufacturers (margins, rates, product lines)',
+      'Account-level theme locking',
+      'Unlimited AI digest',
     ],
   },
 ];
@@ -125,6 +126,11 @@ export default function Pricing() {
           </button>
         </div>
       )}
+
+      <div className="mt-4 rounded-lg bg-brand-800/5 px-4 py-3 text-center text-xs text-gray-600 dark:bg-brand-400/5 dark:text-gray-400">
+        <span className="font-semibold text-gray-700 dark:text-gray-300">Every plan includes</span>{' '}
+        unlimited cases, POs, chase log, commissions, contacts, surgeon &amp; facility database, CSV import, push notifications, and PO photo extraction.
+      </div>
 
       <div className="mt-6 space-y-4">
         {plans.map((plan) => {

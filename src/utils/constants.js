@@ -37,16 +37,16 @@ export const PAY_PERIOD_STATUSES = {
 
 export const PLAN_LIMITS = {
   solo: {
-    label: 'Solo Rep',
-    price: 99,
+    label: 'Solo',
+    price: 129,
     maxUsers: 1,
     aiExtractions: 50,
     aiDigests: 4,
     voiceMinutes: 0,
   },
   assistant: {
-    label: 'Rep + Assistant',
-    price: 149,
+    label: 'AI Pro',
+    price: 199,
     maxUsers: 2,
     aiExtractions: 100,
     aiDigests: 8,
@@ -54,7 +54,7 @@ export const PLAN_LIMITS = {
   },
   distributorship: {
     label: 'Distributorship',
-    price: 249,
+    price: 299,
     maxUsers: 5,
     aiExtractions: 500,
     aiDigests: -1, // unlimited
