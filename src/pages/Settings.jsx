@@ -107,7 +107,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-4">
+    <div className="mx-auto max-w-lg px-4 py-4 overscroll-x-none">
       <h1 className="page-bg-text mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">Settings</h1>
 
       {checkoutSuccess && (

@@ -188,7 +188,7 @@ export default function AppearanceSettings() {
   const isPresetAccent = ACCENT_PRESETS.some((p) => p.color === accentColor);
 
   return (
-    <section className="themed-card touch-pan-y rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
+    <section className="themed-card touch-pan-y overscroll-x-none rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Appearance</h2>
         <button
