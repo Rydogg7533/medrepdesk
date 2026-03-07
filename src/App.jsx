@@ -50,6 +50,7 @@ import MyDistributor from '@/pages/MyDistributor';
 import BillSheetForm from '@/pages/BillSheetForm';
 import BillSheetDetail from '@/pages/BillSheetDetail';
 import ActionItems from '@/pages/ActionItems';
+import FAQ from '@/pages/FAQ';
 import PayPeriodSummary from '@/pages/PayPeriodSummary';
 import Onboarding from '@/pages/Onboarding';
 import TermsOfService from '@/pages/legal/TermsOfService';
@@ -187,6 +188,7 @@ function App() {
               <Route path="/bill-sheet" element={<BillSheetForm />} />
               <Route path="/bill-sheets/:caseId" element={<BillSheetDetail />} />
               <Route path="/action-items" element={<ActionItems />} />
+              <Route path="/faq" element={<FAQ />} />
             </Route>
           </Routes>
           </ToastProvider>

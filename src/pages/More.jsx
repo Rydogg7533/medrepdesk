@@ -3,6 +3,7 @@ import {
   Building2,
   CreditCard,
   Gift,
+  HelpCircle,
   Settings,
   LogOut,
   ChevronRight,
@@ -30,6 +31,7 @@ const ownerItems = [
 ];
 
 const bottomItems = [
+  { icon: HelpCircle, label: 'Help & FAQ', path: '/faq' },
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 
