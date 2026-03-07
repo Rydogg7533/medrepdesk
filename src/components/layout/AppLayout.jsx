@@ -138,7 +138,7 @@ export default function AppLayout() {
       {showVoiceFab && (
         <button
           onClick={() => canAccessAssistant ? setVoiceAgentOpen(true) : setVoiceOpen(true)}
-          className="fixed bottom-[calc(68px+env(safe-area-inset-bottom)+82px)] right-[22px] z-30 flex h-12 w-12 items-center justify-center rounded-full bg-gray-200 text-gray-600 shadow-md transition-transform active:scale-95 dark:bg-gray-700 dark:text-gray-300"
+          className="fixed bottom-[calc(68px+env(safe-area-inset-bottom)+82px)] right-5 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-brand-800 text-white opacity-50 shadow-md transition-transform active:scale-95"
           aria-label="Voice input"
         >
           <Mic className="h-5 w-5" />
