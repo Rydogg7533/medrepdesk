@@ -155,9 +155,8 @@ function applyCustomTheme(prefs) {
     root.style.setProperty('--app-nav-bg', 'rgba(0, 0, 0, 0.6)');
 
     // Apply bg image + dark overlay directly to .themed-nav elements
-    const navImageBg = `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${p.bg_image_url})`;
     document.querySelectorAll('.themed-nav').forEach((el) => {
-      el.style.background = navImageBg;
+      el.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${p.bg_image_url})`;
       el.style.backgroundSize = 'cover';
       el.style.backgroundPosition = 'center';
       el.style.backgroundAttachment = 'fixed';
@@ -170,7 +169,7 @@ function applyCustomTheme(prefs) {
 
     // Clear any image bg styles from nav elements
     document.querySelectorAll('.themed-nav').forEach((el) => {
-      el.style.background = '';
+      el.style.backgroundImage = '';
       el.style.backgroundSize = '';
       el.style.backgroundPosition = '';
       el.style.backgroundAttachment = '';
@@ -218,7 +217,7 @@ function clearCustomTheme() {
 
   // Clear any inline nav image styles
   document.querySelectorAll('.themed-nav').forEach((el) => {
-    el.style.background = '';
+    el.style.backgroundImage = '';
     el.style.backgroundSize = '';
     el.style.backgroundPosition = '';
     el.style.backgroundAttachment = '';

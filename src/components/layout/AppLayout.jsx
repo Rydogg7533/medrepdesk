@@ -75,6 +75,7 @@ export default function AppLayout() {
             backgroundImage: `url(${customTheme.bg_image_url})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
+            backgroundAttachment: 'fixed',
             backgroundColor: '#1a1a2e',
           }}
         />
