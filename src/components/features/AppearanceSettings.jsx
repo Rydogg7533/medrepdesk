@@ -1,5 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { Sketch } from '@uiw/react-color';
+import { useState, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import { HexColorPicker } from 'react-colorful';
 import { Upload, RotateCcw, Lock, X, Check } from 'lucide-react';
 import clsx from 'clsx';
 import { useThemePreferences, useUpdateThemePreferences, THEME_DEFAULTS } from '@/hooks/useThemePreferences';
@@ -7,6 +8,46 @@ import { useTheme } from '@/context/ThemeContext';
 import { GRADIENT_PRESETS, ACCENT_PRESETS } from '@/utils/themePresets';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+
+// Portal-based color picker bottom sheet — renders outside <main> so touch
+// events never reach the scroll container.
+function ColorPickerSheet({ color, onChange, onClose }) {
+  return createPortal(
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 9999, touchAction: 'none' }}
+      onClick={onClose}
+    >
+      {/* Backdrop */}
+      <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)' }} />
+      {/* Picker panel */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: '#fff',
+          borderRadius: '16px 16px 0 0',
+          padding: '16px 16px calc(16px + env(safe-area-inset-bottom))',
+          touchAction: 'none',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <span style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>Pick a color</span>
+          <button
+            onClick={onClose}
+            style={{ padding: 4, borderRadius: 9999, backgroundColor: '#f3f4f6' }}
+          >
+            <X style={{ width: 16, height: 16, color: '#6b7280' }} />
+          </button>
+        </div>
+        <HexColorPicker color={color} onChange={onChange} style={{ width: '100%', touchAction: 'none' }} />
+      </div>
+    </div>,
+    document.body
+  );
+}
 
 function useDebounce(fn, delay) {
   const timer = useRef(null);
@@ -32,27 +73,6 @@ export default function AppearanceSettings() {
   const [uploading, setUploading] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showAccentPicker, setShowAccentPicker] = useState(false);
-
-  // Lock <main> scroll while a color picker is open
-  useEffect(() => {
-    const main = document.querySelector('main');
-    if (!main) return;
-    if (showColorPicker || showAccentPicker) {
-      main.style.overflow = 'hidden';
-      main.style.touchAction = 'none';
-    } else {
-      main.style.overflow = '';
-      main.style.overflowY = 'auto';
-      main.style.overflowX = 'hidden';
-      main.style.touchAction = '';
-    }
-    return () => {
-      main.style.overflow = '';
-      main.style.overflowY = 'auto';
-      main.style.overflowX = 'hidden';
-      main.style.touchAction = '';
-    };
-  }, [showColorPicker, showAccentPicker]);
 
   function currentPrefs() {
     return {
@@ -256,9 +276,11 @@ export default function AppearanceSettings() {
             <span className="text-xs text-gray-500 dark:text-gray-400">{bgColor}</span>
           </button>
           {showColorPicker && (
-            <div className="mt-2">
-              <Sketch color={bgColor} disableAlpha onChange={(color) => handleColorChange(color.hex)} style={{ width: '100%' }} />
-            </div>
+            <ColorPickerSheet
+              color={bgColor}
+              onChange={handleColorChange}
+              onClose={() => setShowColorPicker(false)}
+            />
           )}
         </div>
       )}
@@ -392,9 +414,11 @@ export default function AppearanceSettings() {
           )}
         </div>
         {showAccentPicker && (
-          <div className="mt-2">
-            <Sketch color={accentColor} disableAlpha onChange={(color) => handleAccentChange(color.hex)} style={{ width: '100%' }} />
-          </div>
+          <ColorPickerSheet
+            color={accentColor}
+            onChange={handleAccentChange}
+            onClose={() => setShowAccentPicker(false)}
+          />
         )}
       </div>
     </section>
