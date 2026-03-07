@@ -334,7 +334,7 @@ export default function AppearanceSettings() {
       {/* Accent color */}
       <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-700">
         <p className="mb-2 text-xs font-medium text-gray-600 dark:text-gray-300">Accent Color</p>
-        <div className="mb-3 flex flex-wrap gap-2">
+        <div className="mb-3 flex flex-wrap gap-2 touch-pan-x">
           {ACCENT_PRESETS.map((preset) => (
             <button
               key={preset.id}

@@ -123,7 +123,7 @@ export default function AppLayout() {
       <OfflineBanner />
 
       {/* Content */}
-      <main ref={mainRef} className="relative z-[1] flex-1 overflow-y-auto pt-[calc(44px+env(safe-area-inset-top))] pb-[calc(68px+env(safe-area-inset-bottom))]">
+      <main ref={mainRef} className="relative z-[1] flex-1 overflow-x-hidden overflow-y-auto pt-[calc(44px+env(safe-area-inset-top))] pb-[calc(68px+env(safe-area-inset-bottom))]">
         {/* Subscription banners — sticky inside scroll area */}
         {checkoutSuccess && (
           <div className="sticky top-0 z-20 flex items-center justify-between gap-2 bg-green-50 px-4 py-2 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
