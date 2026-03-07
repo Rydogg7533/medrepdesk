@@ -63,7 +63,7 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col" style={customTheme?.bg_type === 'color' && customTheme?.bg_color ? { backgroundColor: customTheme.bg_color } : undefined}>
       {/* Background image layer */}
       {customTheme?.bg_type === 'image' && customTheme?.bg_image_url && (
         <div
@@ -111,7 +111,7 @@ export default function AppLayout() {
       )}
       {/* Header */}
       <header className="themed-nav fixed inset-x-0 top-0 z-30 flex min-h-touch items-center justify-between border-b border-gray-200 bg-white px-4 pt-safe-top dark:border-gray-700 dark:bg-gray-800">
-        <span className="text-lg font-bold text-brand-800 dark:text-brand-400">MedRepDesk</span>
+        <span className="text-lg font-bold text-brand-800 dark:text-white">MedRepDesk</span>
         <div className="flex items-center gap-3">
           {isDashboard && (
             <button
@@ -138,7 +138,7 @@ export default function AppLayout() {
       {showVoiceFab && (
         <button
           onClick={() => canAccessAssistant ? setVoiceAgentOpen(true) : setVoiceOpen(true)}
-          className="themed-fab fixed bottom-[calc(68px+env(safe-area-inset-bottom)+82px)] right-[22px] z-30 flex h-12 w-12 items-center justify-center rounded-full bg-gray-200 text-gray-600 shadow-md transition-transform active:scale-95 dark:bg-gray-700 dark:text-gray-300"
+          className="fixed bottom-[calc(68px+env(safe-area-inset-bottom)+82px)] right-[22px] z-30 flex h-12 w-12 items-center justify-center rounded-full bg-gray-200 text-gray-600 shadow-md transition-transform active:scale-95 dark:bg-gray-700 dark:text-gray-300"
           aria-label="Voice input"
         >
           <Mic className="h-5 w-5" />
@@ -148,7 +148,7 @@ export default function AppLayout() {
       {/* FAB */}
       <button
         onClick={() => setFabOpen(true)}
-        className="themed-fab fixed bottom-[calc(68px+env(safe-area-inset-bottom)+12px)] right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-brand-800 text-white shadow-lg transition-transform active:scale-95"
+        className="fixed bottom-[calc(68px+env(safe-area-inset-bottom)+12px)] right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-brand-800 text-white shadow-lg transition-transform active:scale-95"
       >
         <Plus className="h-6 w-6" />
       </button>

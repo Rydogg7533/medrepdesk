@@ -8,18 +8,12 @@
   --app-bg-image: none;
   --app-overlay-opacity: 0.5;
   --app-card-opacity: 1;
-  --app-nav-opacity: 1;
-  --app-text-color: #111827;
-  --app-text-secondary: rgba(17, 24, 39, 0.55);
-  --app-text-muted: rgba(17, 24, 39, 0.35);
 }
 
 @layer base {
   body {
-    @apply antialiased;
+    @apply antialiased bg-gray-50 dark:bg-gray-900;
     -webkit-tap-highlight-color: transparent;
-    background-color: var(--app-bg-color);
-    color: var(--app-text-color) !important;
   }
 
   /* Prevent iOS Safari auto-zoom on input focus (requires >= 16px) */
@@ -72,47 +66,10 @@ html[data-custom-theme="true"] .themed-dropdown {
   background-color: rgba(var(--app-card-rgb, 255, 255, 255), var(--app-card-opacity, 1)) !important;
 }
 
-html[data-custom-theme="true"] .themed-fab,
 html[data-custom-theme="true"] .themed-sheet-solid {
   background-color: rgba(var(--app-card-rgb, 255, 255, 255), 1) !important;
 }
 
-
-/* --- Text color overrides for custom themes --- */
-html[data-custom-theme="true"] .text-gray-900,
-html[data-custom-theme="true"] .text-gray-800 {
-  color: var(--app-text-color) !important;
-}
-
-html[data-custom-theme="true"] .text-gray-700,
-html[data-custom-theme="true"] .text-gray-600 {
-  color: var(--app-text-color) !important;
-}
-
-html[data-custom-theme="true"] .text-gray-500,
-html[data-custom-theme="true"] .text-gray-400 {
-  color: var(--app-text-secondary) !important;
-}
-
-html[data-custom-theme="true"] .text-gray-300 {
-  color: var(--app-text-muted) !important;
-}
-
-/* Dark mode text utilities also themed */
-html[data-custom-theme="true"] .dark\:text-gray-100,
-html[data-custom-theme="true"] .dark\:text-gray-200,
-html[data-custom-theme="true"] .dark\:text-gray-300 {
-  color: var(--app-text-color) !important;
-}
-
-html[data-custom-theme="true"] .dark\:text-gray-400,
-html[data-custom-theme="true"] .dark\:text-gray-500 {
-  color: var(--app-text-secondary) !important;
-}
-
-html[data-custom-theme="true"] .dark\:text-gray-600 {
-  color: var(--app-text-muted) !important;
-}
 
 /* --- LOCKED COLORS — never inherit theme text --- */
 html[data-custom-theme="true"] .text-green-400 { color: rgb(74 222 128) !important; }

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useLayoutEffect, useCallback } from 'react';
 import { GRADIENT_PRESETS } from '@/utils/themePresets';
-import { getAutoTextColor, hexToRGB } from '@/utils/themeUtils';
+import { hexToRGB } from '@/utils/themeUtils';
 
 const ThemeContext = createContext(null);
 
@@ -73,24 +73,6 @@ function applyCustomTheme(prefs) {
   root.style.setProperty('--app-card-opacity', String(p.card_opacity));
 
 
-  // Text color (always auto)
-  let bgHex = p.bg_color || '#f8fafc';
-  if (p.bg_type === 'gradient' && p.bg_gradient) {
-    const preset = GRADIENT_PRESETS.find((g) => g.id === p.bg_gradient);
-    const match = preset?.css?.match(/#[0-9a-fA-F]{6}/);
-    bgHex = match ? match[0] : '#667eea';
-  } else if (p.bg_type === 'image') {
-    bgHex = '#1a1a2e';
-  }
-  const resolvedTextColor = getAutoTextColor(bgHex);
-  root.style.setProperty('--app-text-color', resolvedTextColor);
-  document.body.style.color = resolvedTextColor;
-
-  // Secondary/muted text colors (primary at reduced opacity)
-  const tc = hexToRGB(resolvedTextColor);
-  root.style.setProperty('--app-text-secondary', `rgba(${tc.r}, ${tc.g}, ${tc.b}, 0.55)`);
-  root.style.setProperty('--app-text-muted', `rgba(${tc.r}, ${tc.g}, ${tc.b}, 0.35)`);
-
   // Accent color
   const accent = p.accent_color || '#0F4C81';
   const ac = hexToRGB(accent);
@@ -104,8 +86,6 @@ function applyCustomTheme(prefs) {
     `${Math.round(ac.r * 0.85)} ${Math.round(ac.g * 0.85)} ${Math.round(ac.b * 0.85)}`
   );
 
-  const autoTextDark = resolvedTextColor !== '#1a1a1a';
-  root.dataset.customBgDark = autoTextDark ? 'true' : 'false';
   const isCustom = p.bg_type !== 'color' || p.bg_color !== '#f8fafc' || p.card_opacity < 1 || p.accent_color !== '#0F4C81';
   root.dataset.customTheme = isCustom ? 'true' : 'false';
 }
@@ -118,15 +98,10 @@ function clearCustomTheme() {
   root.style.removeProperty('--app-overlay-opacity');
   root.style.removeProperty('--app-card-opacity');
   root.style.removeProperty('--app-card-rgb');
-  root.style.removeProperty('--app-text-color');
-  root.style.removeProperty('--app-text-secondary');
-  root.style.removeProperty('--app-text-muted');
   root.style.removeProperty('--app-accent-rgb');
   root.style.removeProperty('--app-accent-light-rgb');
   root.style.removeProperty('--app-accent-dark-rgb');
-  document.body.style.color = '';
   delete root.dataset.bgType;
-  delete root.dataset.customBgDark;
   delete root.dataset.customTheme;
 }
 
