@@ -55,6 +55,14 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* react-colorful: force touch-action none on interactive areas to prevent scroll on drag */
+.react-colorful__saturation,
+.react-colorful__hue,
+.react-colorful__alpha,
+.react-colorful__interactive {
+  touch-action: none !important;
+}
+
 /* Body transparent so #app-bg-canvas shows through */
 body {
   background-color: transparent !important;

@@ -254,8 +254,8 @@ export default function AppearanceSettings() {
             <span className="text-xs text-gray-500 dark:text-gray-400">{bgColor}</span>
           </button>
           {showColorPicker && (
-            <div ref={bgPickerRef} className="mt-2 touch-none">
-              <HexColorPicker color={bgColor} onChange={handleColorChange} style={{ width: '100%' }} />
+            <div ref={bgPickerRef} className="mt-2 touch-none" style={{ touchAction: 'none' }}>
+              <HexColorPicker color={bgColor} onChange={handleColorChange} style={{ width: '100%', touchAction: 'none' }} />
             </div>
           )}
         </div>
@@ -390,8 +390,8 @@ export default function AppearanceSettings() {
           )}
         </div>
         {showAccentPicker && (
-          <div ref={accentPickerRef} className="mt-2 touch-none">
-            <HexColorPicker color={accentColor} onChange={handleAccentChange} style={{ width: '100%' }} />
+          <div ref={accentPickerRef} className="mt-2 touch-none" style={{ touchAction: 'none' }}>
+            <HexColorPicker color={accentColor} onChange={handleAccentChange} style={{ width: '100%', touchAction: 'none' }} />
           </div>
         )}
       </div>
