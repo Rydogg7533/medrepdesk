@@ -60,16 +60,12 @@
 }
 
 /* --- Theme surface overrides (outside @layer so they beat Tailwind utilities) --- */
+
+/* Cards: bgColor RGB at card opacity */
 html[data-custom-theme="true"] .themed-card,
 html[data-custom-theme="true"] .themed-sheet,
 html[data-custom-theme="true"] .themed-dropdown {
   background-color: rgba(var(--app-card-rgb, 255, 255, 255), var(--app-card-opacity, 1)) !important;
-}
-
-html[data-custom-theme="true"].dark .themed-card,
-html[data-custom-theme="true"].dark .themed-sheet,
-html[data-custom-theme="true"].dark .themed-dropdown {
-  background-color: rgba(31, 41, 55, var(--app-card-opacity, 1)) !important;
 }
 
 html[data-custom-theme="true"] .themed-card {
@@ -79,12 +75,14 @@ html[data-custom-theme="true"] .themed-card {
     0 1px 0 rgba(255, 255, 255, 0.08) inset !important;
 }
 
-html[data-custom-theme="true"] .themed-sheet-solid {
-  background-color: rgba(var(--app-card-rgb, 255, 255, 255), 1) !important;
+/* Nav/header: bgColor with 50% black overlay (darkened) */
+html[data-custom-theme="true"] .themed-nav {
+  background-color: var(--app-nav-bg) !important;
 }
 
-html[data-custom-theme="true"].dark .themed-sheet-solid {
-  background-color: rgb(17 24 39) !important;
+/* Bottom sheets / popups: same darkened surface as nav */
+html[data-custom-theme="true"] .themed-sheet-solid {
+  background-color: var(--app-nav-bg) !important;
 }
 
 /* --- Themed text colors — scoped to cards only --- */

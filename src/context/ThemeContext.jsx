@@ -57,6 +57,14 @@ function getMuted(hex, opacity) {
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
+function applyBlackOverlay(hexColor, overlayOpacity = 0.5) {
+  const { r, g, b } = hexToRgb(hexColor);
+  const r2 = Math.round(r * (1 - overlayOpacity));
+  const g2 = Math.round(g * (1 - overlayOpacity));
+  const b2 = Math.round(b * (1 - overlayOpacity));
+  return `rgb(${r2}, ${g2}, ${b2})`;
+}
+
 function recalculateTextColors(bgColor, cardRgb, cardOpacity, isDark) {
   const root = document.documentElement;
   const bg = parseBgToRgb(bgColor || (isDark ? '#111827' : '#f9fafb'));
@@ -108,18 +116,20 @@ function applyCustomTheme(prefs) {
 
   root.dataset.bgType = p.bg_type;
 
+  // Resolve the effective background color
+  const resolvedBg = resolveThemeBgColor(p);
+  const bgRgb = hexToRgb(resolvedBg);
+
   // Background — with Safari fallbacks
   try {
     if (p.bg_type === 'gradient' && p.bg_gradient) {
       const preset = GRADIENT_PRESETS.find((g) => g.id === p.bg_gradient);
-      // Set color fallback first (Safari needs this before gradient)
       root.style.setProperty('--app-bg-color', '#f8fafc');
       root.style.setProperty('--app-bg-image', 'none');
       if (preset) {
         root.style.setProperty('--app-bg-gradient', preset.css);
       }
     } else if (p.bg_type === 'image' && p.bg_image_url) {
-      // Always set color fallback before image
       root.style.setProperty('--app-bg-color', '#1a1a2e');
       root.style.setProperty('--app-bg-gradient', 'none');
       root.style.setProperty('--app-bg-image', `url(${p.bg_image_url})`);
@@ -129,7 +139,6 @@ function applyCustomTheme(prefs) {
       root.style.setProperty('--app-bg-gradient', 'none');
     }
   } catch (e) {
-    // Fallback: just set a solid color
     root.style.setProperty('--app-bg-color', p.bg_color || '#f8fafc');
     root.style.setProperty('--app-bg-image', 'none');
     root.style.setProperty('--app-bg-gradient', 'none');
@@ -138,13 +147,16 @@ function applyCustomTheme(prefs) {
   // Overlay opacity (for image backgrounds)
   root.style.setProperty('--app-overlay-opacity', String(p.overlay_opacity));
 
-  // Card color: always white, variable opacity
-  root.style.setProperty('--app-card-rgb', '255, 255, 255');
+  // Card color: use bgColor RGB so cards at 100% match the background
+  root.style.setProperty('--app-card-rgb', `${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}`);
   root.style.setProperty('--app-card-opacity', String(p.card_opacity));
 
+  // Nav/header: 50% black overlay on bgColor for darkened surface
+  root.style.setProperty('--app-nav-bg', applyBlackOverlay(resolvedBg, 0.5));
+
   // Recalculate text colors for both bg and card surfaces
-  const resolvedBg = resolveThemeBgColor(p);
-  recalculateTextColors(resolvedBg, '255, 255, 255', p.card_opacity, isDark);
+  const cardRgbStr = `${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}`;
+  recalculateTextColors(resolvedBg, cardRgbStr, p.card_opacity, isDark);
 
   // Accent color
   const accent = p.accent_color || '#0F4C81';
@@ -169,6 +181,7 @@ function clearCustomTheme() {
   root.style.removeProperty('--app-overlay-opacity');
   root.style.removeProperty('--app-card-opacity');
   root.style.removeProperty('--app-card-rgb');
+  root.style.removeProperty('--app-nav-bg');
   root.style.removeProperty('--app-accent-rgb');
   root.style.removeProperty('--app-accent-light-rgb');
   root.style.removeProperty('--app-accent-dark-rgb');
