@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { HexColorPicker } from 'react-colorful';
+import { useState, useRef, useCallback } from 'react';
+import { Sketch } from '@uiw/react-color';
 import { Upload, RotateCcw, Lock, X, Check } from 'lucide-react';
 import clsx from 'clsx';
 import { useThemePreferences, useUpdateThemePreferences, THEME_DEFAULTS } from '@/hooks/useThemePreferences';
@@ -7,45 +7,6 @@ import { useTheme } from '@/context/ThemeContext';
 import { GRADIENT_PRESETS, ACCENT_PRESETS } from '@/utils/themePresets';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
-
-// Wraps HexColorPicker with touch-scroll prevention for iOS.
-// The key issue: ancestor touch-action (pan-y on section) overrides child touch-action (none).
-// So we must use native non-passive touchmove preventDefault to stop scrolling,
-// while NOT blocking touchstart (which react-colorful needs for pointer events).
-function TouchSafeColorPicker({ color, onChange, style }) {
-  const wrapperRef = useRef(null);
-
-  useEffect(() => {
-    const wrapper = wrapperRef.current;
-    if (!wrapper) return;
-
-    // Only prevent touchmove (stops scroll) — NOT touchstart (needed for pointer events)
-    const preventMove = (e) => {
-      e.preventDefault();
-    };
-
-    wrapper.addEventListener('touchmove', preventMove, { passive: false });
-
-    // Also attach to all interactive children for extra safety
-    const interactives = wrapper.querySelectorAll('.react-colorful__interactive');
-    interactives.forEach((el) => {
-      el.addEventListener('touchmove', preventMove, { passive: false });
-    });
-
-    return () => {
-      wrapper.removeEventListener('touchmove', preventMove);
-      interactives.forEach((el) => {
-        el.removeEventListener('touchmove', preventMove);
-      });
-    };
-  }, []);
-
-  return (
-    <div ref={wrapperRef} className="mt-2" style={{ touchAction: 'none', ...style }}>
-      <HexColorPicker color={color} onChange={onChange} style={{ width: '100%', touchAction: 'none' }} />
-    </div>
-  );
-}
 
 function useDebounce(fn, delay) {
   const timer = useRef(null);
@@ -274,7 +235,9 @@ export default function AppearanceSettings() {
             <span className="text-xs text-gray-500 dark:text-gray-400">{bgColor}</span>
           </button>
           {showColorPicker && (
-            <TouchSafeColorPicker color={bgColor} onChange={handleColorChange} />
+            <div className="mt-2">
+              <Sketch color={bgColor} disableAlpha onChange={(color) => handleColorChange(color.hex)} style={{ width: '100%' }} />
+            </div>
           )}
         </div>
       )}
@@ -408,7 +371,9 @@ export default function AppearanceSettings() {
           )}
         </div>
         {showAccentPicker && (
-          <TouchSafeColorPicker color={accentColor} onChange={handleAccentChange} />
+          <div className="mt-2">
+            <Sketch color={accentColor} disableAlpha onChange={(color) => handleAccentChange(color.hex)} style={{ width: '100%' }} />
+          </div>
         )}
       </div>
     </section>
