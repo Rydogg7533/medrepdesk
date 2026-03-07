@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import {
   Calendar, DollarSign, Bell, FileText, Users, BarChart3,
   ChevronDown, ChevronUp, ArrowRight, Check, Shield, Zap,
-  Clock, TrendingUp, Smartphone, Brain,
+  Clock, TrendingUp, Smartphone, Brain, Mic, Palette,
+  MessageSquare, Camera, Mail, UserPlus,
 } from 'lucide-react';
 
 const NAV_LINKS = [
@@ -19,36 +20,115 @@ const STATS = [
   { value: '24/7', label: 'Mobile access' },
 ];
 
-const FEATURES = [
+const FEATURE_SECTIONS = [
   {
+    id: 'cases',
     icon: Calendar,
     title: 'Case Management',
-    description: 'Track every surgery from scheduling through billing. Link surgeons, facilities, and distributors in one place.',
+    subtitle: 'Your entire book of business, from scheduling to payment.',
+    description: 'Track every surgical case through a defined pipeline — scheduled, confirmed, completed, billed, paid. AI smart case entry lets you describe a case the way you\'d say it, and it builds the record for you. Every case gets a unique MRD number for reference across emails and phone calls.',
+    highlights: [
+      'Automated case status pipeline',
+      'AI smart case entry — describe it, done',
+      'Unique MRD case numbers',
+      'Surgeon & facility database',
+      'Distributor management with commission defaults',
+    ],
   },
   {
+    id: 'chase',
     icon: DollarSign,
-    title: 'PO & Commission Tracking',
-    description: 'Monitor purchase orders, chase overdue payments, and track your commissions from expected to paid.',
+    title: 'PO Chase Workflow',
+    subtitle: 'The feature that pays for itself.',
+    description: 'A dedicated workflow for the one thing that controls your income — getting the PO. Log every chase touchpoint, track promised dates, detect when it\'s time to escalate, and photograph physical POs for instant AI extraction. One tap forwards completed POs to your distributor.',
+    highlights: [
+      'Complete chase log with contact & outcome tracking',
+      'Promised date alerts — automatic follow-up',
+      'Escalation detection after N attempts',
+      'PO photo extraction — snap, auto-fill, done',
+      'Auto-forward POs to distributor billing',
+      'AI chase email drafting (AI Pro & up)',
+    ],
   },
   {
+    id: 'commissions',
+    icon: TrendingUp,
+    title: 'Commission Tracking',
+    subtitle: 'Know what you\'re owed, what\'s cleared, and what\'s short.',
+    description: 'Commissions are calculated automatically from your distributor rates the moment a case is completed. Track expected vs. received amounts, override rates per-case when needed, and let AI catch when a distributor is consistently underpaying.',
+    highlights: [
+      'Auto-calculated from distributor rates',
+      'Expected vs. received tracking',
+      'Per-case rate overrides',
+      'Commission status pipeline',
+      'AI discrepancy detection (AI Pro & up)',
+    ],
+  },
+  {
+    id: 'notifications',
     icon: Bell,
-    title: 'Smart Notifications',
-    description: 'Automated reminders for upcoming cases, overdue POs, and follow-ups. Never miss a deadline again.',
+    title: 'Notifications & Digest',
+    subtitle: 'The right alert at the right time.',
+    description: 'Push notifications for tomorrow\'s cases, overdue POs, missed promised dates, escalation flags, due follow-ups, and outstanding commissions. Per-notification control lets you choose push, email, or both for each type. Weekly digest summarizes your entire book.',
+    highlights: [
+      'Case tomorrow alerts',
+      'Promised date & overdue PO alerts',
+      'Escalation & follow-up due alerts',
+      'Per-notification on/off & delivery control',
+      'Full AI weekly briefing (AI Pro & up)',
+    ],
   },
   {
-    icon: Brain,
-    title: 'AI Weekly Briefing',
-    description: 'Get a personalized Monday morning briefing powered by AI — your week at a glance with action items.',
+    id: 'voice',
+    icon: Mic,
+    title: 'Voice',
+    subtitle: 'Log cases and check your book — hands-free.',
+    description: 'Tap the mic and speak. Voice command mode parses your words into structured entries — cases, chase logs, communications. AI Pro unlocks full two-way voice: ask questions and hear answers. Perfect when you\'re in scrubs or driving between hospitals.',
+    highlights: [
+      'Voice input for cases, chase logs & comms',
+      'Full conversational voice agent (AI Pro & up)',
+      '60 min/mo AI Pro, 200 min/mo Distributorship',
+    ],
   },
   {
+    id: 'contacts',
+    icon: MessageSquare,
+    title: 'Communications & Contacts',
+    subtitle: 'Every conversation, linked to the cases they belong to.',
+    description: 'Log calls, emails, texts, and in-person visits directly to cases. Build a contact database of billing coordinators, OR schedulers, and purchasing managers. Import from CSV. Every contact shows when you last reached out so nothing goes cold.',
+    highlights: [
+      'Communication log linked to cases',
+      'Contact database with facility/distributor links',
+      'CSV bulk import',
+      'Last contacted tracking',
+      'Follow-up scheduling on every entry',
+    ],
+  },
+  {
+    id: 'theming',
+    icon: Palette,
+    title: 'Theming & Personalization',
+    subtitle: 'Make the app feel like yours.',
+    description: 'Every plan gets a color picker for backgrounds. AI Pro unlocks background images, gradients, card opacity, and full accent color control. Distributorship owners can lock a branded theme across their entire team.',
+    highlights: [
+      'Solid color backgrounds (all plans)',
+      'Background images & gradients (AI Pro & up)',
+      'Full theming system — card opacity, accents',
+      'Account-level theme locking (Distributorship)',
+    ],
+  },
+  {
+    id: 'team',
     icon: Users,
-    title: 'Contact Network',
-    description: 'Manage surgeons, facilities, distributors, and AP contacts. Import from CSV or add on the go.',
-  },
-  {
-    icon: Smartphone,
-    title: 'Mobile-First PWA',
-    description: 'Install on your phone like a native app. Works offline so you\'re covered even in the OR.',
+    title: 'Team Features',
+    subtitle: 'Add an assistant or manage a full team.',
+    description: 'AI Pro adds a second seat for an assistant with role-gated access. Distributorship scales to 5 users with cross-rep visibility, My Manufacturers for managing product lines and margins, and centralized oversight of every rep\'s book.',
+    highlights: [
+      'Assistant user access (AI Pro & up)',
+      'Cross-rep case & commission visibility',
+      'My Manufacturers — margins, rates, product lines',
+      'Up to 5 users on Distributorship',
+    ],
   },
 ];
 
@@ -56,41 +136,46 @@ const PLANS = [
   {
     name: 'Solo',
     price: 129,
-    description: 'For independent reps managing their own cases',
+    users: '1 user',
+    tagline: 'Everything you need to run your book alone.',
     features: [
-      '1 user',
-      'AI smart case entry (50/mo)',
-      'Voice commands (listen only)',
-      'Basic theming (solid colors)',
-      'Weekly digest (plain text)',
-      'CSV contact import',
+      'AI smart case entry — 50/mo',
+      'PO photo extraction (unlimited)',
+      'Voice commands — listen only',
+      'Basic theming',
+      'Weekly digest',
+      'Push notifications',
     ],
   },
   {
     name: 'AI Pro',
     price: 199,
+    users: '2 users',
     popular: true,
-    description: 'For reps who want the full AI-powered experience',
+    tagline: 'The full AI experience, plus a second seat.',
     features: [
-      '2 users — owner + 1 assistant',
       'Everything in Solo',
-      'AI smart case entry (100/mo)',
+      'AI smart case entry — 100/mo',
       'Full voice agent (60 min/mo)',
-      'Full theming & background images',
+      'Full theming system',
       'AI chase email drafting',
+      'AI commission detection',
+      'Full AI weekly briefing',
     ],
   },
   {
     name: 'Distributorship',
     price: 299,
-    description: 'For teams managing multiple reps and territories',
+    users: 'Up to 5 users',
+    tagline: 'For distributors managing multiple reps.',
     features: [
-      'Up to 5 users',
       'Everything in AI Pro',
-      'AI smart case entry (500/mo)',
+      'AI smart case entry — 500/mo',
       '200 voice minutes/mo',
-      'Cross-rep case & commission visibility',
-      'My Manufacturers & theme locking',
+      'Cross-rep visibility',
+      'My Manufacturers',
+      'Account-level theme locking',
+      'Unlimited AI digest',
     ],
   },
 ];
@@ -101,20 +186,28 @@ const FAQS = [
     a: 'MedRepDesk is a case and financial tracking platform built specifically for orthopedic and medical device sales reps. It replaces spreadsheets with a mobile-first app that tracks cases, POs, commissions, and contacts.',
   },
   {
+    q: 'What counts as an AI extraction?',
+    a: 'AI smart case entry uses your monthly extraction count — 50 on Solo, 100 on AI Pro, 500 on Distributorship. PO photo extraction (photographing a PO to auto-fill fields) is unlimited on every plan.',
+  },
+  {
     q: 'Can I use it on my phone?',
     a: 'Absolutely. MedRepDesk is a Progressive Web App (PWA) — install it on your home screen and it works like a native app. It even works offline so you can access case details between surgeries.',
   },
   {
-    q: 'How does the AI briefing work?',
-    a: 'Every week, our AI analyzes your upcoming cases, overdue POs, pending follow-ups, and commission status to generate a personalized Monday morning briefing. It\'s delivered via push notification and email.',
+    q: 'Is patient data stored?',
+    a: 'No. MedRepDesk stores invoice numbers, case values, and procedure types only — never patient names, dates of birth, or any identifying information. We are not a covered entity under HIPAA.',
   },
   {
-    q: 'Is my data secure?',
-    a: 'Yes. All data is encrypted in transit and at rest. We use Supabase (built on PostgreSQL) with row-level security, ensuring you only see your own data. We never share or sell your information.',
+    q: 'How does the referral program work?',
+    a: 'Share your unique referral link with other reps. When they sign up and start paying, you earn 25% of their monthly subscription for 12 months — paid automatically to your bank via Stripe on the 1st of each month.',
   },
   {
-    q: 'Can I cancel anytime?',
-    a: 'Yes, all plans are month-to-month with no long-term contracts. Cancel anytime from your Settings page and you\'ll retain access through the end of your billing period.',
+    q: 'Can I change plans anytime?',
+    a: 'Yes. Upgrade or downgrade from your account settings at any time. Changes take effect at the next billing cycle. No long-term contracts, no cancellation fees.',
+  },
+  {
+    q: 'What happens when I go over my voice minutes?',
+    a: 'Voice overages are billed at $0.10 per minute on AI Pro and Distributorship plans. You\'ll see your current usage in the app. A monthly cap can be set so you\'re never surprised.',
   },
   {
     q: 'Do you offer a free trial?',
@@ -139,6 +232,43 @@ function FAQItem({ q, a }) {
       </button>
       {open && (
         <p className="pb-5 text-sm leading-relaxed text-gray-400 sm:text-base">{a}</p>
+      )}
+    </div>
+  );
+}
+
+function FeatureSection({ section, index }) {
+  const [expanded, setExpanded] = useState(false);
+  const isEven = index % 2 === 0;
+
+  return (
+    <div className={`rounded-2xl border border-white/5 p-6 sm:p-8 ${isEven ? 'bg-white/[0.03]' : 'bg-white/[0.02]'}`}>
+      <div className="flex items-start gap-4">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500/10">
+          <section.icon className="h-5 w-5 text-blue-400" />
+        </div>
+        <div className="min-w-0">
+          <h4 className="text-lg font-semibold text-white">{section.title}</h4>
+          <p className="mt-0.5 text-sm text-blue-400">{section.subtitle}</p>
+        </div>
+      </div>
+      <p className="mt-4 text-sm leading-relaxed text-gray-400">{section.description}</p>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="mt-3 flex items-center gap-1 text-xs font-medium text-blue-400 transition-colors hover:text-blue-300"
+      >
+        {expanded ? 'Hide details' : 'See what\u2019s included'}
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+      </button>
+      {expanded && (
+        <ul className="mt-3 space-y-2 border-t border-white/5 pt-3">
+          {section.highlights.map((h) => (
+            <li key={h} className="flex items-start gap-2 text-sm text-gray-400">
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+              <span>{h}</span>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );
@@ -299,21 +429,28 @@ export default function Landing() {
               make sure you get paid.
             </p>
           </div>
-          <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => (
-              <div
-                key={f.title}
-                className="rounded-2xl border border-white/5 bg-white/[0.03] p-6 transition-colors hover:border-blue-500/20 hover:bg-white/[0.05]"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
-                  <f.icon className="h-5 w-5 text-blue-400" />
-                </div>
-                <h4 className="mt-4 text-lg font-semibold">{f.title}</h4>
-                <p className="mt-2 text-sm leading-relaxed text-gray-400">
-                  {f.description}
-                </p>
-              </div>
+
+          {/* Included banner */}
+          <div className="mx-auto mt-10 max-w-3xl rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-6 py-4 text-center">
+            <p className="text-sm text-emerald-300">
+              <span className="font-semibold">Every plan includes:</span>{' '}
+              unlimited cases, POs, chase log entries, communications, contacts, surgeon &amp; facility database, distributor management, CSV contact import, push notifications, and unlimited PO photo extraction.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-6 lg:grid-cols-2">
+            {FEATURE_SECTIONS.map((section, i) => (
+              <FeatureSection key={section.id} section={section} index={i} />
             ))}
+          </div>
+
+          {/* Referral callout */}
+          <div className="mx-auto mt-12 max-w-3xl rounded-2xl border border-blue-500/20 bg-blue-500/5 p-6 text-center sm:p-8">
+            <UserPlus className="mx-auto h-8 w-8 text-blue-400" />
+            <h4 className="mt-3 text-lg font-semibold">Referral Program — All Plans</h4>
+            <p className="mt-2 text-sm text-gray-400">
+              Earn 25% of every referred rep's monthly subscription for 12 months. Paid automatically via Stripe on the 1st of each month. Refer 4 reps on Solo and your own subscription is covered.
+            </p>
           </div>
         </div>
       </section>
@@ -347,9 +484,12 @@ export default function Landing() {
                     Most Popular
                   </div>
                 )}
-                <h4 className="text-lg font-semibold">{plan.name}</h4>
-                <p className="mt-1 text-sm text-gray-500">{plan.description}</p>
-                <div className="mt-6 flex items-baseline gap-1">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-lg font-semibold">{plan.name}</h4>
+                  <span className="text-xs text-gray-500">{plan.users}</span>
+                </div>
+                <p className="mt-1 text-sm italic text-gray-500">{plan.tagline}</p>
+                <div className="mt-5 flex items-baseline gap-1">
                   <span className="font-mono text-4xl font-bold text-white">
                     ${plan.price}
                   </span>
@@ -365,7 +505,7 @@ export default function Landing() {
                 >
                   Start Free Trial
                 </Link>
-                <ul className="mt-8 space-y-3">
+                <ul className="mt-6 space-y-2.5">
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-start gap-2 text-sm text-gray-400">
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-blue-400" />
