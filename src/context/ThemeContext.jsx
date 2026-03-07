@@ -143,8 +143,8 @@ function applyNavBackground(p) {
   document.querySelectorAll('.themed-nav').forEach((el) => {
     if (p.bg_type === 'image' && p.bg_image_url) {
       el.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url("${p.bg_image_url}")`;
-      el.style.backgroundSize = 'cover';
-      el.style.backgroundPosition = 'center center';
+      el.style.backgroundSize = '100vw 100vh';
+      el.style.backgroundPosition = '0 0';
       el.style.backgroundRepeat = 'no-repeat';
       el.style.backgroundColor = 'transparent';
     } else {
