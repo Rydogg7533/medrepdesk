@@ -70,6 +70,19 @@ html[data-custom-theme="true"] .themed-sheet-solid {
   background-color: rgba(var(--app-card-rgb, 255, 255, 255), 1) !important;
 }
 
+/* --- Themed text colors — scoped to cards only --- */
+html[data-custom-theme="true"] .themed-card {
+  color: var(--app-text-color);
+}
+
+/* --- Page-level text on background (not inside cards) --- */
+html[data-custom-theme="true"] .page-bg-text {
+  color: var(--app-bg-text-color) !important;
+}
+
+html[data-custom-theme="true"] .page-bg-text-secondary {
+  color: var(--app-bg-text-secondary) !important;
+}
 
 /* --- LOCKED COLORS — never inherit theme text --- */
 html[data-custom-theme="true"] .text-green-400 { color: rgb(74 222 128) !important; }

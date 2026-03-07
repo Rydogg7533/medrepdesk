@@ -93,7 +93,7 @@ export default function Pricing() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-6">
-      <h1 className="text-center text-lg font-bold text-gray-900 dark:text-gray-100">
+      <h1 className="page-bg-text text-center text-lg font-bold text-gray-900 dark:text-gray-100">
         Choose Your Plan
       </h1>
       <p className="mt-1 text-center text-sm text-gray-500 dark:text-gray-400">

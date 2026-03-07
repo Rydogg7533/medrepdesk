@@ -133,7 +133,7 @@ export default function Cases() {
     <div className="p-4">
       {/* Header */}
       <div className="mb-3 flex items-center gap-1">
-        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">Cases</h1>
+        <h1 className="page-bg-text text-lg font-bold text-gray-900 dark:text-gray-100">Cases</h1>
         <InfoTooltip text="Cases track every surgical procedure from scheduling through payment. Each case gets a unique MRD number and moves through the status pipeline automatically." />
       </div>
 

@@ -231,7 +231,7 @@ export default function CaseForm() {
         <button onClick={() => navigate(-1)} className="min-h-touch p-1">
           <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </button>
-        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+        <h1 className="page-bg-text text-lg font-bold text-gray-900 dark:text-gray-100">
           {isEdit ? 'Edit Case' : 'New Case'}
         </h1>
       </div>

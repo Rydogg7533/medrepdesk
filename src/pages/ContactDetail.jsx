@@ -42,7 +42,7 @@ export default function ContactDetail() {
           <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </button>
         <div className="flex-1">
-          <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">{contact.full_name}</h1>
+          <h1 className="page-bg-text text-lg font-bold text-gray-900 dark:text-gray-100">{contact.full_name}</h1>
           {contact.role && <p className="text-sm text-gray-500 dark:text-gray-400">{contact.role}</p>}
         </div>
         <button onClick={() => navigate(`/contacts/${id}/edit`)} className="min-h-touch p-2 text-gray-500 dark:text-gray-400">

@@ -80,7 +80,7 @@ export default function PayPeriodSummary() {
         <button onClick={() => navigate(-1)} className="min-h-touch p-1">
           <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </button>
-        <h1 className="flex-1 text-lg font-bold text-gray-900 dark:text-gray-100">Pay Period</h1>
+        <h1 className="page-bg-text flex-1 text-lg font-bold text-gray-900 dark:text-gray-100">Pay Period</h1>
         <StatusBadge status={period.status} type="pay_period" />
       </div>
 

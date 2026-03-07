@@ -108,7 +108,7 @@ export default function Settings() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-4">
-      <h1 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">Settings</h1>
+      <h1 className="page-bg-text mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">Settings</h1>
 
       {checkoutSuccess && (
         <div className="mb-4 flex items-center gap-2 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">

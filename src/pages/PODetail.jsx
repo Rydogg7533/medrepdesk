@@ -121,7 +121,7 @@ export default function PODetail() {
           <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </button>
         <div className="flex-1">
-          <p className="text-lg font-bold text-gray-900 dark:text-gray-100">Purchase Order</p>
+          <p className="page-bg-text text-lg font-bold text-gray-900 dark:text-gray-100">Purchase Order</p>
         </div>
         <button
           onClick={() => navigate(`/po/${id}/edit`)}

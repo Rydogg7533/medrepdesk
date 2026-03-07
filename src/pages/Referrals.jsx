@@ -70,7 +70,7 @@ export default function Referrals() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-4">
-      <h1 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">Referrals<InfoTooltip text="Earn 25% of every referred rep's subscription for 12 months. Share your link and get paid when they subscribe." /></h1>
+      <h1 className="page-bg-text mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">Referrals<InfoTooltip text="Earn 25% of every referred rep's subscription for 12 months. Share your link and get paid when they subscribe." /></h1>
 
       {connectComplete && (
         <div className="mb-4 flex items-center gap-2 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">

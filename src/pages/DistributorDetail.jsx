@@ -32,7 +32,7 @@ export default function DistributorDetail() {
     <div className="p-4">
       <div className="mb-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="min-h-touch p-1"><ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" /></button>
-        <h1 className="flex-1 text-lg font-bold text-gray-900 dark:text-gray-100">{dist.name}</h1>
+        <h1 className="page-bg-text flex-1 text-lg font-bold text-gray-900 dark:text-gray-100">{dist.name}</h1>
         <button onClick={() => navigate(`/distributors/${id}/edit`)} className="min-h-touch p-2 text-gray-500 dark:text-gray-400"><Edit2 className="h-5 w-5" /></button>
       </div>
 

@@ -143,7 +143,7 @@ export default function SurgeonForm() {
     <div className="p-4">
       <div className="mb-4 flex items-center gap-3">
         <button onClick={goBack} className="min-h-touch p-1"><ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" /></button>
-        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">{isEdit ? 'Edit Surgeon' : 'New Surgeon'}</h1>
+        <h1 className="page-bg-text text-lg font-bold text-gray-900 dark:text-gray-100">{isEdit ? 'Edit Surgeon' : 'New Surgeon'}</h1>
       </div>
 
       {serverError && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">{serverError}</div>}

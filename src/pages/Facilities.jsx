@@ -19,7 +19,7 @@ export default function Facilities() {
   return (
     <div className="p-4">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">Facilities</h1>
+        <h1 className="page-bg-text text-lg font-bold text-gray-900 dark:text-gray-100">Facilities</h1>
         <Button size="sm" onClick={() => navigate('/facilities/new')}>
           <Plus className="h-4 w-4" /> Add
         </Button>

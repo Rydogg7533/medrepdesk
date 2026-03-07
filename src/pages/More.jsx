@@ -80,7 +80,7 @@ export default function More() {
 
   return (
     <div className="p-4">
-      <h1 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">More</h1>
+      <h1 className="page-bg-text mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">More</h1>
 
       <div className="themed-card mb-4 rounded-xl bg-white shadow-sm dark:bg-gray-800">
         <MenuItem icon={Building2} label="My Distributor" path="/my-distributor" />

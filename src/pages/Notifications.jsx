@@ -59,7 +59,7 @@ export default function Notifications() {
     <div className="mx-auto max-w-lg px-4 py-4">
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">Notifications</h1>
+        <h1 className="page-bg-text text-lg font-bold text-gray-900 dark:text-gray-100">Notifications</h1>
         {unreadCount > 0 && (
           <button
             onClick={() => markAllRead.mutate()}

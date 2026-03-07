@@ -22,7 +22,7 @@ export default function BottomNav() {
             className={({ isActive }) =>
               clsx(
                 'flex min-h-touch flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-colors',
-                isActive ? 'text-brand-800 dark:text-white' : 'text-gray-400 dark:text-gray-400'
+                isActive ? 'text-brand-600 dark:text-white' : 'text-gray-400 dark:text-gray-400'
               )
             }
           >

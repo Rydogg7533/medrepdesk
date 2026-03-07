@@ -473,7 +473,7 @@ export default function Money() {
 
   return (
     <div className="p-4">
-      <h1 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">Money<InfoTooltip text="Purchase orders track the billing lifecycle after a case is completed. Chase POs until received, then track payment." /></h1>
+      <h1 className="page-bg-text mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">Money<InfoTooltip text="Purchase orders track the billing lifecycle after a case is completed. Chase POs until received, then track payment." /></h1>
 
       <div className="mb-4 flex border-b border-gray-700">
         {tabs.map((tab) => (
