@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Sketch } from '@uiw/react-color';
 import { Upload, RotateCcw, Lock, X, Check } from 'lucide-react';
 import clsx from 'clsx';
@@ -32,6 +32,27 @@ export default function AppearanceSettings() {
   const [uploading, setUploading] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showAccentPicker, setShowAccentPicker] = useState(false);
+
+  // Lock <main> scroll while a color picker is open
+  useEffect(() => {
+    const main = document.querySelector('main');
+    if (!main) return;
+    if (showColorPicker || showAccentPicker) {
+      main.style.overflow = 'hidden';
+      main.style.touchAction = 'none';
+    } else {
+      main.style.overflow = '';
+      main.style.overflowY = 'auto';
+      main.style.overflowX = 'hidden';
+      main.style.touchAction = '';
+    }
+    return () => {
+      main.style.overflow = '';
+      main.style.overflowY = 'auto';
+      main.style.overflowX = 'hidden';
+      main.style.touchAction = '';
+    };
+  }, [showColorPicker, showAccentPicker]);
 
   function currentPrefs() {
     return {
