@@ -67,6 +67,11 @@ export default function AppLayout() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      {/* Background canvas — fixed behind everything, styled by ThemeContext */}
+      <div
+        id="app-background"
+        style={{ position: 'fixed', inset: 0, zIndex: -1 }}
+      />
       {/* Header */}
       <header className="themed-nav fixed inset-x-0 top-0 z-30 flex min-h-touch items-center justify-between border-b border-gray-200 bg-white px-4 pt-safe-top dark:border-gray-700 dark:bg-gray-800">
         <span className="text-lg font-bold text-brand-800 dark:text-white">MedRepDesk</span>

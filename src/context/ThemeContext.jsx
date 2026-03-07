@@ -109,45 +109,42 @@ function resolveThemeBgColor(p) {
   return p.bg_color || '#f8fafc';
 }
 
-// Apply background to #root element (not body — Tailwind bg class overrides body inline styles)
+// Apply background to #app-background fixed div (iOS-compatible, no background-attachment)
 function applyThemeBackground(p) {
-  const rootEl = document.getElementById('root');
-  if (!rootEl) return;
+  const bgEl = document.getElementById('app-background');
+  if (!bgEl) return;
 
   if (p.bg_type === 'image' && p.bg_image_url) {
     const overlay = p.overlay_opacity ?? 0.5;
-    rootEl.style.backgroundImage = `linear-gradient(rgba(0,0,0,${overlay}), rgba(0,0,0,${overlay})), url(${p.bg_image_url})`;
-    rootEl.style.backgroundSize = 'cover';
-    rootEl.style.backgroundPosition = 'center center';
-    rootEl.style.backgroundAttachment = 'fixed';
-    rootEl.style.backgroundRepeat = 'no-repeat';
-    rootEl.style.backgroundColor = '#1a1a2e';
+    bgEl.style.backgroundImage = `linear-gradient(rgba(0,0,0,${overlay}), rgba(0,0,0,${overlay})), url("${p.bg_image_url}")`;
+    bgEl.style.backgroundSize = 'cover';
+    bgEl.style.backgroundPosition = 'center center';
+    bgEl.style.backgroundRepeat = 'no-repeat';
+    bgEl.style.backgroundColor = '#1a1a2e';
   } else if (p.bg_type === 'gradient' && p.bg_gradient) {
     const preset = GRADIENT_PRESETS.find((g) => g.id === p.bg_gradient);
-    rootEl.style.backgroundImage = preset ? preset.css : 'none';
-    rootEl.style.backgroundAttachment = 'fixed';
-    rootEl.style.backgroundSize = '100% 100%';
-    rootEl.style.backgroundColor = p.bg_color || '#f8fafc';
-    rootEl.style.backgroundRepeat = 'no-repeat';
-    rootEl.style.backgroundPosition = '';
+    bgEl.style.backgroundImage = preset ? preset.css : 'none';
+    bgEl.style.backgroundSize = '100% 100%';
+    bgEl.style.backgroundRepeat = 'no-repeat';
+    bgEl.style.backgroundPosition = '';
+    bgEl.style.backgroundColor = p.bg_color || '#f8fafc';
   } else {
-    rootEl.style.backgroundImage = 'none';
-    rootEl.style.backgroundColor = p.bg_color || '#f8fafc';
-    rootEl.style.backgroundAttachment = '';
-    rootEl.style.backgroundSize = '';
-    rootEl.style.backgroundPosition = '';
-    rootEl.style.backgroundRepeat = '';
+    bgEl.style.backgroundImage = 'none';
+    bgEl.style.backgroundColor = p.bg_color || '#f8fafc';
+    bgEl.style.backgroundSize = '';
+    bgEl.style.backgroundPosition = '';
+    bgEl.style.backgroundRepeat = '';
   }
 }
 
-// Apply nav/header background — same image with dark overlay for image bg, darkened solid for others
+// Nav/header — same image with dark overlay for image bg, darkened solid for others
+// No background-attachment needed — elements are already position:fixed
 function applyNavBackground(p) {
   document.querySelectorAll('.themed-nav').forEach((el) => {
     if (p.bg_type === 'image' && p.bg_image_url) {
-      el.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${p.bg_image_url})`;
+      el.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url("${p.bg_image_url}")`;
       el.style.backgroundSize = 'cover';
       el.style.backgroundPosition = 'center center';
-      el.style.backgroundAttachment = 'fixed';
       el.style.backgroundRepeat = 'no-repeat';
       el.style.backgroundColor = 'transparent';
     } else {
@@ -157,27 +154,24 @@ function applyNavBackground(p) {
       el.style.backgroundColor = `rgb(${Math.round(r * 0.5)}, ${Math.round(g * 0.5)}, ${Math.round(b * 0.5)})`;
       el.style.backgroundSize = '';
       el.style.backgroundPosition = '';
-      el.style.backgroundAttachment = '';
       el.style.backgroundRepeat = '';
     }
   });
 }
 
 function clearThemeBackground() {
-  const rootEl = document.getElementById('root');
-  if (rootEl) {
-    rootEl.style.backgroundImage = '';
-    rootEl.style.backgroundSize = '';
-    rootEl.style.backgroundPosition = '';
-    rootEl.style.backgroundAttachment = '';
-    rootEl.style.backgroundRepeat = '';
-    rootEl.style.backgroundColor = '';
+  const bgEl = document.getElementById('app-background');
+  if (bgEl) {
+    bgEl.style.backgroundImage = '';
+    bgEl.style.backgroundSize = '';
+    bgEl.style.backgroundPosition = '';
+    bgEl.style.backgroundRepeat = '';
+    bgEl.style.backgroundColor = '';
   }
   document.querySelectorAll('.themed-nav').forEach((el) => {
     el.style.backgroundImage = '';
     el.style.backgroundSize = '';
     el.style.backgroundPosition = '';
-    el.style.backgroundAttachment = '';
     el.style.backgroundRepeat = '';
     el.style.backgroundColor = '';
   });

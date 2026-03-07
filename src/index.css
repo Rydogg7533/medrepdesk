@@ -3,15 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --app-bg-color: #f8fafc;
-  --app-bg-gradient: none;
-  --app-bg-image: none;
-  --app-overlay-opacity: 0.5;
   --app-card-opacity: 1;
-}
-
-#root {
-  min-height: 100vh;
 }
 
 @layer base {
