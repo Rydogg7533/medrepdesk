@@ -475,7 +475,7 @@ export default function Money() {
     <div className="p-4">
       <h1 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">Money<InfoTooltip text="Purchase orders track the billing lifecycle after a case is completed. Chase POs until received, then track payment." /></h1>
 
-      <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+      <div className="mb-4 flex gap-0 overflow-x-auto border-b border-gray-200 dark:border-gray-700">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -486,10 +486,10 @@ export default function Money() {
               setShowSendPrompt(false);
             }}
             className={clsx(
-              'shrink-0 flex-1 rounded-lg py-2.5 text-sm font-medium transition-colors',
+              'shrink-0 flex-1 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px',
               activeTab === tab.key
-                ? 'bg-brand-800 text-white'
-                : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                ? 'border-brand-600 text-gray-900 dark:text-white font-semibold'
+                : 'border-transparent text-gray-400 dark:text-gray-500'
             )}
           >
             {tab.label}
@@ -870,14 +870,18 @@ export default function Money() {
           </BottomSheet>
 
           {/* Active / Archived toggle */}
-          <div className="mb-3 flex gap-2">
+          <div className="relative mb-3 flex rounded-xl border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-white/5">
+            <div
+              className="absolute top-1 bottom-1 rounded-lg bg-white shadow-sm transition-all duration-200 dark:bg-gray-700"
+              style={{ width: 'calc(50% - 4px)', left: billSheetView === 'active' ? '4px' : 'calc(50%)' }}
+            />
             {['active', 'archived'].map((view) => (
               <button
                 key={view}
                 onClick={() => setBillSheetView(view)}
                 className={clsx(
-                  'shrink-0 rounded-full px-3 py-1.5 text-xs font-medium capitalize',
-                  billSheetView === view ? 'bg-brand-800 text-white' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                  'relative z-10 flex-1 py-1.5 text-center text-xs font-medium capitalize transition-colors',
+                  billSheetView === view ? 'text-gray-900 font-semibold dark:text-white' : 'text-gray-400'
                 )}
               >
                 {view}

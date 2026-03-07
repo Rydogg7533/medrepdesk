@@ -162,7 +162,7 @@ function Step5Facilities({ userState, addedFacilities, setAddedFacilities, impor
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Search hospitals & facilities..."
-          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 pl-10 pr-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 pl-10 pr-3 py-2.5 text-sm dark:text-white outline-none focus:border-gray-500 focus:ring-0"
         />
       </div>
 
@@ -307,7 +307,7 @@ function Step6Surgeons({ userState, addedSurgeons, setAddedSurgeons, addedFacili
       {/* Search */}
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-        <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search surgeons..." className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 pl-10 pr-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20" />
+        <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search surgeons..." className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 pl-10 pr-3 py-2.5 text-sm dark:text-white outline-none focus:border-gray-500 focus:ring-0" />
       </div>
 
       {searchTerm.length >= 3 && (

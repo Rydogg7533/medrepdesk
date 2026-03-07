@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import clsx from 'clsx';
 import { Users, Search, Phone, Upload, Building, Factory, Stethoscope, Plus, Loader2 } from 'lucide-react';
 import { useContacts, useUpdateContact, useDeleteContact, useArchiveContact, useUnarchiveContact } from '@/hooks/useContacts';
 import { useFacilities, useUpdateFacility, useDeleteFacility, useArchiveFacility, useUnarchiveFacility, useSearchFacilities, useImportGlobalFacility, checkLinkedFacility } from '@/hooks/useFacilities';
@@ -183,7 +184,7 @@ export default function Contacts() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
+      <div>
         <div className="flex overflow-x-auto px-4 scrollbar-hide">
           {TABS.map((tab) => (
             <button
@@ -211,19 +212,25 @@ export default function Contacts() {
             placeholder={`Search ${TABS.find((t) => t.key === activeTab)?.label.toLowerCase()}...`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="min-h-touch w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2.5 pl-10 pr-3 text-sm text-gray-900 dark:text-gray-100 outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
+            className="min-h-touch w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2.5 pl-10 pr-3 text-sm text-gray-900 dark:text-gray-100 outline-none focus:border-gray-500 focus:ring-0"
           />
         </div>
-        <div className="flex min-h-touch items-center rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
+        <div className="relative flex min-h-touch items-center rounded-xl border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-white/5">
+          <div
+            className="absolute top-1 bottom-1 rounded-lg bg-white shadow-sm transition-all duration-200 dark:bg-gray-700"
+            style={{
+              width: 'calc(33.333% - 3px)',
+              left: filterMode === 'active' ? '4px' : filterMode === 'inactive' ? 'calc(33.333%)' : 'calc(66.666%)',
+            }}
+          />
           {FILTER_OPTIONS.map((opt) => (
             <button
               key={opt.key}
               onClick={() => setFilterMode(opt.key)}
-              className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                filterMode === opt.key
-                  ? 'bg-brand-800 text-white dark:bg-brand-600'
-                  : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-              }`}
+              className={clsx(
+                'relative z-10 flex-1 py-1.5 text-center text-xs font-medium transition-colors',
+                filterMode === opt.key ? 'text-gray-900 font-semibold dark:text-white' : 'text-gray-400'
+              )}
             >
               {opt.label}
             </button>
