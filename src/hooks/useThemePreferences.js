@@ -9,7 +9,7 @@ const DEFAULTS = {
   bg_gradient: null,
   bg_image_url: null,
   overlay_opacity: 0.5,
-  card_opacity: 1.0,
+  card_opacity: 0,
   auto_text_color: true,
   accent_color: '#0F4C81',
 };

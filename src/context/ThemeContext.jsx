@@ -65,7 +65,7 @@ function applyBlackOverlay(hexColor, overlayOpacity = 0.5) {
   return `rgb(${r2}, ${g2}, ${b2})`;
 }
 
-function recalculateTextColors(bgColor, cardRgb, cardOpacity, isDark) {
+function recalculateTextColors(bgColor, cardOverlay, isDark) {
   const root = document.documentElement;
   const bg = parseBgToRgb(bgColor || (isDark ? '#111827' : '#f9fafb'));
 
@@ -74,12 +74,14 @@ function recalculateTextColors(bgColor, cardRgb, cardOpacity, isDark) {
   root.style.setProperty('--app-bg-text-color', bgText);
   root.style.setProperty('--app-bg-text-secondary', getMuted(bgText, 0.6));
 
-  // Card surface text — blend card color with background at current opacity
-  const [cr, cg, cb] = cardRgb.split(',').map((s) => parseInt(s.trim()));
-  const opacity = parseFloat(cardOpacity ?? 0.9);
-  const sr = Math.round(cr * opacity + bg.r * (1 - opacity));
-  const sg = Math.round(cg * opacity + bg.g * (1 - opacity));
-  const sb = Math.round(cb * opacity + bg.b * (1 - opacity));
+  // Card surface text — blend card base (white=255 or dark=31) with #2a2a2a overlay
+  const overlay = parseFloat(cardOverlay ?? 0);
+  const baseR = isDark ? 31 : 255;
+  const baseG = isDark ? 41 : 255;
+  const baseB = isDark ? 55 : 255;
+  const sr = Math.round(baseR * (1 - overlay) + 42 * overlay);
+  const sg = Math.round(baseG * (1 - overlay) + 42 * overlay);
+  const sb = Math.round(baseB * (1 - overlay) + 42 * overlay);
   const cardText = getContrastText(sr, sg, sb);
   root.style.setProperty('--app-text-color', cardText);
   root.style.setProperty('--app-text-secondary', getMuted(cardText, 0.55));
@@ -94,7 +96,7 @@ const THEME_DEFAULTS = {
   bg_gradient: null,
   bg_image_url: null,
   overlay_opacity: 0.5,
-  card_opacity: 1.0,
+  card_opacity: 0,
   auto_text_color: true,
   accent_color: '#0F4C81',
 };
@@ -195,20 +197,18 @@ function applyCustomTheme(prefs) {
   applyThemeBackground(p);
   applyNavBackground(p);
 
-  // Card and nav CSS variable colors depend on bg type
+  // Card overlay and nav background
+  const cardOverlay = p.card_opacity ?? 0;
+  root.style.setProperty('--app-card-overlay', String(cardOverlay));
+
   if (p.bg_type === 'image' && p.bg_image_url) {
-    root.style.setProperty('--app-card-rgb', '0, 0, 0');
-    root.style.setProperty('--app-card-opacity', String(Math.max(p.card_opacity, 0.6)));
     root.style.setProperty('--app-nav-bg', 'transparent');
   } else {
-    root.style.setProperty('--app-card-rgb', `${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}`);
-    root.style.setProperty('--app-card-opacity', String(p.card_opacity));
     root.style.setProperty('--app-nav-bg', applyBlackOverlay(resolvedBg, 0.5));
   }
 
   // Recalculate text colors for both bg and card surfaces
-  const cardRgbStr = `${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}`;
-  recalculateTextColors(resolvedBg, cardRgbStr, p.card_opacity, isDark);
+  recalculateTextColors(resolvedBg, cardOverlay, isDark);
 
   // Accent color
   const accent = p.accent_color || '#0F4C81';
@@ -221,14 +221,13 @@ function applyCustomTheme(prefs) {
     `${Math.round(ac.r * 0.85)} ${Math.round(ac.g * 0.85)} ${Math.round(ac.b * 0.85)}`
   );
 
-  const isCustom = p.bg_type !== 'color' || p.bg_color !== '#f8fafc' || p.card_opacity < 1 || p.accent_color !== '#0F4C81';
+  const isCustom = p.bg_type !== 'color' || p.bg_color !== '#f8fafc' || p.card_opacity > 0 || p.accent_color !== '#0F4C81';
   root.dataset.customTheme = isCustom ? 'true' : 'false';
 }
 
 function clearCustomTheme() {
   const root = document.documentElement;
-  root.style.removeProperty('--app-card-opacity');
-  root.style.removeProperty('--app-card-rgb');
+  root.style.removeProperty('--app-card-overlay');
   root.style.removeProperty('--app-nav-bg');
   root.style.removeProperty('--app-accent-rgb');
   root.style.removeProperty('--app-accent-light-rgb');

@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --app-card-opacity: 1;
+  --app-card-overlay: 0;
 }
 
 @layer base {
@@ -62,11 +62,32 @@ body {
 
 /* --- Theme surface overrides (outside @layer so they beat Tailwind utilities) --- */
 
-/* Cards: bgColor RGB at card opacity */
+/* Cards: dark overlay controlled by --app-card-overlay */
 html[data-custom-theme="true"] .themed-card,
 html[data-custom-theme="true"] .themed-sheet,
 html[data-custom-theme="true"] .themed-dropdown {
-  background-color: rgba(var(--app-card-rgb, 255, 255, 255), var(--app-card-opacity, 1)) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+html[data-custom-theme="true"] .themed-card::after,
+html[data-custom-theme="true"] .themed-sheet::after,
+html[data-custom-theme="true"] .themed-dropdown::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: #2a2a2a;
+  opacity: var(--app-card-overlay, 0);
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 0;
+}
+
+html[data-custom-theme="true"] .themed-card > *,
+html[data-custom-theme="true"] .themed-sheet > *,
+html[data-custom-theme="true"] .themed-dropdown > * {
+  position: relative;
+  z-index: 1;
 }
 
 html[data-custom-theme="true"] .themed-card {
