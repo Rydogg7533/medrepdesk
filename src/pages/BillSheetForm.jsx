@@ -194,7 +194,7 @@ export default function BillSheetForm() {
           {items.map((item, index) => (
             <Card key={index}>
               <div className="mb-2 flex items-center justify-between">
-                <h3 className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Item {index + 1}</h3>
+                <h3 className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Item {index + 1}</h3>
                 {items.length > 1 && (
                   <button type="button" onClick={() => removeItem(index)} className="min-h-touch p-2 text-gray-400 hover:text-red-500">
                     <X className="h-4 w-4" />
@@ -321,7 +321,7 @@ export default function BillSheetForm() {
 
           {/* Summary */}
           <Card>
-            <h3 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Summary</h3>
+            <h3 className="mb-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Summary</h3>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 dark:text-gray-400">Total Case Value</span>

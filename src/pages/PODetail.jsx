@@ -184,7 +184,7 @@ export default function PODetail() {
 
       {/* Chase Timeline */}
       <Card className="mb-4">
-        <h3 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Chase Timeline<InfoTooltip text="The chase log tracks every follow-up attempt for a purchase order. Log calls, emails, and texts to build a complete timeline." /></h3>
+        <h3 className="mb-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Chase Timeline<InfoTooltip text="The chase log tracks every follow-up attempt for a purchase order. Log calls, emails, and texts to build a complete timeline." /></h3>
         <ChaseTimeline entries={poChaseEntries} />
       </Card>
 
@@ -405,7 +405,7 @@ export default function PODetail() {
 function InfoRow({ label, value }) {
   return (
     <div className="flex justify-between text-sm">
-      <span className="text-gray-400 dark:text-gray-500">{label}</span>
+      <span className="text-gray-500 dark:text-gray-400">{label}</span>
       <span className="font-medium text-gray-700 dark:text-gray-300">{value || '—'}</span>
     </div>
   );

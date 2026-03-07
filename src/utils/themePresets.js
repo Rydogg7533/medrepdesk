@@ -37,20 +37,13 @@ export const GRADIENT_PRESETS = [
   },
 ];
 
-// Determine if a color is "dark" (for auto text color)
-export function isColorDark(hex) {
-  if (!hex) return false;
-  const c = hex.replace('#', '');
-  const r = parseInt(c.substring(0, 2), 16);
-  const g = parseInt(c.substring(2, 4), 16);
-  const b = parseInt(c.substring(4, 6), 16);
-  // Relative luminance
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance < 0.5;
-}
-
-// Get gradient's dominant color darkness
-export function isGradientDark(presetId) {
-  const darkGradients = ['midnight', 'ocean'];
-  return darkGradients.includes(presetId);
-}
+export const ACCENT_PRESETS = [
+  { id: 'blue', label: 'MedRepDesk Blue', color: '#0F4C81' },
+  { id: 'slate', label: 'Slate', color: '#475569' },
+  { id: 'ocean', label: 'Ocean', color: '#0891B2' },
+  { id: 'forest', label: 'Forest', color: '#16A34A' },
+  { id: 'indigo', label: 'Indigo', color: '#4F46E5' },
+  { id: 'purple', label: 'Purple', color: '#7C3AED' },
+  { id: 'rose', label: 'Rose', color: '#E11D48' },
+  { id: 'charcoal', label: 'Charcoal', color: '#1F2937' },
+];

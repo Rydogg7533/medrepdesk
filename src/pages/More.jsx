@@ -96,7 +96,7 @@ export default function More() {
 
       {/* Theme Toggle */}
       <div className="themed-card mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
-        <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Appearance</h2>
+        <h2 className="mb-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Appearance</h2>
         <div className="flex gap-2">
           {themeOptions.map(({ key, label, icon: Icon }) => (
             <button
@@ -118,7 +118,7 @@ export default function More() {
 
       {/* Subscription */}
       <div className="themed-card mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
-        <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Subscription</h2>
+        <h2 className="mb-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Subscription</h2>
         <button
           onClick={handleManageSubscription}
           disabled={portalSession.isPending}

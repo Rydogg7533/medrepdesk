@@ -166,7 +166,7 @@ export default function NotificationSettings() {
 
   return (
     <section className="themed-card mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
-      <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Notifications</h2>
+      <h2 className="mb-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Notifications</h2>
 
       <div className="flex flex-col gap-5">
         {/* SECTION 1 — Push Notifications on This Device */}
@@ -245,7 +245,7 @@ export default function NotificationSettings() {
         <div className={`border-t border-gray-100 pt-4 dark:border-gray-700 transition-opacity ${isSubscribed ? '' : 'pointer-events-none opacity-50'}`}>
           <div className="mb-3 flex items-center gap-2">
             <Clock className="h-4 w-4 text-gray-400" />
-            <span className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Timing</span>
+            <span className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Timing</span>
           </div>
           <div className="flex flex-col gap-3">
             <HourPicker
@@ -265,7 +265,7 @@ export default function NotificationSettings() {
         <div className={`border-t border-gray-100 pt-4 dark:border-gray-700 transition-opacity ${isSubscribed ? '' : 'pointer-events-none opacity-50'}`}>
           <div className="mb-3 flex items-center gap-2">
             <Calendar className="h-4 w-4 text-gray-400" />
-            <span className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Weekly Digest</span>
+            <span className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Weekly Digest</span>
           </div>
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
@@ -305,7 +305,7 @@ export default function NotificationSettings() {
 
         {/* SECTION 4 — Alert Settings */}
         <div className={`border-t border-gray-100 pt-4 dark:border-gray-700 transition-opacity ${isSubscribed ? '' : 'pointer-events-none opacity-50'}`}>
-          <span className="mb-3 block text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">
+          <span className="mb-3 block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
             Alert Settings
           </span>
           <div className="flex flex-col gap-3">
@@ -322,7 +322,7 @@ export default function NotificationSettings() {
 
           {/* Thresholds */}
           <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-700">
-            <span className="mb-3 block text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">
+            <span className="mb-3 block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
               Thresholds
             </span>
             <div className="flex flex-col gap-3">

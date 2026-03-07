@@ -6,16 +6,16 @@ export default {
     extend: {
       colors: {
         brand: {
-          50: '#EBF2F8',
-          100: '#D7E5F1',
-          200: '#AFCBE3',
-          300: '#87B1D5',
-          400: '#5F97C7',
-          500: '#377DB9',
-          600: '#2C6494',
-          700: '#214B6F',
-          800: '#0F4C81',
-          900: '#0A3358',
+          50: 'rgb(var(--app-accent-rgb, 15 76 129) / 0.06)',
+          100: 'rgb(var(--app-accent-rgb, 15 76 129) / 0.12)',
+          200: 'rgb(var(--app-accent-rgb, 15 76 129) / 0.2)',
+          300: 'rgb(var(--app-accent-rgb, 15 76 129) / 0.35)',
+          400: 'rgb(var(--app-accent-light-rgb, 95 151 199) / <alpha-value>)',
+          500: 'rgb(var(--app-accent-rgb, 15 76 129) / 0.75)',
+          600: 'rgb(var(--app-accent-dark-rgb, 44 100 148) / <alpha-value>)',
+          700: 'rgb(var(--app-accent-dark-rgb, 33 75 111) / <alpha-value>)',
+          800: 'rgb(var(--app-accent-rgb, 15 76 129) / <alpha-value>)',
+          900: 'rgb(var(--app-accent-rgb, 15 76 129) / 0.95)',
         },
         status: {
           scheduled: '#6366F1',

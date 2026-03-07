@@ -1307,7 +1307,7 @@ export default function Onboarding() {
 
           {items.length > 0 && (
             <div className="mb-6 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 text-left">
-              <h2 className="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Setup Summary</h2>
+              <h2 className="mb-2 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Setup Summary</h2>
               <div className="space-y-1.5">
                 {items.map((item) => (
                   <div key={item} className="flex items-center gap-2">

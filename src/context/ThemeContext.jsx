@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useLayoutEffect, useCallback } from 'react';
-import { GRADIENT_PRESETS, isColorDark, isGradientDark } from '@/utils/themePresets';
+import { GRADIENT_PRESETS } from '@/utils/themePresets';
+import { getAutoTextColor, hexToRGB } from '@/utils/themeUtils';
 
 const ThemeContext = createContext(null);
 
@@ -35,10 +36,8 @@ const THEME_DEFAULTS = {
   bg_image_url: null,
   overlay_opacity: 0.5,
   card_opacity: 1.0,
-  nav_opacity: 1.0,
-  nav_match_cards: false,
-  text_color: null,
-  card_color: '#ffffff',
+  auto_text_color: true,
+  accent_color: '#0F4C81',
 };
 
 function applyCustomTheme(prefs) {
@@ -69,34 +68,46 @@ function applyCustomTheme(prefs) {
   // Overlay opacity (for image backgrounds)
   root.style.setProperty('--app-overlay-opacity', String(p.overlay_opacity));
 
-  // Card color (hex → RGB for rgba())
-  const cc = p.card_color || '#ffffff';
-  const ccR = parseInt(cc.slice(1, 3), 16);
-  const ccG = parseInt(cc.slice(3, 5), 16);
-  const ccB = parseInt(cc.slice(5, 7), 16);
-  root.style.setProperty('--app-card-rgb', `${ccR}, ${ccG}, ${ccB}`);
-
-  // Card and nav opacity
+  // Card color: always white, variable opacity
+  root.style.setProperty('--app-card-rgb', '255, 255, 255');
   root.style.setProperty('--app-card-opacity', String(p.card_opacity));
-  const navOpacity = p.nav_match_cards ? p.card_opacity : p.nav_opacity;
-  root.style.setProperty('--app-nav-opacity', String(navOpacity));
+  // Nav always matches card opacity
+  root.style.setProperty('--app-nav-opacity', String(p.card_opacity));
 
-  // Text color
-  let autoTextDark = false;
+  // Text color (always auto)
+  let bgHex = p.bg_color || '#f8fafc';
   if (p.bg_type === 'gradient' && p.bg_gradient) {
-    autoTextDark = isGradientDark(p.bg_gradient);
+    const preset = GRADIENT_PRESETS.find((g) => g.id === p.bg_gradient);
+    const match = preset?.css?.match(/#[0-9a-fA-F]{6}/);
+    bgHex = match ? match[0] : '#667eea';
   } else if (p.bg_type === 'image') {
-    autoTextDark = true;
-  } else {
-    autoTextDark = isColorDark(p.bg_color);
+    bgHex = '#1a1a2e';
   }
-
-  const resolvedTextColor = p.text_color || (autoTextDark ? '#f1f5f9' : '#111827');
+  const resolvedTextColor = getAutoTextColor(bgHex);
   root.style.setProperty('--app-text-color', resolvedTextColor);
   document.body.style.color = resolvedTextColor;
 
+  // Secondary/muted text colors (primary at reduced opacity)
+  const tc = hexToRGB(resolvedTextColor);
+  root.style.setProperty('--app-text-secondary', `rgba(${tc.r}, ${tc.g}, ${tc.b}, 0.55)`);
+  root.style.setProperty('--app-text-muted', `rgba(${tc.r}, ${tc.g}, ${tc.b}, 0.35)`);
+
+  // Accent color
+  const accent = p.accent_color || '#0F4C81';
+  const ac = hexToRGB(accent);
+  root.style.setProperty('--app-accent-rgb', `${ac.r} ${ac.g} ${ac.b}`);
+  // Lighter variant (blend with white at 40%) for dark mode text
+  root.style.setProperty('--app-accent-light-rgb',
+    `${Math.round(ac.r + (255 - ac.r) * 0.4)} ${Math.round(ac.g + (255 - ac.g) * 0.4)} ${Math.round(ac.b + (255 - ac.b) * 0.4)}`
+  );
+  // Darker variant (darken by 15%) for hover states
+  root.style.setProperty('--app-accent-dark-rgb',
+    `${Math.round(ac.r * 0.85)} ${Math.round(ac.g * 0.85)} ${Math.round(ac.b * 0.85)}`
+  );
+
+  const autoTextDark = resolvedTextColor !== '#1a1a1a';
   root.dataset.customBgDark = autoTextDark ? 'true' : 'false';
-  const isCustom = p.bg_type !== 'color' || p.bg_color !== '#f8fafc' || (p.card_color && p.card_color !== '#ffffff') || p.card_opacity < 1;
+  const isCustom = p.bg_type !== 'color' || p.bg_color !== '#f8fafc' || p.card_opacity < 1 || p.accent_color !== '#0F4C81';
   root.dataset.customTheme = isCustom ? 'true' : 'false';
 }
 
@@ -110,6 +121,11 @@ function clearCustomTheme() {
   root.style.removeProperty('--app-card-rgb');
   root.style.removeProperty('--app-nav-opacity');
   root.style.removeProperty('--app-text-color');
+  root.style.removeProperty('--app-text-secondary');
+  root.style.removeProperty('--app-text-muted');
+  root.style.removeProperty('--app-accent-rgb');
+  root.style.removeProperty('--app-accent-light-rgb');
+  root.style.removeProperty('--app-accent-dark-rgb');
   document.body.style.color = '';
   delete root.dataset.bgType;
   delete root.dataset.customBgDark;

@@ -272,7 +272,7 @@ export default function Dashboard() {
               <TrendingUp className="h-4 w-4 text-green-500" />
               <span className="text-xs text-gray-500 dark:text-gray-400">Case Value<InfoTooltip text="Total value of cases scheduled this month." /></span>
             </div>
-            <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{formatCurrency(monthValue)}</p>
+            <p className="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(monthValue)}</p>
             <p className="text-xs text-gray-400 dark:text-gray-500">this month</p>
           </Card>
           {distributor?.pay_schedule?.frequency && (
@@ -285,7 +285,7 @@ export default function Dashboard() {
                   <DollarSign className="h-4 w-4 text-amber-500" />
                   <span className="text-xs text-gray-500 dark:text-gray-400">Awaiting<InfoTooltip text="Commissions in open or closed pay periods not yet paid." /></span>
                 </div>
-                <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{formatCurrency(awaitingTotal)}</p>
+                <p className="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(awaitingTotal)}</p>
                 <p className="text-xs text-gray-400 dark:text-gray-500">{awaitingCommission.length} commission{awaitingCommission.length !== 1 ? 's' : ''}</p>
               </Card>
               <Card
@@ -296,7 +296,7 @@ export default function Dashboard() {
                   <DollarSign className="h-4 w-4 text-green-500" />
                   <span className="text-xs text-gray-500 dark:text-gray-400">Earned This Month<InfoTooltip text="Total value of POs received this month." /></span>
                 </div>
-                <p className="mt-1 text-2xl font-bold text-green-600">{formatCurrency(earnedThisMonth)}</p>
+                <p className="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(earnedThisMonth)}</p>
                 <p className="text-xs text-gray-400 dark:text-gray-500">{earnedPOs.length} PO{earnedPOs.length !== 1 ? 's' : ''} this month</p>
               </Card>
             </>

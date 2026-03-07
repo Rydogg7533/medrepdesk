@@ -230,7 +230,7 @@ export default function CaseDetail() {
       {/* Status Timeline */}
       <Card className="mb-4">
         <div className="mb-3 flex items-center gap-1">
-          <h3 className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Pipeline</h3>
+          <h3 className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Pipeline</h3>
           <button
             onClick={() => setShowPipeline(true)}
             className="inline-flex items-center justify-center rounded-full p-0.5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
@@ -252,7 +252,7 @@ export default function CaseDetail() {
                       ? 'bg-brand-800 text-white'
                       : isActive
                         ? 'bg-brand-100 text-brand-800 dark:text-brand-400'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
+                        : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400'
                   }`}
                 >
                   {isActive ? <CheckCircle className="h-3.5 w-3.5" /> : i + 1}
@@ -283,7 +283,7 @@ export default function CaseDetail() {
       {['scheduled', 'confirmed'].includes(caseData.status) && (
         <Card className="mb-4">
           <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">
+            <h3 className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
               <Bell className="mr-1 inline h-3.5 w-3.5" />
               Reminders
             </h3>
@@ -324,7 +324,7 @@ export default function CaseDetail() {
       {/* Notes */}
       {caseData.notes && (
         <Card className="mb-4">
-          <h3 className="mb-1 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Notes</h3>
+          <h3 className="mb-1 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Notes</h3>
           <p className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">{caseData.notes}</p>
         </Card>
       )}
@@ -332,7 +332,7 @@ export default function CaseDetail() {
       {/* PO Section */}
       <Card className="mb-4">
         <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Purchase Orders</h3>
+          <h3 className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Purchase Orders</h3>
           <button
             onClick={() => navigate(`/po/new?caseId=${id}`)}
             className="flex items-center gap-1 text-xs font-medium text-brand-800 dark:text-brand-400"
@@ -364,7 +364,7 @@ export default function CaseDetail() {
       {/* Chase Summary */}
       {casePOs.length > 0 && (
         <Card className="mb-4">
-          <h3 className="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Chase Summary</h3>
+          <h3 className="mb-2 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Chase Summary</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-400 dark:text-gray-500">Chase Attempts</span>
@@ -398,7 +398,7 @@ export default function CaseDetail() {
       {chaseEntries.length > 0 && (
         <Card className="mb-4">
           <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Chase Activity</h3>
+            <h3 className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Chase Activity</h3>
             <button
               onClick={() => setShowChase(true)}
               className="flex items-center gap-1 text-xs font-medium text-brand-800 dark:text-brand-400"
@@ -423,7 +423,7 @@ export default function CaseDetail() {
       {/* Commission Section */}
       <Card className="mb-4">
         <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Commission</h3>
+          <h3 className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Commission</h3>
           {!caseCommission && ['completed', 'bill_sheet_submitted', 'po_requested', 'billed', 'po_received', 'paid'].includes(caseData.status) && (
             <button
               onClick={() => {
@@ -462,7 +462,7 @@ export default function CaseDetail() {
       {/* Communications Section */}
       <Card className="mb-4">
         <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Communications</h3>
+          <h3 className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Communications</h3>
           <button
             onClick={() => navigate(`/communications/new?caseId=${id}`)}
             className="flex items-center gap-1 text-xs font-medium text-brand-800 dark:text-brand-400"
@@ -530,7 +530,7 @@ export default function CaseDetail() {
         if (rescheduleNotes.length === 0) return null;
         return (
           <Card className="mb-4">
-            <h3 className="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">
+            <h3 className="mb-2 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
               <CalendarClock className="mr-1 inline h-3.5 w-3.5" />
               Reschedule History
             </h3>
@@ -789,7 +789,7 @@ export default function CaseDetail() {
 function InfoRow({ label, value }) {
   return (
     <div className="flex justify-between text-sm">
-      <span className="text-gray-400 dark:text-gray-500">{label}</span>
+      <span className="text-gray-500 dark:text-gray-400">{label}</span>
       <span className="font-medium text-gray-700 dark:text-gray-300">{value || '—'}</span>
     </div>
   );

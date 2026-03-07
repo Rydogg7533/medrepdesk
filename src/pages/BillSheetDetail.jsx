@@ -260,7 +260,7 @@ export default function BillSheetDetail() {
       </Card>
 
       {/* Line Items */}
-      <h2 className="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">
+      <h2 className="mb-2 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
         Line Items ({items.length})
       </h2>
       <div className="mb-4 space-y-2">
@@ -313,7 +313,7 @@ export default function BillSheetDetail() {
       {/* Chase Log Summary */}
       {chaseCount > 0 && (
         <Card className="mb-4">
-          <h3 className="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Chase Activity</h3>
+          <h3 className="mb-2 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Chase Activity</h3>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-gray-500 dark:text-gray-400">Follow-ups</span>
@@ -449,7 +449,7 @@ export default function BillSheetDetail() {
 function InfoRow({ label, value }) {
   return (
     <div className="flex justify-between text-sm">
-      <span className="text-gray-400 dark:text-gray-500">{label}</span>
+      <span className="text-gray-500 dark:text-gray-400">{label}</span>
       <span className="font-medium text-gray-700 dark:text-gray-300">{value || '—'}</span>
     </div>
   );

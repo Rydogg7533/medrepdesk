@@ -344,7 +344,7 @@ export default function MyDistributor() {
       <form onSubmit={handleSaveDistributor} className="space-y-4">
         {/* Distributor Info */}
         <Card>
-          <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Distributor Info</h2>
+          <h2 className="mb-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Distributor Info</h2>
           <div className="flex flex-col gap-4">
             <Input label="Distributor Name *" name="name" value={form.name} onChange={onChange} required />
             <Input label="Phone" name="phone" type="tel" value={form.phone} onChange={onChange} placeholder="Main phone number" />
@@ -354,7 +354,7 @@ export default function MyDistributor() {
 
         {/* Billing & PO Forwarding */}
         <Card>
-          <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Billing & PO Forwarding</h2>
+          <h2 className="mb-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Billing & PO Forwarding</h2>
           <div className="flex flex-col gap-4">
             <Input label="Billing Email" name="billing_email" type="email" value={form.billing_email} onChange={onChange} placeholder="POs will be forwarded here" />
             {form.billing_email && (
@@ -367,7 +367,7 @@ export default function MyDistributor() {
 
         {/* Product & Commission Settings */}
         <div>
-          <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Product & Commission Settings</h2>
+          <h2 className="mb-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Product & Commission Settings</h2>
 
           {validationError && (
             <div className="mb-3 rounded-lg bg-red-50 dark:bg-red-900/30 p-3 text-sm text-red-600 dark:text-red-400">{validationError}</div>
@@ -573,7 +573,7 @@ export default function MyDistributor() {
 
         {/* Pay Schedule */}
         <Card>
-          <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Pay Schedule</h2>
+          <h2 className="mb-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Pay Schedule</h2>
           <div className="flex flex-col gap-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Pay Frequency</label>

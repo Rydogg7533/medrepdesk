@@ -10,10 +10,8 @@ const DEFAULTS = {
   bg_image_url: null,
   overlay_opacity: 0.5,
   card_opacity: 1.0,
-  nav_opacity: 1.0,
-  nav_match_cards: false,
-  text_color: null,
-  card_color: '#ffffff',
+  auto_text_color: true,
+  accent_color: '#0F4C81',
 };
 
 export function useThemePreferences() {

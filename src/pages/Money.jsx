@@ -764,7 +764,7 @@ export default function Money() {
 
                 {/* Chase Activity Timeline */}
                 <div>
-                  <h3 className="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Chase Activity</h3>
+                  <h3 className="mb-2 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Chase Activity</h3>
                   <ChaseTimeline entries={detailChaseEntries} />
                 </div>
 
@@ -1086,7 +1086,7 @@ export default function Money() {
                 />
               ) : (
                 <div>
-                  <h2 className="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">All Periods</h2>
+                  <h2 className="mb-2 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">All Periods</h2>
                   <div className="space-y-2">
                     {allPayPeriods.map((period) => (
                       <Card

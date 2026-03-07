@@ -96,7 +96,7 @@ export default function PayPeriodSummary() {
 
       {/* Amounts */}
       <Card className="mb-4">
-        <h2 className="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Amounts</h2>
+        <h2 className="mb-2 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Amounts</h2>
         <div className="space-y-2">
           <div className="flex justify-between">
             <span className="text-sm text-gray-600 dark:text-gray-400">Expected</span>
@@ -124,7 +124,7 @@ export default function PayPeriodSummary() {
       {/* Commissions List */}
       {commissions.length > 0 && (
         <div className="mb-4">
-          <h2 className="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Commissions</h2>
+          <h2 className="mb-2 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Commissions</h2>
           <div className="space-y-2">
             {commissions.map((comm) => (
               <Card
@@ -160,7 +160,7 @@ export default function PayPeriodSummary() {
 
       {period.status === 'closed' && (
         <Card>
-          <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Mark as Paid</h2>
+          <h2 className="mb-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Mark as Paid</h2>
           <div className="space-y-3">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Amount Received</label>

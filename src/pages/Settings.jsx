@@ -129,7 +129,7 @@ export default function Settings() {
 
       {/* Dashboard */}
       <section className="themed-card mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
-        <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Dashboard</h2>
+        <h2 className="mb-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Dashboard</h2>
         <div className="space-y-1">
           {DASHBOARD_SECTIONS.map(({ key, label }) => (
             <label
@@ -159,7 +159,7 @@ export default function Settings() {
 
       {/* Account Info */}
       <section className="themed-card mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
-        <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Account</h2>
+        <h2 className="mb-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Account</h2>
         <div className="space-y-3">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-800/10 dark:bg-brand-400/10">
@@ -175,7 +175,7 @@ export default function Settings() {
 
       {/* My States */}
       <section className="themed-card mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
-        <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">My States</h2>
+        <h2 className="mb-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">My States</h2>
         <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
           Select the states you operate in for better search filtering.
         </p>
@@ -278,7 +278,7 @@ export default function Settings() {
 
       {/* Subscription */}
       <section className="themed-card mt-4 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
-        <h2 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Subscription</h2>
+        <h2 className="mb-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Subscription</h2>
 
         <div className="flex items-center justify-between">
           <div>

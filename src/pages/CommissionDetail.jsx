@@ -208,7 +208,7 @@ export default function CommissionDetail() {
 
       {/* Amounts */}
       <Card className="mb-4">
-        <h3 className="mb-3 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Amounts<InfoTooltip text="Expected amount is calculated from case value and commission rate." /></h3>
+        <h3 className="mb-3 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Amounts<InfoTooltip text="Expected amount is calculated from case value and commission rate." /></h3>
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-gray-400 dark:text-gray-500">Expected</span>
@@ -245,7 +245,7 @@ export default function CommissionDetail() {
       {/* Notes */}
       {commission.notes && (
         <Card className="mb-4">
-          <h3 className="mb-1 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Notes</h3>
+          <h3 className="mb-1 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Notes</h3>
           <p className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">{commission.notes}</p>
         </Card>
       )}
@@ -253,7 +253,7 @@ export default function CommissionDetail() {
       {/* Dispute Resolution Note */}
       {commission.dispute_resolution_note && (
         <Card className="mb-4">
-          <h3 className="mb-1 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Resolution</h3>
+          <h3 className="mb-1 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Resolution</h3>
           <p className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">{commission.dispute_resolution_note}</p>
         </Card>
       )}
@@ -417,7 +417,7 @@ export default function CommissionDetail() {
 function InfoRow({ label, value }) {
   return (
     <div className="flex justify-between text-sm">
-      <span className="text-gray-400 dark:text-gray-500">{label}</span>
+      <span className="text-gray-500 dark:text-gray-400">{label}</span>
       <span className="font-medium text-gray-700 dark:text-gray-300">{value || '—'}</span>
     </div>
   );

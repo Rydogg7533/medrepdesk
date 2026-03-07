@@ -53,7 +53,7 @@ export default function DistributorDetail() {
 
       {dist.notes && (
         <Card className="mb-4">
-          <h3 className="mb-1 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Notes</h3>
+          <h3 className="mb-1 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Notes</h3>
           <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{dist.notes}</p>
         </Card>
       )}
@@ -72,7 +72,7 @@ export default function DistributorDetail() {
 function InfoRow({ label, value }) {
   return (
     <div className="flex justify-between text-sm">
-      <span className="text-gray-400 dark:text-gray-500">{label}</span>
+      <span className="text-gray-500 dark:text-gray-400">{label}</span>
       <span className="font-medium text-gray-700 dark:text-gray-300">{value || '—'}</span>
     </div>
   );

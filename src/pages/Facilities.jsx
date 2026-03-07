@@ -31,7 +31,7 @@ export default function Facilities() {
         <>
           {own.length > 0 && (
             <div className="mb-4">
-              <h2 className="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Your Facilities</h2>
+              <h2 className="mb-2 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Your Facilities</h2>
               <div className="space-y-2">
                 {own.map((f) => (
                   <FacilityCard key={f.id} facility={f} onClick={() => navigate(`/facilities/${f.id}/edit`)} />
@@ -41,7 +41,7 @@ export default function Facilities() {
           )}
           {global.length > 0 && (
             <div>
-              <h2 className="mb-2 flex items-center gap-1 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">
+              <h2 className="mb-2 flex items-center gap-1 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
                 <Globe className="h-3 w-3" /> Global Facilities
               </h2>
               <div className="space-y-2">

@@ -31,7 +31,7 @@ export default function Surgeons() {
         <>
           {own.length > 0 && (
             <div className="mb-4">
-              <h2 className="mb-2 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">Your Surgeons</h2>
+              <h2 className="mb-2 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Your Surgeons</h2>
               <div className="space-y-2">
                 {own.map((s) => (
                   <SurgeonCard key={s.id} surgeon={s} onClick={() => navigate(`/surgeons/${s.id}/edit`)} />
@@ -41,7 +41,7 @@ export default function Surgeons() {
           )}
           {global.length > 0 && (
             <div>
-              <h2 className="mb-2 flex items-center gap-1 text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">
+              <h2 className="mb-2 flex items-center gap-1 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
                 <Globe className="h-3 w-3" /> Global Surgeons
               </h2>
               <div className="space-y-2">
