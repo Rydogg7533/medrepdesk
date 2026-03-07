@@ -136,7 +136,7 @@ export default function AppLayout() {
       {/* Voice FAB */}
       <button
         onClick={() => canAccessAssistant ? setVoiceAgentOpen(true) : setVoiceOpen(true)}
-        className={`fixed bottom-[calc(68px+env(safe-area-inset-bottom)+82px)] right-5 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-brand-800 text-white shadow-md transition-opacity duration-150 transition-transform active:scale-95 active:opacity-100 ${isVoiceActive ? 'opacity-100' : 'opacity-50'}`}
+        className={`fixed bottom-[calc(68px+env(safe-area-inset-bottom)+82px)] right-5 z-30 flex h-12 w-12 items-center justify-center rounded-full border-2 border-white text-white shadow-md transition-all duration-150 active:scale-95 ${isVoiceActive ? 'bg-brand-800' : 'bg-brand-800/75 active:bg-brand-800'}`}
         aria-label="Voice input"
       >
         <Mic className="h-5 w-5" />
