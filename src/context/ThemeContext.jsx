@@ -146,7 +146,8 @@ function applyNavBackground(p) {
     if (p.bg_type === 'image' && p.bg_image_url) {
       el.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url("${p.bg_image_url}")`;
       el.style.backgroundSize = `${window.innerWidth}px ${window.innerHeight}px`;
-      el.style.backgroundPosition = '0px 0px';
+      const rect = el.getBoundingClientRect();
+      el.style.backgroundPosition = `0px ${-rect.top}px`;
       el.style.backgroundRepeat = 'no-repeat';
       el.style.backgroundColor = 'transparent';
     } else {
