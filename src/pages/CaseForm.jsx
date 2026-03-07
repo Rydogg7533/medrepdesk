@@ -16,8 +16,7 @@ import Input from '@/components/ui/Input';
 import TimeWheelPicker from '@/components/ui/TimeWheelPicker';
 import SearchableSelect from '@/components/ui/SearchableSelect';
 import VoiceButton from '@/components/ui/VoiceButton';
-import { useDistributorProducts } from '@/hooks/useDistributorProducts';
-import { groupProductsByCategory, getProductLabel } from '@/utils/productCatalog';
+
 
 export default function CaseForm() {
   const { id } = useParams();
@@ -53,8 +52,14 @@ export default function CaseForm() {
   const [parseBanner, setParseBanner] = useState('');
 
   const { account } = useAuth();
-  const { data: distProducts = [] } = useDistributorProducts(account?.primary_distributor_id);
-  const groupedProcedureTypes = groupProductsByCategory(distProducts);
+  const PROCEDURE_TYPES = [
+    { value: 'hip', label: 'Hip' },
+    { value: 'knee', label: 'Knee' },
+    { value: 'shoulder', label: 'Shoulder' },
+    { value: 'spine', label: 'Spine' },
+    { value: 'trauma', label: 'Trauma' },
+    { value: 'other', label: 'Other' },
+  ];
   const surgeonInitialOptions = useMemo(() =>
     privateSurgeons.map((s) => ({
       value: s.id,
@@ -360,19 +365,9 @@ export default function CaseForm() {
               className="min-h-touch w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2.5 text-sm dark:text-white outline-none focus:border-brand-800 focus:ring-2 focus:ring-brand-800/20"
             >
               <option value="">Select type</option>
-              {groupedProcedureTypes.map((group) => (
-                <optgroup key={group.label} label={group.label}>
-                  {group.products.map((dp) => (
-                    <option
-                      key={dp.product_type === 'custom' ? dp.id : dp.product_type}
-                      value={dp.product_type === 'custom' ? dp.custom_name : dp.product_type}
-                    >
-                      {dp.product_type === 'custom' ? dp.custom_name : getProductLabel(dp.product_type)}
-                    </option>
-                  ))}
-                </optgroup>
+              {PROCEDURE_TYPES.map((pt) => (
+                <option key={pt.value} value={pt.value}>{pt.label}</option>
               ))}
-              <option value="other">Other</option>
             </select>
           </div>
 
