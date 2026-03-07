@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Briefcase, MessageSquare, UserPlus, FileText, Settings, Mic, UserRound, Stethoscope, Building2 } from 'lucide-react';
+import { Outlet, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Plus, Briefcase, MessageSquare, UserPlus, FileText, Settings, Mic, UserRound, Stethoscope, Building2, AlertTriangle, CheckCircle, Clock, X } from 'lucide-react';
 import BottomNav from './BottomNav';
 import BottomSheet from '@/components/ui/BottomSheet';
 import DashboardSettings from '@/components/dashboard/DashboardSettings';
@@ -11,7 +11,7 @@ import VoiceQuickLog from '@/components/features/VoiceQuickLog';
 import VoiceAgent from '@/components/features/VoiceAgent';
 import ConversationalVoiceModal from '@/components/features/ConversationalVoiceModal';
 import { useAutoClosePayPeriods } from '@/hooks/useAutoClosePayPeriods';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscription, useCreatePortalSession } from '@/hooks/useSubscription';
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import { useMicrophonePermission } from '@/hooks/useMicrophonePermission';
@@ -27,9 +27,12 @@ export default function AppLayout() {
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [voiceAgentOpen, setVoiceAgentOpen] = useState(false);
   const [convoVoice, setConvoVoice] = useState(null); // { scriptType, prefillName?, caseData? } | null
-  const { canAccessAssistant } = useSubscription();
+  const { canAccessAssistant, isPastDue, isTrialing, trialEndsAt } = useSubscription();
+  const portalSession = useCreatePortalSession();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [checkoutSuccess, setCheckoutSuccess] = useState(false);
   const mainRef = useRef(null);
   const isDashboard = location.pathname === '/dashboard';
   const isVoiceActive = voiceOpen || voiceAgentOpen || !!convoVoice;
@@ -54,6 +57,29 @@ export default function AppLayout() {
     window.addEventListener('open-dashboard-settings', handler);
     return () => window.removeEventListener('open-dashboard-settings', handler);
   }, []);
+
+  // Detect checkout success from URL
+  useEffect(() => {
+    if (searchParams.get('checkout') === 'success') {
+      setCheckoutSuccess(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete('checkout');
+      setSearchParams(next, { replace: true });
+    }
+  }, []);
+
+  const trialDaysLeft = isTrialing && trialEndsAt
+    ? Math.max(0, Math.ceil((trialEndsAt - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
+
+  async function handleManageBilling() {
+    try {
+      const result = await portalSession.mutateAsync();
+      if (result?.url) window.location.href = result.url;
+    } catch (err) {
+      console.error('Portal session error:', err);
+    }
+  }
 
   // Proactive mic permission for voice-enabled plans
   useEffect(() => {
@@ -98,6 +124,40 @@ export default function AppLayout() {
 
       {/* Content */}
       <main ref={mainRef} className="relative z-[1] flex-1 overflow-y-auto pt-[calc(44px+env(safe-area-inset-top))] pb-[calc(68px+env(safe-area-inset-bottom))]">
+        {/* Subscription banners — sticky inside scroll area */}
+        {checkoutSuccess && (
+          <div className="sticky top-0 z-20 flex items-center justify-between gap-2 bg-green-50 px-4 py-2 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 flex-shrink-0" />
+              Subscription activated successfully!
+            </div>
+            <button onClick={() => setCheckoutSuccess(false)} className="p-0.5">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+        {isPastDue && (
+          <div className="sticky top-0 z-20 flex items-center justify-between gap-2 bg-red-50 px-4 py-2 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+              Payment failed — update your payment method to avoid interruption.
+            </div>
+            <button onClick={handleManageBilling} className="whitespace-nowrap font-medium underline">
+              Update payment
+            </button>
+          </div>
+        )}
+        {isTrialing && trialDaysLeft !== null && (
+          <div className="sticky top-0 z-20 flex items-center justify-center gap-2 bg-blue-50 px-4 py-1.5 text-sm text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
+            <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+            {trialDaysLeft === 0
+              ? 'Your trial ends today.'
+              : `${trialDaysLeft} day${trialDaysLeft !== 1 ? 's' : ''} left in your free trial.`}
+            <button onClick={() => navigate('/pricing')} className="ml-1 font-medium underline">
+              Choose a plan
+            </button>
+          </div>
+        )}
         <PageTransition>
           <Outlet />
         </PageTransition>
