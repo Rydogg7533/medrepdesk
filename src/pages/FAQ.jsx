@@ -35,7 +35,7 @@ function CategorySection({ category, faqs }) {
   const [openQuestionId, setOpenQuestionId] = useState(null);
 
   return (
-    <div className={`themed-card rounded-2xl overflow-hidden border transition-all duration-200 ${
+    <div className={`rounded-2xl overflow-hidden border transition-all duration-200 ${
       isOpen
         ? "border-blue-200 dark:border-blue-800/50 shadow-sm"
         : "border-gray-100 dark:border-gray-700/50"
@@ -119,7 +119,7 @@ export default function FAQ() {
   return (
     <div className="pb-24">
 
-      <div className="themed-card bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 pt-4 pb-5">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 pt-4 pb-5">
         <h1 className="page-bg-text text-xl font-bold text-gray-900 dark:text-white mb-0.5">Help & FAQ</h1>
         <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
           {FAQS.length} questions · tap a category to browse
@@ -184,7 +184,7 @@ export default function FAQ() {
                 <div className="text-xs text-gray-400 dark:text-gray-500 mb-3">
                   {searchResults.length} result{searchResults.length !== 1 ? "s" : ""} for &ldquo;{query}&rdquo;
                 </div>
-                <div className="themed-card bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
                   {searchResults.map(faq => (
                     <FAQItem
                       key={faq.id}
