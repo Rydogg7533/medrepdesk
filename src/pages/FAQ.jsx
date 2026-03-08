@@ -90,7 +90,7 @@ function CategorySection({ category, faqs }) {
 
 export default function FAQ() {
   const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState(null);
+  const [activeCategory, setActiveCategory] = useState("getting-started");
   const [openSearchId, setOpenSearchId] = useState(null);
 
   const isSearching = query.trim().length >= 2;
@@ -145,23 +145,23 @@ export default function FAQ() {
       <div className="px-4 pt-4">
 
         {!isSearching && (
-          <div className="flex gap-2 overflow-x-auto pb-3 mb-4 -mx-4 px-4 scrollbar-hide">
+          <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-700 -mx-4 px-4 mb-4 scrollbar-hide">
             <button
               onClick={() => setActiveCategory(null)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+              className={`shrink-0 px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
                 activeCategory === null
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600"
+                  ? "border-brand-800 text-brand-800 dark:text-brand-400 dark:border-brand-400"
+                  : "border-transparent text-gray-500 dark:text-gray-400"
               }`}
             >All</button>
             {FAQ_CATEGORIES.map(cat => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id === activeCategory ? null : cat.id)}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
+                className={`shrink-0 flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
                   activeCategory === cat.id
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600"
+                    ? "border-brand-800 text-brand-800 dark:text-brand-400 dark:border-brand-400"
+                    : "border-transparent text-gray-500 dark:text-gray-400"
                 }`}
               >
                 <span>{cat.icon}</span>
