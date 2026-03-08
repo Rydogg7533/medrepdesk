@@ -172,7 +172,7 @@ export default function FAQ() {
         )}
 
         {isSearching && (
-          <div className="mt-4 space-y-2 pb-4">
+          <div className="pt-4 space-y-2 pb-4">
             {searchResults.length === 0 ? (
               <div className="text-center py-14">
                 <div className="text-4xl mb-3">&#128269;</div>
@@ -200,7 +200,7 @@ export default function FAQ() {
         )}
 
         {!isSearching && (
-          <div className="mt-4 space-y-2.5 pb-4">
+          <div className="pt-4 space-y-2.5 pb-4">
             {visibleCategories.map(cat => (
               <CategorySection
                 key={cat.id}
