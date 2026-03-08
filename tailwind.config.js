@@ -35,10 +35,10 @@ export default {
         mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       spacing: {
-        'safe-top': 'env(safe-area-inset-top)',
-        'safe-bottom': 'env(safe-area-inset-bottom)',
-        'safe-left': 'env(safe-area-inset-left)',
-        'safe-right': 'env(safe-area-inset-right)',
+        'safe-top': 'env(safe-area-inset-top, 0px)',
+        'safe-bottom': 'env(safe-area-inset-bottom, 0px)',
+        'safe-left': 'env(safe-area-inset-left, 0px)',
+        'safe-right': 'env(safe-area-inset-right, 0px)',
       },
       minHeight: {
         touch: '44px',
