@@ -142,10 +142,10 @@ export default function FAQ() {
         </div>
       </div>
 
-      <div className="px-4 pt-4 space-y-4">
+      <div className="px-4">
 
         {!isSearching && (
-          <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-700 -mx-4 px-4 -mt-1 mb-4 scrollbar-hide">
+          <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-700 -mx-4 px-4 scrollbar-hide">
             <button
               onClick={() => setActiveCategory(null)}
               className={`shrink-0 px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
@@ -172,7 +172,7 @@ export default function FAQ() {
         )}
 
         {isSearching && (
-          <div className="space-y-2 pb-4">
+          <div className="mt-4 space-y-2 pb-4">
             {searchResults.length === 0 ? (
               <div className="text-center py-14">
                 <div className="text-4xl mb-3">&#128269;</div>
@@ -200,7 +200,7 @@ export default function FAQ() {
         )}
 
         {!isSearching && (
-          <div className="space-y-2.5 pb-4">
+          <div className="mt-4 space-y-2.5 pb-4">
             {visibleCategories.map(cat => (
               <CategorySection
                 key={cat.id}
