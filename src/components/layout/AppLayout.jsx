@@ -124,7 +124,7 @@ export default function AppLayout() {
 
       {/* Subscription banners — fixed below header */}
       {checkoutSuccess && (
-        <div className="fixed inset-x-0 top-[calc(44px+env(safe-area-inset-top))] z-30 flex items-center justify-between gap-2 bg-green-50 px-4 py-2 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
+        <div className="fixed inset-x-0 z-30 flex items-center justify-between gap-2 bg-green-50 px-4 py-2 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400" style={{ top: 'calc(44px + env(safe-area-inset-top, 0px))' }}>
           <div className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4 flex-shrink-0" />
             Subscription activated successfully!
@@ -135,7 +135,7 @@ export default function AppLayout() {
         </div>
       )}
       {isPastDue && (
-        <div className="fixed inset-x-0 top-[calc(44px+env(safe-area-inset-top))] z-30 flex items-center justify-between gap-2 bg-red-50 px-4 py-2 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+        <div className="fixed inset-x-0 z-30 flex items-center justify-between gap-2 bg-red-50 px-4 py-2 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400" style={{ top: 'calc(44px + env(safe-area-inset-top, 0px))' }}>
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 flex-shrink-0" />
             Payment failed — update your payment method to avoid interruption.
@@ -146,7 +146,7 @@ export default function AppLayout() {
         </div>
       )}
       {isTrialing && trialDaysLeft !== null && (
-        <div className="fixed inset-x-0 top-[calc(44px+env(safe-area-inset-top))] z-30 flex items-center justify-center gap-2 bg-blue-50 px-4 py-1.5 text-sm text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
+        <div className="fixed inset-x-0 z-30 flex items-center justify-center gap-2 bg-blue-50 px-4 py-1.5 text-sm text-blue-700 dark:bg-blue-900/20 dark:text-blue-400" style={{ top: 'calc(44px + env(safe-area-inset-top, 0px))' }}>
           <Clock className="h-3.5 w-3.5 flex-shrink-0" />
           {trialDaysLeft === 0
             ? 'Your trial ends today.'
@@ -161,7 +161,7 @@ export default function AppLayout() {
       <main
         ref={mainRef}
         className="relative z-[1] flex-1 overflow-x-hidden overflow-y-auto overscroll-none pb-[calc(68px+env(safe-area-inset-bottom))]"
-        style={{ paddingTop: (checkoutSuccess || isPastDue || (isTrialing && trialDaysLeft !== null)) ? 'calc(44px + env(safe-area-inset-top) + 36px)' : 'calc(44px + env(safe-area-inset-top))' }}
+        style={{ paddingTop: (checkoutSuccess || isPastDue || (isTrialing && trialDaysLeft !== null)) ? 'calc(44px + env(safe-area-inset-top, 0px) + 36px)' : 'calc(44px + env(safe-area-inset-top, 0px))' }}
       >
         <PageTransition>
           <Outlet />
