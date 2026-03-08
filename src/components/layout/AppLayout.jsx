@@ -158,7 +158,11 @@ export default function AppLayout() {
       )}
 
       {/* Content */}
-      <main ref={mainRef} className={`relative z-[1] flex-1 overflow-x-hidden overflow-y-auto overscroll-none pb-[calc(68px+env(safe-area-inset-bottom))] ${(checkoutSuccess || isPastDue || (isTrialing && trialDaysLeft !== null)) ? 'pt-[calc(44px+env(safe-area-inset-top)+36px)]' : 'pt-[calc(44px+env(safe-area-inset-top))]'}`}>
+      <main
+        ref={mainRef}
+        className="relative z-[1] flex-1 overflow-x-hidden overflow-y-auto overscroll-none pb-[calc(68px+env(safe-area-inset-bottom))]"
+        style={{ paddingTop: (checkoutSuccess || isPastDue || (isTrialing && trialDaysLeft !== null)) ? 'calc(44px + env(safe-area-inset-top) + 36px)' : 'calc(44px + env(safe-area-inset-top))' }}
+      >
         <PageTransition>
           <Outlet />
         </PageTransition>
