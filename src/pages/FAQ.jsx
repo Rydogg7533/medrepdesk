@@ -142,10 +142,10 @@ export default function FAQ() {
         </div>
       </div>
 
-      <div className="px-4 pt-4">
+      <div className="px-4 pt-4 space-y-4">
 
         {!isSearching && (
-          <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-700 -mx-4 px-4 mb-4 scrollbar-hide">
+          <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-700 -mx-4 px-4 -mt-1 scrollbar-hide">
             <button
               onClick={() => setActiveCategory(null)}
               className={`shrink-0 px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
