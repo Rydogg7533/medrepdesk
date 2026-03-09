@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Plus, X, Check, Search, ChevronDown, ChevronRight, CheckCircle,
   Building2, User, Stethoscope, Contact, Factory, Briefcase, Bell, DollarSign,
-  Zap, Copy, Mic,
+  Zap, Copy, Mic, Lock, Unlock,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { supabase } from '@/lib/supabase';
@@ -162,7 +162,7 @@ function Step5Facilities({ userState, addedFacilities, setAddedFacilities, impor
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Search hospitals & facilities..."
-          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 pl-10 pr-3 py-2.5 text-sm dark:text-white outline-none focus:border-gray-500 focus:ring-0"
+          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 pl-10 pr-3 py-2.5 text-sm dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none focus:border-gray-500 focus:ring-0"
         />
       </div>
 
@@ -307,7 +307,7 @@ function Step6Surgeons({ userState, addedSurgeons, setAddedSurgeons, addedFacili
       {/* Search */}
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-        <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search surgeons..." className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 pl-10 pr-3 py-2.5 text-sm dark:text-white outline-none focus:border-gray-500 focus:ring-0" />
+        <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search surgeons..." className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 pl-10 pr-3 py-2.5 text-sm dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none focus:border-gray-500 focus:ring-0" />
       </div>
 
       {searchTerm.length >= 3 && (
@@ -655,6 +655,7 @@ export default function Onboarding() {
     const [addedGroups, setAddedGroups] = useState([]);
     const [checkedProducts, setCheckedProducts] = useState({});
     const [expandedGroups, setExpandedGroups] = useState(new Set());
+    const [lockedGroups, setLockedGroups] = useState(new Set());
     const [showGroupPicker, setShowGroupPicker] = useState(false);
     const [payForm, setPayForm] = useState({ pay_frequency: '', pay_day: '', first_pay_date: '', commission_lag: '' });
     const [showPay, setShowPay] = useState(false);
@@ -812,6 +813,7 @@ export default function Onboarding() {
                 const cat = PRODUCT_CATALOG.find((c) => c.key === catKey);
                 if (!cat) return null;
                 const isExpanded = expandedGroups.has(catKey);
+                const isLocked = lockedGroups.has(catKey);
                 return (
                   <div key={catKey} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3">
                     <div className="flex items-center gap-2">
@@ -827,19 +829,29 @@ export default function Onboarding() {
                           const isChecked = checkedProducts[product.value]?.checked;
                           return (
                             <div key={product.value} className="flex items-center gap-3 py-1">
-                              <label className="flex flex-1 items-center gap-2 cursor-pointer">
-                                <input type="checkbox" checked={!!isChecked} onChange={() => toggleProduct(product.value)} className="h-4 w-4 rounded border-gray-300 text-brand-800 focus:ring-brand-800" />
+                              <label className={`flex flex-1 items-center gap-2 ${isLocked ? 'pointer-events-none' : 'cursor-pointer'}`}>
+                                <input type="checkbox" checked={!!isChecked} onChange={() => toggleProduct(product.value)} disabled={isLocked} className="h-4 w-4 rounded border-gray-300 text-brand-800 focus:ring-brand-800 disabled:opacity-50" />
                                 <span className={`text-sm ${isChecked ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}>{product.label}</span>
                               </label>
                               {isChecked && (
                                 <div className="flex items-center gap-1">
-                                  <input type="number" step="0.01" min="0" max="100" placeholder="0.00" value={checkedProducts[product.value]?.commission_rate || ''} onChange={(e) => setProductRate(product.value, e.target.value)} className="w-20 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1.5 text-sm text-right dark:text-white outline-none focus:border-brand-800" />
+                                  <input type="number" step="0.01" min="0" max="100" placeholder="0.00" value={checkedProducts[product.value]?.commission_rate || ''} onChange={(e) => setProductRate(product.value, e.target.value)} disabled={isLocked} className="w-20 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1.5 text-sm text-right dark:text-white outline-none focus:border-brand-800 disabled:opacity-50 disabled:bg-gray-50 dark:disabled:bg-gray-800" />
                                   <span className="text-sm text-gray-400">%</span>
                                 </div>
                               )}
                             </div>
                           );
                         })}
+                        <div className="pt-2">
+                          <button
+                            type="button"
+                            onClick={() => setLockedGroups((p) => { const n = new Set(p); n.has(catKey) ? n.delete(catKey) : n.add(catKey); return n; })}
+                            className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 active:bg-gray-100 dark:active:bg-gray-700"
+                          >
+                            {isLocked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+                            {isLocked ? 'Locked' : 'Unlocked'}
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>

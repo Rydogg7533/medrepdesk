@@ -16,6 +16,12 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import AuthCallback from '@/pages/AuthCallback';
 import ResetPassword from '@/pages/ResetPassword';
 
+// Beta Program pages
+import BetaLanding from '@/pages/BetaLanding';
+import BugReportPortal from '@/pages/BugReportPortal';
+import FeatureRequestPortal from '@/pages/FeatureRequestPortal';
+import BetaDashboard from '@/pages/BetaDashboard';
+
 // App pages
 import Dashboard from '@/pages/Dashboard';
 import Cases from '@/pages/Cases';
@@ -138,6 +144,12 @@ function App() {
             {/* Public pages (no auth) */}
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
+
+            {/* Beta Program pages (public, no auth) */}
+            <Route path="/beta" element={<BetaLanding />} />
+            <Route path="/beta/bugs" element={<BugReportPortal />} />
+            <Route path="/beta/features" element={<FeatureRequestPortal />} />
+            <Route path="/beta/dashboard" element={<BetaDashboard />} />
 
             {/* Onboarding (protected, no AppLayout) */}
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
