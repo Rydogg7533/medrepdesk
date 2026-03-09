@@ -15,10 +15,10 @@ const NAV_LINKS = [
 ];
 
 const STATS = [
-  { value: '10x', label: 'Faster PO tracking' },
+  { value: '$0', label: 'POs lost to no follow-up' },
   { value: '100%', label: 'Commission visibility' },
-  { value: '0', label: 'Missed follow-ups' },
-  { value: '24/7', label: 'Mobile access' },
+  { value: '1-tap', label: 'AI chase email drafted' },
+  { value: '24/7', label: 'AI watching your book' },
 ];
 
 const FEATURE_SECTIONS = [
@@ -321,17 +321,16 @@ export default function Landing() {
         <div className="relative mx-auto max-w-4xl text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-4 py-1.5 text-sm text-blue-400">
             <Zap className="h-3.5 w-3.5" />
-            <span>Built for medical device reps</span>
+            <span>AI-powered · Built for medical device reps</span>
           </div>
           <h1 className="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-            Stop losing money{' '}
+            You do the surgery.{' '}
             <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-              in spreadsheets
+              AI chases the PO.
             </span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-gray-400 sm:text-xl">
-            MedRepDesk tracks your cases, purchase orders, and commissions in one
-            mobile-first platform — so you get paid faster and never miss a follow-up.
+            The only rep tool with a dedicated AI that tracks every follow-up, promised date, and underpayment — so nothing falls through the cracks between the OR and your commission check.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
@@ -395,7 +394,7 @@ export default function Landing() {
                 The solution
               </h2>
               <h3 className="mt-3 text-2xl font-bold sm:text-3xl">
-                One app, from case to commission
+                One AI that remembers everything and works while you're in the OR
               </h3>
               <ul className="mt-6 space-y-4 text-gray-400">
                 {[
