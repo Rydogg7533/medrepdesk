@@ -76,8 +76,8 @@ function SkipConfirmation({ isOpen, onClose, onSkip, title, body, goBackLabel })
 // ─── STEP WRAPPER ─────────────────────────────────────────────────────────────
 function StepWrapper({ step, onBack, children }) {
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-gray-900">
-      <div className="sticky top-0 z-10">
+    <div className="flex h-screen flex-col bg-slate-50 dark:bg-gray-900">
+      <div className="sticky top-0 z-10 bg-slate-50 dark:bg-gray-900">
         <div className="pt-safe-top" />
         <ProgressBar step={step} total={TOTAL_STEPS} />
         {step > 1 && (
@@ -89,7 +89,7 @@ function StepWrapper({ step, onBack, children }) {
           </div>
         )}
       </div>
-      <div className="flex-1 px-5 pb-safe-bottom">
+      <div className="flex-1 overflow-y-auto px-5 pb-safe-bottom">
         {children}
       </div>
     </div>
