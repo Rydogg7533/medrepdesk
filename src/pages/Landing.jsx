@@ -324,7 +324,7 @@ export default function Landing() {
             <span>AI-powered · Built for medical device reps</span>
           </div>
           <h1 className="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-            You do the surgery.{' '}
+            You do the surgery.<br />
             <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
               AI chases the PO.
             </span>
