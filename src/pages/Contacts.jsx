@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import clsx from 'clsx';
-import { Users, Search, Phone, Upload, Building, Factory, Stethoscope, Plus, Loader2 } from 'lucide-react';
+import { Users, Search, Phone, Building, Factory, Stethoscope, Plus, Loader2 } from 'lucide-react';
 import { useContacts, useUpdateContact, useDeleteContact, useArchiveContact, useUnarchiveContact } from '@/hooks/useContacts';
 import { useFacilities, useUpdateFacility, useDeleteFacility, useArchiveFacility, useUnarchiveFacility, useSearchFacilities, useImportGlobalFacility, checkLinkedFacility } from '@/hooks/useFacilities';
 import { useManufacturers, useUpdateManufacturer, useDeleteManufacturer, useArchiveManufacturer, useUnarchiveManufacturer, checkLinkedManufacturer } from '@/hooks/useManufacturers';
@@ -336,21 +336,6 @@ function PeopleTab({ contacts, filterMode, onToggle, onDeleteAsync, onArchiveAsy
 
   return (
     <>
-      <div className="flex items-center gap-2 mb-2">
-        <button
-          onClick={() => navigate('/contacts/new')}
-          className="flex-1 min-h-touch flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 py-2.5 text-sm font-medium text-brand-800 dark:text-brand-400 active:bg-gray-50 dark:active:bg-gray-800"
-        >
-          <Plus className="h-4 w-4" /> Add Contact
-        </button>
-        <button
-          onClick={() => navigate('/contacts/import')}
-          className="flex items-center gap-1.5 rounded-lg bg-brand-50 dark:bg-brand-800/20 px-3 py-2.5 text-sm font-medium text-brand-800 dark:text-brand-400"
-        >
-          <Upload className="h-4 w-4" />
-          CSV
-        </button>
-      </div>
       {contacts.length === 0 ? (
         <p className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">No contacts found</p>
       ) : (

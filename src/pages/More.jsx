@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Building2,
   CreditCard,
+  Download,
   Gift,
   HelpCircle,
   Settings,
@@ -86,6 +87,7 @@ export default function More() {
 
       <div className="themed-card mb-4 rounded-xl bg-white shadow-sm dark:bg-gray-800">
         <MenuItem icon={Building2} label="My Distributor" path="/my-distributor" />
+        <MenuItem icon={Download} label="Export Data" path="/export" />
       </div>
 
       <RoleGate allowedRoles={['owner']}>

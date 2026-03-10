@@ -58,6 +58,7 @@ import MyDistributor from '@/pages/MyDistributor';
 import BillSheetForm from '@/pages/BillSheetForm';
 import BillSheetDetail from '@/pages/BillSheetDetail';
 import ActionItems from '@/pages/ActionItems';
+import Export from '@/pages/Export';
 import FAQ from '@/pages/FAQ';
 import PayPeriodSummary from '@/pages/PayPeriodSummary';
 import Onboarding from '@/pages/Onboarding';
@@ -204,6 +205,7 @@ function App() {
               <Route path="/bill-sheet" element={<BillSheetForm />} />
               <Route path="/bill-sheets/:caseId" element={<BillSheetDetail />} />
               <Route path="/action-items" element={<ActionItems />} />
+              <Route path="/export" element={<Export />} />
               <Route path="/faq" element={<FAQ />} />
             </Route>
           </Routes>
