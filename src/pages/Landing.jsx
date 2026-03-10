@@ -219,7 +219,7 @@ const FAQS = [
 function FAQItem({ q, a }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border-b border-white/10">
+    <div className="border-b border-[#1a2438]">
       <button
         onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between py-5 text-left"
@@ -228,11 +228,11 @@ function FAQItem({ q, a }) {
         {open ? (
           <ChevronUp className="h-5 w-5 shrink-0 text-[#d4a843]" />
         ) : (
-          <ChevronDown className="h-5 w-5 shrink-0 text-gray-500" />
+          <ChevronDown className="h-5 w-5 shrink-0 text-[#445570]" />
         )}
       </button>
       {open && (
-        <p className="pb-5 text-sm leading-relaxed text-gray-400 sm:text-base">{a}</p>
+        <p className="pb-5 text-sm leading-relaxed text-[#8a9ab5] sm:text-base">{a}</p>
       )}
     </div>
   );
@@ -243,7 +243,7 @@ function FeatureSection({ section, index }) {
   const isEven = index % 2 === 0;
 
   return (
-    <div className={`rounded-lg border border-white/5 p-6 sm:p-8 ${isEven ? 'bg-white/[0.03]' : 'bg-white/[0.02]'}`}>
+    <div className={`rounded-lg border border-[#1a2438] p-6 sm:p-8 ${isEven ? 'bg-[#0d1829]' : 'bg-[#0d1829]'}`}>
       <div className="flex items-start gap-4">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded bg-gold/10">
           <section.icon className="h-5 w-5 text-[#d4a843]" />
@@ -253,7 +253,7 @@ function FeatureSection({ section, index }) {
           <p className="mt-0.5 text-sm text-[#d4a843]">{section.subtitle}</p>
         </div>
       </div>
-      <p className="mt-4 text-sm leading-relaxed text-gray-400">{section.description}</p>
+      <p className="mt-4 text-sm leading-relaxed text-[#8a9ab5]">{section.description}</p>
       <button
         onClick={() => setExpanded(!expanded)}
         className="mt-3 flex items-center gap-1 text-xs font-medium text-[#d4a843] transition-colors hover:text-[#d4a843]"
@@ -262,9 +262,9 @@ function FeatureSection({ section, index }) {
         <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
       </button>
       {expanded && (
-        <ul className="mt-3 space-y-2 border-t border-white/5 pt-3">
+        <ul className="mt-3 space-y-2 border-t border-[#1a2438] pt-3">
           {section.highlights.map((h) => (
-            <li key={h} className="flex items-start gap-2 text-sm text-gray-400">
+            <li key={h} className="flex items-start gap-2 text-sm text-[#8a9ab5]">
               <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
               <span>{h}</span>
             </li>
@@ -277,9 +277,9 @@ function FeatureSection({ section, index }) {
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-[#09090B] font-outfit text-white">
+    <div className="min-h-screen bg-[#09090f] font-outfit text-white">
       {/* ─── Nav ─────────────────────────────── */}
-      <nav className="sticky top-0 z-50 border-b border-white/5 bg-[#09090B]/80 pt-safe-top backdrop-blur-xl">
+      <nav className="sticky top-0 z-50 border-b border-[#1a2438] bg-[#09090f]/80 pt-safe-top backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <Link to="/" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded bg-gold font-bold text-white text-sm">
@@ -292,7 +292,7 @@ export default function Landing() {
               <a
                 key={l.label}
                 href={l.href}
-                className="text-sm text-gray-400 transition-colors hover:text-white"
+                className="text-sm text-[#8a9ab5] transition-colors hover:text-white"
               >
                 {l.label}
               </a>
@@ -301,7 +301,7 @@ export default function Landing() {
           <div className="flex items-center gap-3">
             <Link
               to="/signin"
-              className="text-sm text-gray-400 transition-colors hover:text-white"
+              className="text-sm text-[#8a9ab5] transition-colors hover:text-white"
             >
               Sign in
             </Link>
@@ -327,7 +327,7 @@ export default function Landing() {
             <span style={{ color:"#ffffff" }}>You do the surgery.</span><br/>
             <span style={{ color:"#d4a843" }}>AI chases the PO.</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-gray-400 sm:text-xl">
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-[#8a9ab5] sm:text-xl">
             The only rep tool with a dedicated AI that tracks every follow-up, promised date, and underpayment — so nothing falls through the cracks between the OR and your commission check.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -340,7 +340,7 @@ export default function Landing() {
             </Link>
             <a
               href="#features"
-              className="inline-flex items-center gap-2 rounded border border-white/10 px-8 py-3.5 text-base font-semibold text-gray-300 transition-colors hover:border-white/20 hover:text-white"
+              className="inline-flex items-center gap-2 rounded border border-[#1a2438] px-8 py-3.5 text-base font-semibold text-gray-300 transition-colors hover:border-[#1a2438] hover:text-white"
             >
               See How It Works
             </a>
@@ -349,14 +349,14 @@ export default function Landing() {
       </section>
 
       {/* ─── Stats ───────────────────────────── */}
-      <section className="border-y border-white/5 bg-white/[0.02] px-4 py-16 sm:px-6">
+      <section className="border-y border-[#1a2438] bg-[#0d1829] px-4 py-16 sm:px-6">
         <div className="mx-auto grid max-w-4xl grid-cols-2 gap-8 md:grid-cols-4">
           {STATS.map((s) => (
             <div key={s.label} className="text-center">
               <div className="font-mono text-3xl font-bold text-[#d4a843] sm:text-4xl">
                 {s.value}
               </div>
-              <div className="mt-1 text-sm text-gray-500">{s.label}</div>
+              <div className="mt-1 text-sm text-[#445570]">{s.label}</div>
             </div>
           ))}
         </div>
@@ -373,7 +373,7 @@ export default function Landing() {
               <h3 className="mt-3 text-2xl font-bold sm:text-3xl text-[#6b7a8d]">
                 Spreadsheets weren't built for the OR
               </h3>
-              <ul className="mt-6 space-y-4 text-gray-400">
+              <ul className="mt-6 space-y-4 text-[#8a9ab5]">
                 {[
                   'Cases tracked across multiple spreadsheets and apps',
                   'POs slip through the cracks — money left on the table',
@@ -394,7 +394,7 @@ export default function Landing() {
               <h3 className="mt-3 text-2xl font-bold sm:text-3xl">
                 One AI that remembers everything and works while you're in the OR
               </h3>
-              <ul className="mt-6 space-y-4 text-gray-400">
+              <ul className="mt-6 space-y-4 text-[#8a9ab5]">
                 {[
                   'Every case, PO, and commission in one place',
                   'Automated reminders before things slip',
@@ -413,7 +413,7 @@ export default function Landing() {
       </section>
 
       {/* ─── Features ────────────────────────── */}
-      <section id="features" className="bg-white/[0.02] px-4 py-20 sm:px-6 sm:py-28">
+      <section id="features" className="bg-[#0d1829] px-4 py-20 sm:px-6 sm:py-28">
         <div className="mx-auto max-w-6xl">
           <div className="text-center">
             <h2 className="font-mono text-[11px] tracking-[0.15em] font-bold text-[#d4a843] uppercase">
@@ -422,7 +422,7 @@ export default function Landing() {
             <h3 className="mt-3 text-3xl font-bold sm:text-4xl">
               Everything you need to close the loop
             </h3>
-            <p className="mx-auto mt-4 max-w-2xl text-gray-400">
+            <p className="mx-auto mt-4 max-w-2xl text-[#8a9ab5]">
               Built by reps, for reps. Every feature designed to save you time and
               make sure you get paid.
             </p>
@@ -446,7 +446,7 @@ export default function Landing() {
           <div className="mx-auto mt-12 max-w-3xl rounded-lg border border-gold/20 bg-gold/5 p-6 text-center sm:p-8">
             <UserPlus className="mx-auto h-8 w-8 text-[#d4a843]" />
             <h4 className="mt-3 text-lg font-semibold">Referral Program — All Plans</h4>
-            <p className="mt-2 text-sm text-gray-400">
+            <p className="mt-2 text-sm text-[#8a9ab5]">
               Earn 25% of every referred rep's monthly subscription for 12 months. Paid automatically via Stripe on the 1st of each month. Refer 4 reps on Solo and your own subscription is covered.
             </p>
           </div>
@@ -463,7 +463,7 @@ export default function Landing() {
             <h3 className="mt-3 text-3xl font-bold sm:text-4xl">
               Simple, transparent pricing
             </h3>
-            <p className="mx-auto mt-4 max-w-xl text-gray-400">
+            <p className="mx-auto mt-4 max-w-xl text-[#8a9ab5]">
               14-day free trial on all plans. No credit card required.
             </p>
           </div>
@@ -474,7 +474,7 @@ export default function Landing() {
                 className={`relative rounded-lg border p-8 ${
                   plan.popular
                     ? 'border-gold/40 bg-gold/5 shadow-lg shadow-[#d4a843]/10'
-                    : 'border-white/10 bg-white/[0.03]'
+                    : 'border-[#1a2438] bg-[#0d1829]'
                 }`}
               >
                 {plan.popular && (
@@ -484,14 +484,14 @@ export default function Landing() {
                 )}
                 <div className="flex items-center justify-between">
                   <h4 className="text-lg font-semibold">{plan.name}</h4>
-                  <span className="text-xs text-gray-500">{plan.users}</span>
+                  <span className="text-xs text-[#445570]">{plan.users}</span>
                 </div>
-                <p className="mt-1 text-sm italic text-gray-500">{plan.tagline}</p>
+                <p className="mt-1 text-sm italic text-[#445570]">{plan.tagline}</p>
                 <div className="mt-5 flex items-baseline gap-1">
                   <span className="font-mono text-4xl font-bold text-white">
                     ${plan.price}
                   </span>
-                  <span className="text-sm text-gray-500">/month</span>
+                  <span className="text-sm text-[#445570]">/month</span>
                 </div>
                 <Link
                   to="/signup"
@@ -505,7 +505,7 @@ export default function Landing() {
                 </Link>
                 <ul className="mt-6 space-y-2.5">
                   {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm text-gray-400">
+                    <li key={f} className="flex items-start gap-2 text-sm text-[#8a9ab5]">
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#d4a843]" />
                       {f}
                     </li>
@@ -518,14 +518,14 @@ export default function Landing() {
       </section>
 
       {/* ─── Feature Explorer ─────────────────── */}
-      <section className="bg-white/[0.02] px-4 py-20 sm:px-6 sm:py-28">
+      <section className="bg-[#0d1829] px-4 py-20 sm:px-6 sm:py-28">
         <div className="mx-auto max-w-6xl">
           <FeaturesSearch />
         </div>
       </section>
 
       {/* ─── FAQ ──────────────────────────────── */}
-      <section id="faq" className="bg-white/[0.02] px-4 py-20 sm:px-6 sm:py-28">
+      <section id="faq" className="bg-[#0d1829] px-4 py-20 sm:px-6 sm:py-28">
         <div className="mx-auto max-w-3xl">
           <div className="text-center">
             <h2 className="font-mono text-[11px] tracking-[0.15em] font-bold text-[#d4a843] uppercase">
@@ -552,7 +552,7 @@ export default function Landing() {
               spreadsheets?
             </span>
           </h2>
-          <p className="mx-auto mt-6 max-w-xl text-lg text-gray-400">
+          <p className="mx-auto mt-6 max-w-xl text-lg text-[#8a9ab5]">
             Join medical device reps who track every case, PO, and commission in
             one place. Start your free trial today.
           </p>
@@ -563,12 +563,12 @@ export default function Landing() {
             Start Your Free 14-Day Trial
             <ArrowRight className="h-4 w-4" />
           </Link>
-          <p className="mt-4 text-sm text-gray-600">No credit card required</p>
+          <p className="mt-4 text-sm text-[#445570]">No credit card required</p>
         </div>
       </section>
 
       {/* ─── Footer ──────────────────────────── */}
-      <footer className="border-t border-white/5 px-4 py-12 sm:px-6">
+      <footer className="border-t border-[#1a2438] px-4 py-12 sm:px-6">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 sm:flex-row">
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded bg-gold text-xs font-bold text-white">
@@ -576,13 +576,13 @@ export default function Landing() {
             </div>
             <span className="font-semibold tracking-tight">MedRepDesk</span>
           </div>
-          <div className="flex items-center gap-6 text-sm text-gray-500">
+          <div className="flex items-center gap-6 text-sm text-[#445570]">
             <a href="#features" className="hover:text-gray-300">Features</a>
             <a href="#pricing" className="hover:text-gray-300">Pricing</a>
             <a href="#faq" className="hover:text-gray-300">FAQ</a>
             <Link to="/signin" className="hover:text-gray-300">Sign in</Link>
           </div>
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-[#445570]">
             &copy; {new Date().getFullYear()} MedRepDesk. All rights reserved.
           </p>
         </div>

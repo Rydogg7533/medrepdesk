@@ -1,9 +1,9 @@
 import { useState } from "react";
 
 const T = {
-  bgBase: "#09090b", bgCard: "rgba(255,255,255,0.03)", bgCardBorder: "rgba(255,255,255,0.08)",
-  bgNav: "rgba(9,9,11,0.85)", textPrimary: "#ffffff", textSecondary: "rgba(255,255,255,0.6)",
-  textMuted: "rgba(255,255,255,0.35)", blue: "#d4a843", blueBright: "#60a5fa",
+  bgBase: "#09090f", bgCard: "#0d1829", bgCardBorder: "#1a2438",
+  bgNav: "rgba(9,9,15,0.85)", textPrimary: "#e8e8e8", textSecondary: "#8a9ab5",
+  textMuted: "#445570", blue: "#d4a843", blueBright: "#60a5fa",
   teal: "#10b981", tealBright: "#34d399", amber: "#f59e0b", amberBright: "#fbbf24",
   red: "#f87171", bronze: "#cd7f32", silver: "#c0c0c0", gold: "#f5c542",
   fontHead: "'Outfit', system-ui, sans-serif", fontBody: "'Inter', system-ui, -apple-system, sans-serif",
@@ -61,7 +61,7 @@ export default function BetaDashboard() {
       <Nav activePage="dashboard" />
 
       {/* Profile strip */}
-      <div style={{ background: "rgba(255,255,255,0.02)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      <div style={{ background: "#0d1829", borderBottom: "1px solid #1a2438" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{ width: 44, height: 44, borderRadius: "50%", background: T.blue, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 800, fontFamily: T.fontHead, color: "#fff" }}>{t.full_name.charAt(0)}</div>
@@ -72,7 +72,7 @@ export default function BetaDashboard() {
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <div style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)", color: T.tealBright, borderRadius: 20, padding: "4px 12px", fontSize: 12, fontWeight: 600, fontFamily: T.fontHead }}>🟢 Active</div>
-            <a href="https://app.medrepdesk.io" style={{ background: T.blue, color: "#fff", borderRadius: 8, padding: "8px 16px", textDecoration: "none", fontSize: 13, fontWeight: 700, fontFamily: T.fontHead }}>Open App →</a>
+            <a href="https://app.medrepdesk.io" style={{ background: T.blue, color: "#fff", borderRadius: 4, padding: "8px 16px", textDecoration: "none", fontSize: 13, fontWeight: 700, fontFamily: T.fontHead }}>Open App →</a>
           </div>
         </div>
       </div>
@@ -97,7 +97,7 @@ export default function BetaDashboard() {
               </div>
               <div style={{ position: "relative", height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 3, marginBottom: 6 }}>
                 <div style={{ position: "absolute", left: 0, top: 0, height: "100%", width: `${prog}%`, background: `linear-gradient(90deg, ${T.blue}, ${T.blueBright})`, borderRadius: 3 }} />
-                <div style={{ position: "absolute", top: "50%", left: `${prog}%`, transform: "translate(-50%,-50%)", width: 14, height: 14, background: T.blue, border: "2px solid #09090b", borderRadius: "50%", boxShadow: `0 0 0 2px ${T.blue}` }} />
+                <div style={{ position: "absolute", top: "50%", left: `${prog}%`, transform: "translate(-50%,-50%)", width: 14, height: 14, background: T.blue, border: "2px solid #09090f", borderRadius: "50%", boxShadow: `0 0 0 2px ${T.blue}` }} />
               </div>
               <div style={{ textAlign: "center", fontSize: 11, color: T.textMuted, fontFamily: T.fontBody }}>{prog}% through the beta</div>
             </div>
@@ -111,7 +111,7 @@ export default function BetaDashboard() {
                   const current = tierIdx === i - 1;
                   const locked = tierIdx < i - 1;
                   return (
-                    <div key={tier.key} style={{ border: `1px solid ${achieved ? tier.color + "50" : "rgba(255,255,255,0.07)"}`, borderRadius: 12, padding: 18, background: achieved ? `${tier.color}06` : T.bgCard, opacity: locked ? 0.45 : 1, position: "relative", overflow: "hidden" }}>
+                    <div key={tier.key} style={{ border: `1px solid ${achieved ? tier.color + "50" : "rgba(255,255,255,0.07)"}`, borderRadius: 8, padding: 18, background: achieved ? `${tier.color}06` : T.bgCard, opacity: locked ? 0.45 : 1, position: "relative", overflow: "hidden" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, justifyContent: "space-between" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <span style={{ fontSize: 24 }}>{tier.icon}</span>
@@ -120,8 +120,8 @@ export default function BetaDashboard() {
                             <div style={{ fontSize: 11, color: T.textMuted, fontFamily: T.fontBody }}>{tier.months} mo free</div>
                           </div>
                         </div>
-                        {achieved && <div style={{ fontSize: 10, fontWeight: 800, background: tier.color, color: "#000", padding: "2px 7px", borderRadius: 10, fontFamily: T.fontHead }}>✓ DONE</div>}
-                        {current && <div style={{ fontSize: 10, fontWeight: 800, background: "rgba(59,130,246,0.2)", color: T.blueBright, padding: "2px 7px", borderRadius: 10, fontFamily: T.fontHead }}>ACTIVE</div>}
+                        {achieved && <div style={{ fontSize: 10, fontWeight: 800, background: tier.color, color: "#000", padding: "2px 7px", borderRadius: 4, fontFamily: T.fontHead }}>✓ DONE</div>}
+                        {current && <div style={{ fontSize: 10, fontWeight: 800, background: "rgba(59,130,246,0.2)", color: T.blueBright, padding: "2px 7px", borderRadius: 4, fontFamily: T.fontHead }}>ACTIVE</div>}
                       </div>
                       {tier.checks.map((c, ci) => {
                         const done = t[c.doneKey];
@@ -152,13 +152,13 @@ export default function BetaDashboard() {
 
             {/* Gold CTA */}
             {!t.testimonial_done && t.three_feedbacks_done && (
-              <div style={{ display: "flex", alignItems: "center", gap: 16, background: "rgba(245,197,66,0.06)", border: "1px solid rgba(245,197,66,0.2)", borderRadius: 12, padding: "20px 24px", marginBottom: 16, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 16, background: "rgba(245,197,66,0.06)", border: "1px solid rgba(245,197,66,0.2)", borderRadius: 8, padding: "20px 24px", marginBottom: 16, flexWrap: "wrap" }}>
                 <span style={{ fontSize: 28 }}>🥇</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 15, fontWeight: 800, fontFamily: T.fontHead, color: T.gold, marginBottom: 3 }}>One step from Gold</div>
                   <div style={{ fontSize: 13, color: T.textSecondary, fontFamily: T.fontBody }}>Record a 60-second video or leave a G2/Capterra review to unlock your 3rd free month.</div>
                 </div>
-                <button style={{ background: T.gold, color: "#000", border: "none", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 800, fontFamily: T.fontHead, cursor: "pointer", flexShrink: 0 }} onClick={() => setModal(true)}>How to Submit →</button>
+                <button style={{ background: T.gold, color: "#000", border: "none", borderRadius: 4, padding: "10px 18px", fontSize: 13, fontWeight: 800, fontFamily: T.fontHead, cursor: "pointer", flexShrink: 0 }} onClick={() => setModal(true)}>How to Submit →</button>
               </div>
             )}
 
@@ -170,7 +170,7 @@ export default function BetaDashboard() {
                 { icon:"💡", label:"Feature Requests", value: SUBMISSIONS.filter(s => s.type==="feature").length, color: T.amberBright },
                 { icon:"💬", label:"Discord", value: t.discord_joined ? "Joined" : "Not yet", color: t.discord_joined ? T.tealBright : T.textMuted },
               ].map(stat => (
-                <div key={stat.label} style={{ background: T.bgCard, border: `1px solid ${T.bgCardBorder}`, borderRadius: 12, padding: "18px 16px", textAlign: "center" }}>
+                <div key={stat.label} style={{ background: T.bgCard, border: `1px solid ${T.bgCardBorder}`, borderRadius: 8, padding: "18px 16px", textAlign: "center" }}>
                   <div style={{ fontSize: 22, marginBottom: 6 }}>{stat.icon}</div>
                   <div style={{ fontSize: 22, fontWeight: 800, fontFamily: T.fontHead, color: stat.color }}>{stat.value}</div>
                   <div style={{ fontSize: 11, color: T.textMuted, fontFamily: T.fontBody, marginTop: 2 }}>{stat.label}</div>
@@ -179,13 +179,13 @@ export default function BetaDashboard() {
             </div>
 
             {!t.discord_joined && (
-              <div style={{ display: "flex", alignItems: "center", gap: 16, background: "rgba(88,101,242,0.08)", border: "1px solid rgba(88,101,242,0.2)", borderRadius: 12, padding: "18px 20px", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 16, background: "rgba(88,101,242,0.08)", border: "1px solid rgba(88,101,242,0.2)", borderRadius: 8, padding: "18px 20px", flexWrap: "wrap" }}>
                 <span style={{ fontSize: 22 }}>💬</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontFamily: T.fontHead, fontSize: 14, color: T.textPrimary, marginBottom: 3 }}>Join the Beta Discord</div>
                   <div style={{ fontSize: 13, color: T.textSecondary, fontFamily: T.fontBody }}>Real-time support, feature previews, and direct access to Ryan.</div>
                 </div>
-                <a href="https://discord.gg/medrepdesk" style={{ background: "#5865F2", color: "#fff", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 700, fontFamily: T.fontHead, textDecoration: "none" }}>Join Discord →</a>
+                <a href="https://discord.gg/medrepdesk" style={{ background: "#5865F2", color: "#fff", borderRadius: 4, padding: "10px 18px", fontSize: 13, fontWeight: 700, fontFamily: T.fontHead, textDecoration: "none" }}>Join Discord →</a>
               </div>
             )}
           </>
@@ -201,8 +201,8 @@ export default function BetaDashboard() {
                 </p>
               </div>
               <div style={{ display: "flex", gap: 8 }}>
-                <a href="/beta/bugs" style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 600, color: T.textSecondary, textDecoration: "none", fontFamily: T.fontBody }}>🐛 Report Bug</a>
-                <a href="/beta/features" style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 600, color: T.textSecondary, textDecoration: "none", fontFamily: T.fontBody }}>💡 Request Feature</a>
+                <a href="/beta/bugs" style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 4, padding: "8px 16px", fontSize: 13, fontWeight: 600, color: T.textSecondary, textDecoration: "none", fontFamily: T.fontBody }}>🐛 Report Bug</a>
+                <a href="/beta/features" style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 4, padding: "8px 16px", fontSize: 13, fontWeight: 600, color: T.textSecondary, textDecoration: "none", fontFamily: T.fontBody }}>💡 Request Feature</a>
               </div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -257,7 +257,7 @@ export default function BetaDashboard() {
               ))}
             </div>
 
-            <div style={{ display: "flex", gap: 14, background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: 12, padding: "18px 20px", marginBottom: 14 }}>
+            <div style={{ display: "flex", gap: 14, background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: 8, padding: "18px 20px", marginBottom: 14 }}>
               <span style={{ fontSize: 22 }}>🔒</span>
               <div>
                 <div style={{ fontWeight: 800, fontFamily: T.fontHead, fontSize: 14, color: T.textPrimary, marginBottom: 4 }}>Price Lock Guarantee</div>
@@ -266,7 +266,7 @@ export default function BetaDashboard() {
             </div>
 
             {!t.testimonial_done && (
-              <div style={{ background: "rgba(245,197,66,0.05)", border: "1px solid rgba(245,197,66,0.2)", borderRadius: 14, padding: 24 }}>
+              <div style={{ background: "rgba(245,197,66,0.05)", border: "1px solid rgba(245,197,66,0.2)", borderRadius: 8, padding: 24 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
                   <span style={{ fontSize: 28 }}>🥇</span>
                   <div>
@@ -279,14 +279,14 @@ export default function BetaDashboard() {
                     { icon:"🎥", title:"60-Second Video", desc:"Record on your phone. Walk through how you use the app and what it's solved. Email to beta@medrepdesk.io" },
                     { icon:"⭐", title:"G2 or Capterra Review", desc:"Leave an honest review on G2 or Capterra. Send us the link and we'll apply your free month within 24 hours." },
                   ].map(opt => (
-                    <div key={opt.title} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: 18 }}>
+                    <div key={opt.title} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: 18 }}>
                       <div style={{ fontSize: 24, marginBottom: 8 }}>{opt.icon}</div>
                       <div style={{ fontSize: 14, fontWeight: 700, fontFamily: T.fontHead, color: T.textPrimary, marginBottom: 6 }}>{opt.title}</div>
                       <div style={{ fontSize: 12, color: T.textSecondary, fontFamily: T.fontBody, lineHeight: 1.5 }}>{opt.desc}</div>
                     </div>
                   ))}
                 </div>
-                <button style={{ width: "100%", padding: "12px", background: T.gold, color: "#000", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 800, fontFamily: T.fontHead, cursor: "pointer" }} onClick={() => setModal(true)}>
+                <button style={{ width: "100%", padding: "12px", background: T.gold, color: "#000", border: "none", borderRadius: 4, fontSize: 14, fontWeight: 800, fontFamily: T.fontHead, cursor: "pointer" }} onClick={() => setModal(true)}>
                   I've Done This — Submit →
                 </button>
               </div>
@@ -298,7 +298,7 @@ export default function BetaDashboard() {
       {/* Testimonial modal */}
       {modal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 24 }} onClick={() => setModal(false)}>
-          <div style={{ background: "#14141a", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 16, padding: "32px 36px", maxWidth: 440, width: "100%" }} onClick={e => e.stopPropagation()}>
+          <div style={{ background: "#0d1829", border: "1px solid #1a2438", borderRadius: 8, padding: "32px 36px", maxWidth: 440, width: "100%" }} onClick={e => e.stopPropagation()}>
             <div style={s.eyebrow}>GOLD TIER</div>
             <h3 style={{ fontSize: 20, fontWeight: 800, fontFamily: T.fontHead, color: T.textPrimary, marginBottom: 12 }}>🥇 Submit Your Testimonial</h3>
             <p style={{ fontSize: 14, color: T.textSecondary, fontFamily: T.fontBody, marginBottom: 8 }}>Email us at <a href="mailto:beta@medrepdesk.io" style={{ color: T.blueBright }}>beta@medrepdesk.io</a> with:</p>
@@ -306,12 +306,12 @@ export default function BetaDashboard() {
               <li>Your video link (Loom, Drive, YouTube — anything works), <em>or</em></li>
               <li>Link to your G2 or Capterra review</li>
             </ul>
-            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "10px 14px", fontSize: 13, fontFamily: T.fontMono, color: T.textSecondary, marginBottom: 20 }}>
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 4, padding: "10px 14px", fontSize: 13, fontFamily: T.fontMono, color: T.textSecondary, marginBottom: 20 }}>
               Subject: Gold Tier Testimonial — {MOCK.full_name}
             </div>
             <div style={{ display: "flex", gap: 10 }}>
-              <a href={`mailto:beta@medrepdesk.io?subject=Gold Tier Testimonial — ${MOCK.full_name}`} style={{ flex: 1, background: T.blue, color: "#fff", borderRadius: 8, padding: "11px", fontSize: 14, fontWeight: 700, fontFamily: T.fontHead, textDecoration: "none", textAlign: "center" }}>Open Email →</a>
-              <button style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: T.textSecondary, borderRadius: 8, padding: "11px 20px", fontSize: 14, fontFamily: T.fontBody, cursor: "pointer" }} onClick={() => setModal(false)}>Close</button>
+              <a href={`mailto:beta@medrepdesk.io?subject=Gold Tier Testimonial — ${MOCK.full_name}`} style={{ flex: 1, background: T.blue, color: "#fff", borderRadius: 4, padding: "11px", fontSize: 14, fontWeight: 700, fontFamily: T.fontHead, textDecoration: "none", textAlign: "center" }}>Open Email →</a>
+              <button style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: T.textSecondary, borderRadius: 4, padding: "11px 20px", fontSize: 14, fontFamily: T.fontBody, cursor: "pointer" }} onClick={() => setModal(false)}>Close</button>
             </div>
           </div>
         </div>
@@ -344,6 +344,6 @@ const s = {
   page: { background: T.bgBase, minHeight: "100vh", color: T.textPrimary },
   container: { maxWidth: 1100, margin: "0 auto", padding: "32px 24px" },
   eyebrow: { fontSize: 11, fontWeight: 700, letterSpacing: "2px", color: T.blue, fontFamily: T.fontHead, marginBottom: 10 },
-  card: { background: T.bgCard, border: `1px solid ${T.bgCardBorder}`, borderRadius: 14, padding: 22, marginBottom: 14 },
+  card: { background: T.bgCard, border: `1px solid ${T.bgCardBorder}`, borderRadius: 8, padding: 22, marginBottom: 14 },
   cardTitle: { fontSize: 12, fontWeight: 700, color: T.textMuted, fontFamily: T.fontHead, marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid rgba(255,255,255,0.05)", letterSpacing: "0.5px", textTransform: "uppercase" },
 };
