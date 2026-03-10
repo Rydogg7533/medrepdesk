@@ -54,18 +54,7 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Dark background for marketing pages, transparent for app (theme canvas) */
-html {
-  background-color: #09090B !important;
-}
-
-body {
-  background-color: #09090B !important;
-}
-
-/* App pages override to transparent for theme canvas */
-html.app-theme-active,
-html.app-theme-active body {
+html, body {
   background-color: transparent !important;
 }
 
