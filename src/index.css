@@ -64,7 +64,8 @@ body {
 }
 
 /* App pages override to transparent for theme canvas */
-body.app-theme-active {
+html.app-theme-active,
+html.app-theme-active body {
   background-color: transparent !important;
 }
 
