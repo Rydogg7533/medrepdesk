@@ -67,6 +67,23 @@ html[data-custom-theme="true"] .themed-card {
     0 8px 32px rgba(0, 0, 0, 0.45),
     0 2px 8px rgba(0, 0, 0, 0.3),
     0 1px 0 rgba(255, 255, 255, 0.08) inset !important;
+  position: relative;
+  overflow: hidden;
+}
+
+html[data-custom-theme="true"] .themed-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, var(--app-card-overlay, 0));
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+}
+
+html[data-custom-theme="true"] .themed-card > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Nav/header: bgColor with 50% black overlay (darkened) */
