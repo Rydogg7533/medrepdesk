@@ -13,7 +13,7 @@ const T = {
   textSecondary: "rgba(255,255,255,0.6)",
   textMuted: "rgba(255,255,255,0.35)",
   blue: "#d4a843",
-  blueBright: "#60a5fa",
+  blueBright: "#d4a843",
   teal: "#10b981",
   tealBright: "#34d399",
   amber: "#f59e0b",
