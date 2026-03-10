@@ -97,7 +97,7 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-transparent">
       {/* Background canvas — fixed behind everything, styled by ThemeContext */}
       <div
         id="app-bg-canvas"
@@ -160,7 +160,7 @@ export default function AppLayout() {
       {/* Content */}
       <main
         ref={mainRef}
-        className="relative z-[1] flex-1 overflow-x-hidden overflow-y-auto overscroll-none pb-[calc(68px+env(safe-area-inset-bottom,0px))]"
+        className="relative z-[1] flex-1 overflow-x-hidden overflow-y-auto overscroll-none bg-transparent pb-[calc(68px+env(safe-area-inset-bottom,0px))]"
         style={{ paddingTop: (checkoutSuccess || isPastDue || (isTrialing && trialDaysLeft !== null)) ? 'calc(44px + env(safe-area-inset-top, 0px) + 36px)' : 'calc(44px + env(safe-area-inset-top, 0px))' }}
       >
         <PageTransition>
