@@ -324,7 +324,7 @@ export default function Landing() {
             <span>AI-powered · Built for medical device reps</span>
           </div>
           <h1 style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:"clamp(32px,5vw,56px)", fontWeight:700, lineHeight:1.15, letterSpacing:"-0.03em" }}>
-            <span style={{ color:"#ffffff" }}>You do the surgery.</span><br/>
+            <span style={{ color:"#ffffff" }}>You do the case.</span><br/>
             <span style={{ color:"#d4a843" }}>AI chases the PO.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-[#8a9ab5] sm:text-xl">
