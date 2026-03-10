@@ -86,13 +86,10 @@ function recalculateTextColors(bgColor, cardOverlay, isDark, isImageMode, cardCo
     sg = Math.round(bg.g * (1 - overlay) + cc.g * overlay);
     sb = Math.round(bg.b * (1 - overlay) + cc.b * overlay);
   } else {
-    // Solid/gradient: white card darkened with black overlay
-    const baseR = isDark ? 31 : 255;
-    const baseG = isDark ? 41 : 255;
-    const baseB = isDark ? 55 : 255;
-    sr = Math.round(baseR * (1 - overlay));
-    sg = Math.round(baseG * (1 - overlay));
-    sb = Math.round(baseB * (1 - overlay));
+    // Solid/gradient: card matches bg color, darkened with black overlay
+    sr = Math.round(bg.r * (1 - overlay));
+    sg = Math.round(bg.g * (1 - overlay));
+    sb = Math.round(bg.b * (1 - overlay));
   }
 
   const cardText = getContrastText(sr, sg, sb);
@@ -220,6 +217,9 @@ function applyCustomTheme(prefs) {
 
   root.dataset.bgType = p.bg_type;
 
+  // Activate theme-aware html+body (transparent so #app-bg-canvas shows through)
+  document.documentElement.classList.add('app-theme-active');
+
   // Resolve the effective background color
   const resolvedBg = resolveThemeBgColor(p);
 
@@ -235,14 +235,13 @@ function applyCustomTheme(prefs) {
     // Image mode: card bg = rgba(cardColor, cardOpacity)
     const cc = hexToRgb(p.card_color || '#ffffff');
     root.style.setProperty('--app-card-bg', `rgba(${cc.r}, ${cc.g}, ${cc.b}, ${cardOverlay})`);
+  } else if (p.bg_type === 'gradient') {
+    // Gradient mode: transparent card so gradient shows through
+    root.style.setProperty('--app-card-bg', 'transparent');
   } else {
-    // Solid/gradient mode: darken white card with black overlay
-    if (cardOverlay > 0) {
-      const v = Math.round(255 * (1 - cardOverlay));
-      root.style.setProperty('--app-card-bg', `rgb(${v}, ${v}, ${v})`);
-    } else {
-      root.style.removeProperty('--app-card-bg');
-    }
+    // Solid mode: card matches background color exactly
+    const bgRgb = hexToRgb(p.bg_color || '#f8fafc');
+    root.style.setProperty('--app-card-bg', `rgba(${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}, 1)`);
   }
 
   if (p.bg_type === 'image' && p.bg_image_url) {
@@ -268,10 +267,21 @@ function applyCustomTheme(prefs) {
 
   const isCustom = p.bg_type !== 'color' || p.bg_color !== '#f8fafc' || p.card_opacity > 0 || p.accent_color !== '#0F4C81';
   root.dataset.customTheme = isCustom ? 'true' : 'false';
+
+  // Debug: verify CSS variables are injected
+  console.log('[Theme] Applied custom theme:', {
+    bg_type: p.bg_type,
+    resolvedBg,
+    cardBg: root.style.getPropertyValue('--app-card-bg'),
+    navBg: root.style.getPropertyValue('--app-nav-bg'),
+    customTheme: root.dataset.customTheme,
+    htmlClasses: root.className,
+  });
 }
 
 function clearCustomTheme() {
   const root = document.documentElement;
+  document.documentElement.classList.remove('app-theme-active');
   root.style.removeProperty('--app-card-overlay');
   root.style.removeProperty('--app-card-bg');
   root.style.removeProperty('--app-nav-bg');
