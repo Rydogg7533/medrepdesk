@@ -317,7 +317,7 @@ export default function Landing() {
 
       {/* ─── Hero ────────────────────────────── */}
       <section className="relative overflow-hidden px-4 pb-20 pt-20 sm:px-6 sm:pt-28 lg:pt-36">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#d4a843]/10 via-transparent to-transparent" />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(#0d1829 0%, #09090f 100%)' }} />
         <div className="relative mx-auto max-w-4xl text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded border border-gold/20 bg-gold/10 px-4 py-1.5 text-sm text-[#d4a843]">
             <Zap className="h-3.5 w-3.5" />
