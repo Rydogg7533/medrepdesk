@@ -21,6 +21,8 @@ import BetaLanding from '@/pages/BetaLanding';
 import BugReportPortal from '@/pages/BugReportPortal';
 import FeatureRequestPortal from '@/pages/FeatureRequestPortal';
 import BetaDashboard from '@/pages/BetaDashboard';
+import BetaScheduler from '@/pages/BetaScheduler';
+import FeatureBacklog from '@/pages/FeatureBacklog';
 
 // App pages
 import Dashboard from '@/pages/Dashboard';
@@ -150,6 +152,8 @@ function App() {
             <Route path="/beta/bugs" element={<BugReportPortal />} />
             <Route path="/beta/features" element={<FeatureRequestPortal />} />
             <Route path="/beta/dashboard" element={<BetaDashboard />} />
+            <Route path="/beta/schedule" element={<BetaScheduler />} />
+            <Route path="/admin/features" element={<FeatureBacklog />} />
 
             {/* Onboarding (protected, no AppLayout) */}
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
