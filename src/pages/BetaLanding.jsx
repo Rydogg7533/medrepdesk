@@ -1,384 +1,1061 @@
 import { useState } from "react";
 
-/* ─── MedRepDesk design tokens (extracted from medrepdesk.io) ─────────────── */
-const T = {
-  bgBase: "#09090b",
-  bgCard: "rgba(255,255,255,0.03)",
-  bgCardBorder: "rgba(255,255,255,0.08)",
-  bgNav: "rgba(9,9,11,0.85)",
-  bgBlueSubtle: "rgba(59,130,246,0.08)",
-  bgTealSubtle: "rgba(16,185,129,0.08)",
-  bgAmberSubtle: "rgba(245,158,11,0.1)",
-  textPrimary: "#ffffff",
-  textSecondary: "rgba(255,255,255,0.6)",
-  textMuted: "rgba(255,255,255,0.35)",
-  blue: "#d4a843",
-  blueBright: "#d4a843",
-  teal: "#10b981",
-  tealBright: "#34d399",
-  amber: "#f59e0b",
-  amberBright: "#fbbf24",
-  red: "#f87171",
-  bronze: "#cd7f32",
-  silver: "#c0c0c0",
-  gold: "#f5c542",
-  fontHead: "'Outfit', system-ui, sans-serif",
-  fontBody: "'Inter', system-ui, -apple-system, sans-serif",
-  fontMono: "'JetBrains Mono', ui-monospace, monospace",
+// ─── DESIGN TOKENS ───────────────────────────────────────────
+// bg:        #09090f   near-black
+// surface:   #0d1829   card background
+// border:    #1a2438   subtle navy
+// text:      #e8e8e8   primary
+// muted:     #8a9ab5   secondary
+// dim:       #445570   tertiary
+// accent:    #d4a843   Stryker gold
+//
+// RADIUS: buttons/badges = 4px | cards/inputs = 8px | dots = 9999px
+// FONTS:  IBM Plex Mono = headlines, labels, buttons
+//         DM Sans       = body copy
+
+const FONTS = "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap";
+
+// ─── DIVIDER — always rendered OUTSIDE section containers ────
+const Divider = () => (
+  <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 40px" }}>
+    <div style={{ height: 1, background: "#1a2438" }} />
+  </div>
+);
+
+// ─── FEATURE GRID ────────────────────────────────────────────
+// Individual cell borders (not divide-x/divide-y) + overflow:hidden
+// so lines never bleed past the 8px rounded corners.
+const features = [
+  {
+    title: "CASE PIPELINE",
+    body: "Every case from scheduled through paid. Status advances automatically as you work — confirmed, completed, bill sheet in, PO requested, PO received, paid.",
+  },
+  {
+    title: "PO CHASE WORKFLOW",
+    body: "Log every call, email, and conversation. Track what each contact promised and when. Flag cases that have been chased too many times with no response.",
+  },
+  {
+    title: "COMMISSION TRACKING",
+    body: "Expected vs. received, per case, per distributor. When a number comes in short, you'll know immediately — not six weeks later when you're reconciling.",
+  },
+  {
+    title: "AI CASE ENTRY",
+    body: "Describe a case out loud or type a few words. AI structures it into the right fields. Photograph a PO and AI reads it. Less data entry, same record.",
+  },
+  {
+    title: "WEEKLY DIGEST",
+    body: "Monday morning: every open case, every overdue PO, every pending commission, every follow-up due. One read and you know exactly where everything stands.",
+  },
+  {
+    title: "SMART ALERTS",
+    body: "Promised date passed with no PO. Commission expected two weeks ago. Case tomorrow with no confirmation. You find out when it happens, not when you think to check.",
+  },
+];
+
+const FeatureGrid = () => (
+  <div
+    style={{
+      border: "1px solid #1a2438",
+      borderRadius: 8,
+      overflow: "hidden",
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+    }}
+  >
+    {features.map((f, i) => (
+      <div
+        key={f.title}
+        style={{
+          padding: "28px 28px 32px",
+          borderRight: i % 2 === 0 ? "1px solid #1a2438" : "none",
+          borderBottom: i < features.length - 2 ? "1px solid #1a2438" : "none",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: "0.12em",
+            color: "#e8e8e8",
+            marginBottom: 12,
+          }}
+        >
+          {f.title}
+        </div>
+        <div
+          style={{
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: 14,
+            lineHeight: 1.7,
+            color: "#8a9ab5",
+          }}
+        >
+          {f.body}
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+// ─── PRICING GRID ────────────────────────────────────────────
+const plans = [
+  {
+    label: "SOLO REP",
+    price: "$129",
+    period: "/mo",
+    desc: "Full platform. PO workflow, commission tracking, AI case entry, weekly digest. Everything a single rep needs.",
+  },
+  {
+    label: "REP + ASSISTANT",
+    price: "$199",
+    period: "/mo",
+    desc: "Everything in Solo plus a second seat, AI chase email drafting, voice responses, and commission discrepancy detection.",
+  },
+];
+
+const PricingGrid = () => (
+  <div
+    style={{
+      border: "1px solid #1a2438",
+      borderRadius: 8,
+      overflow: "hidden",
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+    }}
+  >
+    {plans.map((p, i) => (
+      <div
+        key={p.label}
+        style={{
+          padding: "32px 28px",
+          borderRight: i === 0 ? "1px solid #1a2438" : "none",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: "0.12em",
+            color: "#d4a843",
+            marginBottom: 16,
+          }}
+        >
+          {p.label}
+        </div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 16 }}>
+          <span
+            style={{
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: 44,
+              fontWeight: 700,
+              color: "#e8e8e8",
+              letterSpacing: "-0.02em",
+            }}
+          >
+            {p.price}
+          </span>
+          <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#8a9ab5" }}>
+            {p.period}
+          </span>
+        </div>
+        <div
+          style={{
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: 14,
+            lineHeight: 1.7,
+            color: "#8a9ab5",
+          }}
+        >
+          {p.desc}
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+// ─── INVOLVEMENT GRID ────────────────────────────────────────
+const involves = [
+  {
+    label: "A 20-MINUTE SETUP CALL",
+    body: "Before you get access, Ryan gets on the phone with you. Not a demo — a setup. He configures the app around your actual workflow.",
+  },
+  {
+    label: "FOUR WEEKS OF REAL USE",
+    body: "Log your actual cases, chase your actual POs. This only works if you're using it on live work, not test data.",
+  },
+  {
+    label: "HONEST FEEDBACK",
+    body: "A check-in call at week two and a short survey at week four. Tell us what's working, what isn't, and what's missing. That's the whole ask.",
+  },
+  {
+    label: "YOUR RATE, LOCKED",
+    body: "When you finish the program, your rate is locked at $129/mo forever. Launch pricing will be higher. Yours won't change.",
+  },
+];
+
+const InvolvementGrid = () => (
+  <div
+    style={{
+      border: "1px solid #1a2438",
+      borderRadius: 8,
+      overflow: "hidden",
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+    }}
+  >
+    {involves.map((item, i) => (
+      <div
+        key={item.label}
+        style={{
+          padding: "28px 28px 32px",
+          borderRight: i % 2 === 0 ? "1px solid #1a2438" : "none",
+          borderBottom: i < involves.length - 2 ? "1px solid #1a2438" : "none",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: "0.12em",
+            color: "#e8e8e8",
+            marginBottom: 12,
+          }}
+        >
+          {item.label}
+        </div>
+        <div
+          style={{
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: 14,
+            lineHeight: 1.7,
+            color: "#8a9ab5",
+          }}
+        >
+          {item.body}
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+// ─── SHARED FORM STYLES ──────────────────────────────────────
+const inputStyle = {
+  width: "100%",
+  padding: "12px 14px",
+  background: "#0d1829",
+  border: "1px solid #1a2438",
+  borderRadius: 8,
+  color: "#e8e8e8",
+  fontFamily: "'DM Sans', sans-serif",
+  fontSize: 14,
+  outline: "none",
+  boxSizing: "border-box",
 };
 
-const SPECIALTIES = [
-  { value: "orthopedic", label: "Orthopedic" },
-  { value: "spine", label: "Spine" },
-  { value: "trauma", label: "Trauma" },
-  { value: "sports_med", label: "Sports Medicine" },
-  { value: "general_surgery", label: "General Surgery" },
-  { value: "cardiovascular", label: "Cardiovascular" },
-  { value: "neuro", label: "Neurosurgery" },
-  { value: "other", label: "Other" },
-];
-const CASE_VOLUMES = [
-  { value: "under_10", label: "Under 10/month" },
-  { value: "10_to_25", label: "10–25/month" },
-  { value: "25_to_50", label: "25–50/month" },
-  { value: "over_50", label: "50+/month" },
-];
-const TIERS = [
-  { name: "Bronze", color: "#cd7f32", months: 1, icon: "🥉", requirements: ["Complete onboarding", "Log 5+ surgical cases"] },
-  { name: "Silver", color: "#c0c0c0", months: 2, icon: "🥈", requirements: ["Everything in Bronze", "Submit 3 bug reports or feature requests"] },
-  { name: "Gold", color: "#f5c542", months: 3, icon: "🥇", requirements: ["Everything in Silver", "Record a 60-sec video OR write a G2/Capterra review"] },
-];
-const STEPS = ["Your Info", "Rep Background", "Invite Code"];
+const labelStyle = {
+  fontFamily: "'IBM Plex Mono', monospace",
+  fontSize: 10,
+  fontWeight: 700,
+  letterSpacing: "0.12em",
+  color: "#445570",
+  display: "block",
+  marginBottom: 6,
+};
 
-export default function BetaLanding() {
-  const [step, setStep] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [errors, setErrors] = useState({});
+const specialties = [
+  "Orthopedic — Hip & Knee",
+  "Orthopedic — Spine",
+  "Orthopedic — Shoulder & Extremity",
+  "Orthopedic — Trauma",
+  "Cardiovascular",
+  "Neuro",
+  "General Surgery",
+  "Other",
+];
+
+const volumes = ["1–5 cases/week", "6–10 cases/week", "11–20 cases/week", "20+ cases/week"];
+
+const tools = [
+  "Spreadsheets / Excel",
+  "Notes app / memory",
+  "Veeva CRM",
+  "Salesforce",
+  "Other CRM",
+  "Nothing formal",
+];
+
+// ─── APPLY FORM ──────────────────────────────────────────────
+const ApplyForm = ({ onClose }) => {
+  const [step, setStep] = useState(1);
   const [form, setForm] = useState({
-    full_name: "", email: "", phone: "",
-    specialty: "", years_experience: "", territory: "",
-    distributor_names: "", cases_per_month: "",
-    current_tools: "", biggest_pain_point: "",
-    invite_code: "", referred_by_name: "",
+    name: "", email: "", phone: "", territory: "",
+    specialty: "", volume: "", currentTool: "", biggestPain: "",
   });
+  const [submitted, setSubmitted] = useState(false);
+
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const validateStep = () => {
-    const e = {};
-    if (step === 0) {
-      if (!form.full_name.trim()) e.full_name = "Required";
-      if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) e.email = "Valid email required";
-    }
-    if (step === 1) {
-      if (!form.specialty) e.specialty = "Required";
-      if (!form.cases_per_month) e.cases_per_month = "Required";
-      if (!form.biggest_pain_point.trim()) e.biggest_pain_point = "Required";
-    }
-    if (step === 2) { if (!form.invite_code.trim()) e.invite_code = "Invite code required"; }
-    setErrors(e);
-    return Object.keys(e).length === 0;
+  const handleSubmit = async () => {
+    // TODO: wire to Supabase beta_signups table
+    // const { error } = await supabase.from('beta_signups').insert([form]);
+    console.log("Beta signup:", form);
+    setSubmitted(true);
   };
 
-  const next = () => { if (validateStep()) setStep((s) => s + 1); };
-  const back = () => setStep((s) => s - 1);
-  const submit = async () => {
-    if (!validateStep()) return;
-    setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    setSubmitting(false);
-    setSubmitted(true);
+  const step1Valid = form.name && form.email;
+  const step2Valid = form.specialty && form.volume && form.currentTool && form.biggestPain;
+
+  const btnPrimary = (enabled) => ({
+    padding: "13px 0",
+    background: enabled ? "#d4a843" : "#1a2438",
+    border: "none",
+    borderRadius: 4,
+    color: enabled ? "#09090f" : "#445570",
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.12em",
+    cursor: enabled ? "pointer" : "default",
+    transition: "all 0.2s",
+    width: "100%",
+  });
+
+  const btnSecondary = {
+    flex: 1,
+    padding: "13px 0",
+    background: "none",
+    border: "1px solid #1a2438",
+    borderRadius: 4,
+    color: "#445570",
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 11,
+    letterSpacing: "0.1em",
+    cursor: "pointer",
   };
 
   if (submitted) {
     return (
-      <div style={s.page}>
-        <Nav />
-        <div style={s.centerPage}>
-          <div style={s.glassCard}>
-            <div style={{ fontSize: 52, marginBottom: 12 }}>🎉</div>
-            <div style={s.eyebrow}>APPLICATION RECEIVED</div>
-            <h2 style={{ ...s.h2, marginBottom: 12 }}>You're In</h2>
-            <p style={s.bodyText}>We'll email you within 24 hours with your login link and Discord invite.</p>
-            <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 0 }}>
-              {[["📧","Check email for login link"],["💬","Join our Discord for direct team access"],["📱","Install the PWA, start logging cases"],["🥇","Hit Gold tier → 3 months free locked in"]].map(([icon, text], i) => (
-                <div key={i} style={{ display: "flex", gap: 14, padding: "13px 0", borderBottom: "1px solid rgba(255,255,255,0.06)", alignItems: "center" }}>
-                  <span style={{ fontSize: 18 }}>{icon}</span>
-                  <span style={{ color: T.textSecondary, fontSize: 14, fontFamily: T.fontBody }}>{text}</span>
-                </div>
-              ))}
-            </div>
-            <p style={{ color: T.textMuted, fontSize: 12, fontFamily: T.fontBody, marginTop: 20 }}>Questions? <a href="mailto:beta@medrepdesk.io" style={{ color: T.blueBright }}>beta@medrepdesk.io</a></p>
-          </div>
+      <div style={{ textAlign: "center", padding: "40px 0" }}>
+        <div
+          style={{
+            fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: 13,
+            color: "#d4a843",
+            letterSpacing: "0.1em",
+            marginBottom: 16,
+          }}
+        >
+          APPLICATION RECEIVED
         </div>
+        <div
+          style={{
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: 15,
+            color: "#8a9ab5",
+            lineHeight: 1.7,
+            marginBottom: 28,
+          }}
+        >
+          Ryan will reach out within 24 hours to schedule your setup call.
+        </div>
+        <button
+          onClick={onClose}
+          style={{
+            background: "none",
+            border: "none",
+            color: "#445570",
+            fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.1em",
+            cursor: "pointer",
+          }}
+        >
+          CLOSE
+        </button>
       </div>
     );
   }
 
   return (
-    <div style={s.page}>
-      <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet" />
-      <Nav />
-
-      {/* HERO */}
-      <div style={s.hero}>
-        <div style={s.heroGlow} />
-        <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center", position: "relative" }}>
-          <div style={s.pill}><span style={{ color: T.blue }}>⚡</span>&nbsp; Beta Program — 25 spots available</div>
-          <h1 style={s.h1}>Built by a rep.<br /><span style={{ color: T.blueBright }}>For reps.</span></h1>
-          <p style={{ color: T.textSecondary, fontSize: 17, lineHeight: 1.7, fontFamily: T.fontBody, maxWidth: 520, margin: "0 auto 40px" }}>
-            Be one of the first 25 independent ortho reps to use the tool that finally solves the PO chase. 8 weeks, real feedback, real rewards.
-          </p>
-          <div style={s.statsRow}>
-            {[["25","Beta Spots"],["8 wk","Program"],["3 mo","Free (max)"]].map(([n,l], i) => (
-              <div key={i} style={{ ...s.statItem, borderRight: i < 2 ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
-                <span style={s.statNum}>{n}</span>
-                <span style={s.statLabel}>{l}</span>
-              </div>
-            ))}
-          </div>
-          <a href="#apply" style={s.cta}>Apply for Beta Access →</a>
-        </div>
+    <div>
+      {/* Step progress */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 28 }}>
+        {[1, 2, 3].map((s) => (
+          <div
+            key={s}
+            style={{
+              height: 2,
+              flex: 1,
+              borderRadius: 9999,
+              background: s <= step ? "#d4a843" : "#1a2438",
+              transition: "background 0.3s",
+            }}
+          />
+        ))}
       </div>
 
-      {/* TIERS */}
-      <div style={s.section}>
-        <div style={s.eyebrow}>BETA REWARDS</div>
-        <h2 style={s.h2center}>Earn Your Free Months</h2>
-        <p style={s.subText}>Tiers stack — hit Gold, lock in all three months. Requirements are cumulative.</p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 16, marginBottom: 20 }}>
-          {TIERS.map((tier) => (
-            <div key={tier.name} style={{ ...s.glassCard, borderColor: `${tier.color}35`, position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", inset: 0, background: `${tier.color}08`, pointerEvents: "none", borderRadius: 8 }} />
-              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18, position: "relative" }}>
-                <span style={{ fontSize: 32 }}>{tier.icon}</span>
-                <div>
-                  <div style={{ fontSize: 17, fontWeight: 800, fontFamily: T.fontHead, color: tier.color }}>{tier.name}</div>
-                  <div style={{ color: T.textMuted, fontSize: 12, fontFamily: T.fontBody }}>{tier.months} Month{tier.months > 1 ? "s" : ""} Free</div>
-                </div>
-              </div>
-              {tier.requirements.map((r, i) => (
-                <div key={i} style={{ display: "flex", gap: 8, padding: "5px 0", position: "relative" }}>
-                  <span style={{ color: T.teal, fontSize: 11, marginTop: 1 }}>✓</span>
-                  <span style={{ color: T.textSecondary, fontSize: 13, fontFamily: T.fontBody, lineHeight: 1.5 }}>{r}</span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 14, background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: 8, padding: "16px 20px" }}>
-          <span style={{ fontSize: 18 }}>🔒</span>
+      {step === 1 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
-            <span style={{ color: T.textPrimary, fontWeight: 700, fontFamily: T.fontHead, fontSize: 14 }}>Price Lock Guarantee — </span>
-            <span style={{ color: T.textSecondary, fontSize: 13, fontFamily: T.fontBody }}>Beta testers lock in today's rate forever. Your price never increases as long as you stay subscribed.</span>
+            <label style={labelStyle}>YOUR NAME *</label>
+            <input
+              style={inputStyle}
+              value={form.name}
+              onChange={(e) => set("name", e.target.value)}
+              placeholder="Full name"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>EMAIL *</label>
+            <input
+              style={inputStyle}
+              type="email"
+              value={form.email}
+              onChange={(e) => set("email", e.target.value)}
+              placeholder="you@example.com"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>PHONE (OPTIONAL)</label>
+            <input
+              style={inputStyle}
+              type="tel"
+              value={form.phone}
+              onChange={(e) => set("phone", e.target.value)}
+              placeholder="Best number to reach you"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>TERRITORY (OPTIONAL)</label>
+            <input
+              style={inputStyle}
+              value={form.territory}
+              onChange={(e) => set("territory", e.target.value)}
+              placeholder="e.g. Denver Metro, Pacific Northwest"
+            />
+          </div>
+          <button
+            style={{ ...btnPrimary(step1Valid), marginTop: 8 }}
+            onClick={() => step1Valid && setStep(2)}
+          >
+            CONTINUE →
+          </button>
+        </div>
+      )}
+
+      {step === 2 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div>
+            <label style={labelStyle}>SPECIALTY *</label>
+            <select
+              style={{ ...inputStyle, appearance: "none" }}
+              value={form.specialty}
+              onChange={(e) => set("specialty", e.target.value)}
+            >
+              <option value="">Select your specialty</option>
+              {specialties.map((s) => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={labelStyle}>WEEKLY CASE VOLUME *</label>
+            <select
+              style={{ ...inputStyle, appearance: "none" }}
+              value={form.volume}
+              onChange={(e) => set("volume", e.target.value)}
+            >
+              <option value="">Select volume</option>
+              {volumes.map((v) => <option key={v}>{v}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={labelStyle}>CURRENT TRACKING TOOL *</label>
+            <select
+              style={{ ...inputStyle, appearance: "none" }}
+              value={form.currentTool}
+              onChange={(e) => set("currentTool", e.target.value)}
+            >
+              <option value="">How do you track today?</option>
+              {tools.map((t) => <option key={t}>{t}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={labelStyle}>BIGGEST PAIN POINT *</label>
+            <textarea
+              style={{ ...inputStyle, height: 88, resize: "none", lineHeight: 1.6 }}
+              value={form.biggestPain}
+              onChange={(e) => set("biggestPain", e.target.value)}
+              placeholder="What falls through the cracks most often in your current workflow?"
+            />
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button style={btnSecondary} onClick={() => setStep(1)}>← BACK</button>
+            <button
+              style={{ ...btnPrimary(step2Valid), flex: 2 }}
+              onClick={() => step2Valid && setStep(3)}
+            >
+              CONTINUE →
+            </button>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* FEATURES */}
-      <div style={{ ...s.section, background: "rgba(255,255,255,0.015)", borderTop: "1px solid rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        <div style={s.sectionInner}>
-          <div style={s.eyebrow}>WHAT YOU'RE TESTING</div>
-          <h2 style={s.h2center}>The Full Platform</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 14 }}>
-            {[
-              { icon: "📋", label: "Case Management", color: T.blue, desc: "Full surgical case lifecycle from scheduled → paid, all from your phone." },
-              { icon: "📬", label: "PO Chase Workflow", color: T.teal, desc: "Chase log, promised date tracking, one-tap follow-up. Nothing like this exists." },
-              { icon: "💰", label: "Commission Tracking", color: T.amberBright, desc: "Auto-calculates expected commissions. Flags when distributors underpay." },
-              { icon: "🤖", label: "AI Features", color: T.blueBright, desc: "Photograph a PO → AI extracts all fields. Type a case → AI structures it." },
-              { icon: "🔔", label: "Smart Alerts", color: T.red, desc: "Push notifications for tomorrow's cases, missed promised dates, overdue POs." },
-              { icon: "📊", label: "Weekly Digest", color: T.tealBright, desc: "Monday morning AI briefing: what's due, overdue, and what you earned." },
-            ].map((f) => (
-              <div key={f.label} style={{ background: T.bgCard, border: `1px solid ${T.bgCardBorder}`, borderRadius: 8, padding: 20 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 4, background: `${f.color}15`, border: `1px solid ${f.color}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, marginBottom: 12 }}>{f.icon}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, fontFamily: T.fontHead, color: f.color, marginBottom: 6 }}>{f.label}</div>
-                <div style={{ color: T.textSecondary, fontSize: 13, lineHeight: 1.6, fontFamily: T.fontBody }}>{f.desc}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* WHAT WE NEED */}
-      <div style={s.section}>
-        <div style={s.eyebrow}>YOUR COMMITMENT</div>
-        <h2 style={s.h2center}>What We Need From You</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 14 }}>
-          {[
-            { icon: "🐛", color: T.red, title: "Bug Reports", desc: "Find something broken? Tell us exactly what happened. Counts toward Silver tier." },
-            { icon: "💡", color: T.amberBright, title: "Feature Requests", desc: "Missing something? Submit it. Upvote what others submitted. We build the most-requested first." },
-            { icon: "💬", color: T.blue, title: "Discord Check-ins", desc: "Weekly check-ins with the team. Real talk about what's working and what isn't." },
-            { icon: "🎥", color: T.gold, title: "Testimonial (Gold)", desc: "60-sec video or a G2/Capterra review. Optional — but unlocks your 3rd free month." },
-          ].map((n) => (
-            <div key={n.title} style={{ background: T.bgCard, border: `1px solid ${T.bgCardBorder}`, borderRadius: 8, padding: 24 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 4, background: `${n.color}15`, color: n.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, marginBottom: 12 }}>{n.icon}</div>
-              <div style={{ fontSize: 15, fontWeight: 700, fontFamily: T.fontHead, color: T.textPrimary, marginBottom: 8 }}>{n.title}</div>
-              <div style={{ color: T.textSecondary, fontSize: 13, lineHeight: 1.6, fontFamily: T.fontBody }}>{n.desc}</div>
+      {step === 3 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <div
+            style={{
+              background: "#0d1829",
+              border: "1px solid #1a2438",
+              borderRadius: 8,
+              padding: "20px",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "'IBM Plex Mono', monospace",
+                fontSize: 10,
+                letterSpacing: "0.12em",
+                color: "#d4a843",
+                marginBottom: 10,
+              }}
+            >
+              SETUP CALL REQUIRED
             </div>
-          ))}
+            <div
+              style={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: 13,
+                lineHeight: 1.7,
+                color: "#8a9ab5",
+              }}
+            >
+              Ryan will reach out within 24 hours to schedule a 20-minute setup call before you get
+              access. This ensures the app is configured for your actual workflow on day one.
+            </div>
+          </div>
+          <div
+            style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: 13,
+              color: "#445570",
+              lineHeight: 1.6,
+            }}
+          >
+            Applying as: <span style={{ color: "#e8e8e8" }}>{form.name}</span> ·{" "}
+            <span style={{ color: "#e8e8e8" }}>{form.email}</span>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button style={btnSecondary} onClick={() => setStep(2)}>← BACK</button>
+            <button style={{ ...btnPrimary(true), flex: 2 }} onClick={handleSubmit}>
+              SUBMIT APPLICATION →
+            </button>
+          </div>
         </div>
+      )}
+    </div>
+  );
+};
+
+// ─── MODAL ───────────────────────────────────────────────────
+const Modal = ({ onClose }) => (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      zIndex: 100,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 20,
+    }}
+    onClick={onClose}
+  >
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        background: "rgba(0,0,0,0.75)",
+        backdropFilter: "blur(4px)",
+      }}
+    />
+    <div
+      style={{
+        position: "relative",
+        zIndex: 1,
+        background: "#09090f",
+        border: "1px solid #1a2438",
+        borderRadius: 8,
+        padding: "36px 32px",
+        width: "100%",
+        maxWidth: 480,
+        maxHeight: "90vh",
+        overflowY: "auto",
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 28,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: 13,
+            fontWeight: 700,
+            color: "#e8e8e8",
+            letterSpacing: "0.05em",
+          }}
+        >
+          REQUEST EARLY ACCESS
+        </div>
+        <button
+          onClick={onClose}
+          style={{
+            background: "none",
+            border: "none",
+            color: "#445570",
+            cursor: "pointer",
+            fontSize: 20,
+            lineHeight: 1,
+          }}
+        >
+          ×
+        </button>
       </div>
+      <ApplyForm onClose={onClose} />
+    </div>
+  </div>
+);
 
-      {/* FORM */}
-      <div style={{ ...s.section, background: "rgba(255,255,255,0.015)", borderTop: "1px solid rgba(255,255,255,0.06)" }} id="apply">
-        <div style={{ maxWidth: 560, margin: "0 auto" }}>
-          <div style={s.eyebrow}>INVITE-ONLY</div>
-          <h2 style={{ ...s.h2, marginBottom: 6 }}>Apply for Beta Access</h2>
-          <p style={{ color: T.textSecondary, fontSize: 14, fontFamily: T.fontBody, marginBottom: 28 }}>
-            You need an invite code from Ryan or a team member. No code? Email <a href="mailto:beta@medrepdesk.io" style={{ color: T.blueBright, textDecoration: "none" }}>beta@medrepdesk.io</a>
+// ─── EYEBROW ─────────────────────────────────────────────────
+const Eyebrow = ({ children }) => (
+  <div
+    style={{
+      fontFamily: "'IBM Plex Mono', monospace",
+      fontSize: 10,
+      fontWeight: 700,
+      letterSpacing: "0.15em",
+      color: "#d4a843",
+      marginBottom: 24,
+    }}
+  >
+    {children}
+  </div>
+);
+
+// ─── CTA BUTTON ──────────────────────────────────────────────
+const CTAButton = ({ onClick }) => {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "inline-block",
+        padding: "14px 28px",
+        background: hovered ? "#d4a843" : "none",
+        border: "1px solid #d4a843",
+        borderRadius: 4,
+        color: hovered ? "#09090f" : "#d4a843",
+        fontFamily: "'IBM Plex Mono', monospace",
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: "0.12em",
+        cursor: "pointer",
+        transition: "background 0.2s, color 0.2s",
+      }}
+    >
+      REQUEST EARLY ACCESS →
+    </button>
+  );
+};
+
+// ─── PAGE ────────────────────────────────────────────────────
+export default function BetaLanding() {
+  const [showModal, setShowModal] = useState(false);
+
+  const section = { maxWidth: 760, margin: "0 auto", padding: "72px 40px" };
+
+  return (
+    <>
+      <link rel="stylesheet" href={FONTS} />
+      <div style={{ background: "#09090f", minHeight: "100vh", color: "#e8e8e8" }}>
+
+        {/* NAV */}
+        <nav
+          style={{
+            borderBottom: "1px solid #1a2438",
+            padding: "0 40px",
+            height: 56,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            position: "sticky",
+            top: 0,
+            background: "#09090f",
+            zIndex: 50,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: 13,
+              fontWeight: 700,
+              letterSpacing: "0.05em",
+              color: "#e8e8e8",
+            }}
+          >
+            MedRepDesk
+          </span>
+          <a
+            href="mailto:beta@medrepdesk.io"
+            style={{
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: 10,
+              color: "#445570",
+              letterSpacing: "0.08em",
+              textDecoration: "none",
+            }}
+          >
+            beta@medrepdesk.io
+          </a>
+        </nav>
+
+        {/* HERO — divider is NOT inside this section */}
+        <section
+          style={{
+            ...section,
+            paddingBottom: 96,
+            background: "linear-gradient(180deg, #0d1829 0%, #09090f 100%)",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "0.15em",
+              color: "#d4a843",
+              marginBottom: 32,
+            }}
+          >
+            EARLY ACCESS · 10 REPS · STARTS NOW
+          </div>
+          <h1
+            style={{
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: "clamp(26px, 4.5vw, 46px)",
+              fontWeight: 700,
+              lineHeight: 1.15,
+              letterSpacing: "-0.03em",
+              margin: "0 0 40px",
+            }}
+          >
+            <span style={{ color: "#ffffff" }}>
+              The PO chase is broken.
+              <br />
+              We built a fix.
+            </span>
+            <br />
+            <span style={{ color: "#6b7a8d" }}>
+              10 reps. Real cases. Tell
+              <br />
+              us what doesn't work.
+            </span>
+          </h1>
+          <p
+            style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: 15,
+              lineHeight: 1.75,
+              color: "#8a9ab5",
+              maxWidth: 560,
+              margin: "0 0 16px",
+            }}
+          >
+            MedRepDesk is the workflow tool independent device reps have been running on
+            spreadsheets and memory for years. Every case, every chase, every promised date —
+            tracked in one place, from your phone.
           </p>
+          <p
+            style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: 15,
+              lineHeight: 1.75,
+              color: "#8a9ab5",
+              maxWidth: 560,
+              margin: "0 0 48px",
+            }}
+          >
+            We're testing it with a small group of reps before we open it up. No gimmicks. No
+            referral games. If you fit the profile, we'd like to talk.
+          </p>
+          <CTAButton onClick={() => setShowModal(true)} />
+        </section>
 
-          <div style={s.glassCard}>
-            {/* Progress */}
-            <div style={{ display: "flex", alignItems: "flex-start", marginBottom: 32 }}>
-              {STEPS.map((name, i) => (
-                <div key={name} style={{ display: "flex", alignItems: "center", flex: i < STEPS.length - 1 ? 1 : 0 }}>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: i < step ? T.blue : i === step ? T.blue : "rgba(255,255,255,0.1)", border: `2px solid ${i <= step ? T.blue : "rgba(255,255,255,0.12)"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", fontFamily: T.fontHead }}>
-                      {i < step ? "✓" : i + 1}
-                    </div>
-                    <span style={{ fontSize: 10, color: i === step ? T.blueBright : T.textMuted, fontFamily: T.fontBody, whiteSpace: "nowrap" }}>{name}</span>
-                  </div>
-                  {i < STEPS.length - 1 && <div style={{ flex: 1, height: 1, background: i < step ? T.blue : "rgba(255,255,255,0.1)", margin: "0 8px", marginBottom: 20 }} />}
+        <Divider />
+
+        {/* WHAT IT DOES */}
+        <section style={section}>
+          <Eyebrow>WHAT IT DOES</Eyebrow>
+          <FeatureGrid />
+        </section>
+
+        <Divider />
+
+        {/* WHO WE'RE LOOKING FOR */}
+        <section style={section}>
+          <Eyebrow>WHO WE'RE LOOKING FOR</Eyebrow>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48 }}>
+            <div>
+              <p
+                style={{
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: 14,
+                  lineHeight: 1.8,
+                  color: "#8a9ab5",
+                  margin: "0 0 16px",
+                }}
+              >
+                Independent 1099 reps — primarily implant-focused. You're running your own book,
+                billing your own cases, chasing your own POs. You know exactly which AP contact to
+                call at which hospital and exactly how long they'll stall.
+              </p>
+              <p
+                style={{
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: 14,
+                  lineHeight: 1.8,
+                  color: "#8a9ab5",
+                  margin: 0,
+                }}
+              >
+                You're not looking for a CRM. You're not looking for a sales tool. You want the
+                administrative side of this business to stop costing you money and mental energy.
+              </p>
+            </div>
+            <div
+              style={{
+                border: "1px solid #1a2438",
+                borderLeft: "2px solid #1a2438",
+                borderRadius: 8,
+                padding: "24px",
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: "'IBM Plex Mono', monospace",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.12em",
+                  color: "#d4a843",
+                  marginBottom: 16,
+                }}
+              >
+                GOOD FIT IF YOU:
+              </div>
+              {[
+                "Run an independent 1099 book",
+                "Primarily implant-focused (ortho, spine, cardio, neuro)",
+                "Managing 5+ cases per week",
+                "Currently tracking in spreadsheets, notes, or memory",
+                "Willing to use the tool on real cases and give direct feedback",
+              ].map((item) => (
+                <div key={item} style={{ display: "flex", gap: 12, marginBottom: 10 }}>
+                  <span
+                    style={{
+                      fontFamily: "'IBM Plex Mono', monospace",
+                      fontSize: 12,
+                      color: "#d4a843",
+                      flexShrink: 0,
+                      marginTop: 1,
+                    }}
+                  >
+                    —
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "'IBM Plex Mono', monospace",
+                      fontSize: 11,
+                      color: "#8a9ab5",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {item}
+                  </span>
                 </div>
               ))}
             </div>
-
-            {step === 0 && <>
-              <FInp field="full_name" label="Full Name *" placeholder="Jane Smith" form={form} set={set} errors={errors} />
-              <FInp field="email" label="Email Address *" type="email" placeholder="jane@example.com" form={form} set={set} errors={errors} />
-              <FInp field="phone" label="Phone (optional)" type="tel" placeholder="(801) 555-0123" form={form} set={set} errors={errors} />
-            </>}
-
-            {step === 1 && <>
-              <FSel field="specialty" label="Primary Specialty *" options={SPECIALTIES} form={form} set={set} errors={errors} />
-              <FSel field="cases_per_month" label="Cases Per Month *" options={CASE_VOLUMES} form={form} set={set} errors={errors} />
-              <FInp field="years_experience" label="Years as Independent Rep" type="number" placeholder="5" form={form} set={set} errors={errors} />
-              <FInp field="territory" label="Territory" placeholder="Utah / Idaho / Wyoming" form={form} set={set} errors={errors} />
-              <FInp field="distributor_names" label="Distributors You Rep For" placeholder="Acumed, Arthrex, Stryker..." form={form} set={set} errors={errors} />
-              <FInp field="current_tools" label="What do you use today?" placeholder="Notes app, spreadsheets..." form={form} set={set} errors={errors} />
-              <div style={{ marginBottom: 16 }}>
-                <label style={s.formLabel}>Biggest PO/commission pain point? *</label>
-                <textarea style={{ ...s.formInput, minHeight: 80, resize: "vertical", ...(errors.biggest_pain_point ? { borderColor: T.red } : {}) }} placeholder="Describe what frustrates you most..." value={form.biggest_pain_point} onChange={(e) => set("biggest_pain_point", e.target.value)} />
-                {errors.biggest_pain_point && <span style={s.formErr}>{errors.biggest_pain_point}</span>}
-              </div>
-            </>}
-
-            {step === 2 && <>
-              <div style={{ marginBottom: 16 }}>
-                <label style={s.formLabel}>Invite Code *</label>
-                <input style={{ ...s.formInput, textTransform: "uppercase", letterSpacing: "2px", fontWeight: 700, textAlign: "center", fontFamily: T.fontMono, ...(errors.invite_code ? { borderColor: T.red } : {}) }} value={form.invite_code} onChange={(e) => set("invite_code", e.target.value.toUpperCase())} placeholder="BETA-MRD-2026-XXXX" />
-                {errors.invite_code && <span style={s.formErr}>{errors.invite_code}</span>}
-              </div>
-              <FInp field="referred_by_name" label="Who referred you? (optional)" placeholder="Ryan, John..." form={form} set={set} errors={errors} />
-              <div style={{ display: "flex", gap: 12, background: "rgba(88,101,242,0.1)", border: "1px solid rgba(88,101,242,0.2)", borderRadius: 8, padding: 14, marginTop: 8 }}>
-                <span style={{ fontSize: 18 }}>💬</span>
-                <div>
-                  <div style={{ color: T.textPrimary, fontWeight: 700, fontSize: 13, fontFamily: T.fontHead }}>You'll get a Discord invite after approval</div>
-                  <div style={{ color: T.textSecondary, fontSize: 12, fontFamily: T.fontBody, marginTop: 3 }}>Real-time support, feature previews, and direct access to Ryan.</div>
-                </div>
-              </div>
-            </>}
-
-            <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
-              {step > 0 && <button style={s.secondaryBtn} onClick={back}>← Back</button>}
-              {step < 2 && <button style={s.primaryBtn} onClick={next}>Continue →</button>}
-              {step === 2 && <button style={{ ...s.primaryBtn, opacity: submitting ? 0.7 : 1 }} onClick={submit} disabled={submitting}>{submitting ? "Submitting..." : "Submit Application →"}</button>}
-            </div>
           </div>
-        </div>
+        </section>
+
+        <Divider />
+
+        {/* NOTE FROM RYAN */}
+        <section style={section}>
+          <div style={{ borderLeft: "2px solid #d4a843", paddingLeft: 24 }}>
+            <div
+              style={{
+                fontFamily: "'IBM Plex Mono', monospace",
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: "0.12em",
+                color: "#d4a843",
+                marginBottom: 16,
+              }}
+            >
+              A NOTE FROM RYAN
+            </div>
+            <p
+              style={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: 14,
+                lineHeight: 1.8,
+                color: "#8a9ab5",
+                margin: "0 0 12px",
+              }}
+            >
+              I built this because I watched what it actually takes to run a 1099 device book. The
+              OR part is straightforward. The part after — the bill sheets, the PO chasing, the AP
+              calls, the commission reconciliation — that's where money gets left on the table every
+              month.
+            </p>
+            <p
+              style={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: 14,
+                lineHeight: 1.8,
+                color: "#8a9ab5",
+                margin: 0,
+              }}
+            >
+              This isn't a beta test. It's a co-development program. If you join, I want to know
+              every time something doesn't work the way you expect it to. That's the deal.
+            </p>
+          </div>
+        </section>
+
+        <Divider />
+
+        {/* WHAT IT COSTS */}
+        <section style={section}>
+          <Eyebrow>WHAT IT COSTS</Eyebrow>
+          <PricingGrid />
+          <div style={{ marginTop: 20, borderLeft: "2px solid #1a2438", paddingLeft: 16 }}>
+            <p
+              style={{
+                fontFamily: "'IBM Plex Mono', monospace",
+                fontSize: 11,
+                lineHeight: 1.8,
+                color: "#445570",
+                margin: 0,
+              }}
+            >
+              Reps who join during early access lock in today's rate permanently. When pricing
+              increases at launch, yours doesn't.
+            </p>
+          </div>
+        </section>
+
+        <Divider />
+
+        {/* WHAT THIS INVOLVES */}
+        <section style={section}>
+          <Eyebrow>WHAT THIS INVOLVES</Eyebrow>
+          <InvolvementGrid />
+        </section>
+
+        <Divider />
+
+        {/* APPLY CTA */}
+        <section style={{ ...section, textAlign: "center" }}>
+          <div
+            style={{
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "0.15em",
+              color: "#d4a843",
+              marginBottom: 20,
+            }}
+          >
+            10 SPOTS · STARTS NOW
+          </div>
+          <h2
+            style={{
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: "clamp(22px, 3.5vw, 32px)",
+              fontWeight: 700,
+              letterSpacing: "-0.02em",
+              color: "#ffffff",
+              margin: "0 0 16px",
+            }}
+          >
+            If this is you, apply.
+          </h2>
+          <p
+            style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: 15,
+              color: "#8a9ab5",
+              maxWidth: 440,
+              margin: "0 auto 36px",
+              lineHeight: 1.7,
+            }}
+          >
+            Takes 3 minutes. Ryan reads every application personally.
+          </p>
+          <CTAButton onClick={() => setShowModal(true)} />
+        </section>
+
+        {/* FOOTER */}
+        <footer
+          style={{
+            borderTop: "1px solid #1a2438",
+            padding: "24px 40px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: 10,
+              color: "#445570",
+              letterSpacing: "0.05em",
+            }}
+          >
+            © 2026 MedRepDesk
+          </span>
+          <div style={{ display: "flex", gap: 24 }}>
+            {["Privacy", "Terms", "Contact"].map((l) => (
+              <a
+                key={l}
+                href="#"
+                style={{
+                  fontFamily: "'IBM Plex Mono', monospace",
+                  fontSize: 10,
+                  color: "#445570",
+                  letterSpacing: "0.08em",
+                  textDecoration: "none",
+                }}
+              >
+                {l}
+              </a>
+            ))}
+          </div>
+        </footer>
       </div>
 
-      <Footer />
-    </div>
+      {showModal && <Modal onClose={() => setShowModal(false)} />}
+    </>
   );
 }
-
-/* ─── Shared components ──────────────────────────────────────────────────── */
-export function Nav({ activePage }) {
-  return (
-    <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(9,9,11,0.85)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-      <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet" />
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <a href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-          <div style={{ width: 32, height: 32, borderRadius: 4, background: T.blue, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 15, color: "#fff", fontFamily: T.fontHead }}>M</div>
-          <span style={{ fontSize: 16, fontWeight: 700, color: T.textPrimary, fontFamily: T.fontHead }}>MedRepDesk</span>
-        </a>
-        <div style={{ display: "flex", gap: 4 }}>
-          {[["🐛 Bug Report", "/beta/bugs"], ["💡 Features", "/beta/features"], ["📊 My Progress", "/beta/dashboard"], ["💬 Discord", "https://discord.gg/medrepdesk"]].map(([label, href]) => (
-            <a key={href} href={href} style={{ color: T.textSecondary, fontSize: 13, fontFamily: T.fontBody, textDecoration: "none", padding: "5px 12px", borderRadius: 4 }}>{label}</a>
-          ))}
-        </div>
-        <div style={{ background: "rgba(245,158,11,0.1)", color: T.amberBright, fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 4, letterSpacing: "1.5px", fontFamily: T.fontHead, border: "1px solid rgba(245,158,11,0.25)" }}>BETA</div>
-      </div>
-    </nav>
-  );
-}
-
-export function Footer() {
-  return (
-    <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "36px 24px", background: T.bgBase }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 4, background: T.blue, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 13, color: "#fff", fontFamily: T.fontHead }}>M</div>
-          <span style={{ fontSize: 15, fontWeight: 700, color: T.textPrimary, fontFamily: T.fontHead }}>MedRepDesk</span>
-        </div>
-        <p style={{ color: T.textMuted, fontSize: 13, fontFamily: T.fontBody, margin: "0 0 12px" }}>Built for the reps who move instruments, chase POs, and make it happen.</p>
-        <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-          {[["Privacy Policy", "#"], ["Terms of Service", "#"], ["beta@medrepdesk.io", "mailto:beta@medrepdesk.io"]].map(([label, href]) => (
-            <a key={label} href={href} style={{ color: T.textMuted, fontSize: 12, fontFamily: T.fontBody, textDecoration: "none" }}>{label}</a>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FInp({ field, label, type = "text", placeholder, form, set, errors }) {
-  return (
-    <div style={{ marginBottom: 16 }}>
-      <label style={s.formLabel}>{label}</label>
-      <input type={type} style={{ ...s.formInput, ...(errors[field] ? { borderColor: T.red } : {}) }} value={form[field]} onChange={(e) => set(field, e.target.value)} placeholder={placeholder} />
-      {errors[field] && <span style={s.formErr}>{errors[field]}</span>}
-    </div>
-  );
-}
-function FSel({ field, label, options, form, set, errors }) {
-  return (
-    <div style={{ marginBottom: 16 }}>
-      <label style={s.formLabel}>{label}</label>
-      <select style={{ ...s.formInput, ...(errors[field] ? { borderColor: T.red } : {}) }} value={form[field]} onChange={(e) => set(field, e.target.value)}>
-        <option value="">Select...</option>
-        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
-      {errors[field] && <span style={s.formErr}>{errors[field]}</span>}
-    </div>
-  );
-}
-
-const s = {
-  page: { background: T.bgBase, minHeight: "100vh", color: T.textPrimary },
-  centerPage: { display: "flex", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 56px)", padding: 24 },
-  section: { padding: "72px 24px" },
-  sectionInner: { maxWidth: 1000, margin: "0 auto" },
-  glassCard: { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "28px 30px", maxWidth: 480, width: "100%" },
-  eyebrow: { fontSize: 11, fontWeight: 700, letterSpacing: "2px", color: T.blue, fontFamily: T.fontHead, marginBottom: 12, textTransform: "uppercase" },
-  h1: { fontSize: "clamp(2.4rem,6vw,4rem)", fontWeight: 800, fontFamily: T.fontHead, lineHeight: 1.1, letterSpacing: "-1.5px", marginBottom: 20, color: T.textPrimary },
-  h2: { fontSize: "clamp(1.6rem,3vw,2rem)", fontWeight: 800, fontFamily: T.fontHead, letterSpacing: "-0.5px", color: T.textPrimary },
-  h2center: { fontSize: "clamp(1.6rem,3vw,2rem)", fontWeight: 800, fontFamily: T.fontHead, letterSpacing: "-0.5px", color: T.textPrimary, textAlign: "center", marginBottom: 10 },
-  bodyText: { color: T.textSecondary, fontSize: 15, lineHeight: 1.7, fontFamily: T.fontBody },
-  subText: { color: T.textSecondary, textAlign: "center", fontSize: 15, fontFamily: T.fontBody, marginBottom: 36, lineHeight: 1.6 },
-  pill: { display: "inline-flex", alignItems: "center", background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 4, padding: "6px 16px", fontSize: 12, fontFamily: T.fontBody, color: T.textSecondary, marginBottom: 24 },
-  hero: { position: "relative", padding: "96px 24px 80px", textAlign: "center", overflow: "hidden" },
-  heroGlow: { position: "absolute", inset: 0, background: "radial-gradient(ellipse 80% 50% at 50% 0%,rgba(59,130,246,0.12) 0%,transparent 70%)", pointerEvents: "none" },
-  statsRow: { display: "inline-flex", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "16px 32px", marginBottom: 32 },
-  statItem: { textAlign: "center", padding: "0 24px" },
-  statNum: { display: "block", fontSize: 26, fontWeight: 800, fontFamily: T.fontHead, color: T.blueBright },
-  statLabel: { display: "block", fontSize: 11, color: T.textMuted, fontFamily: T.fontBody, marginTop: 2, letterSpacing: "0.5px" },
-  cta: { display: "inline-block", background: T.blue, color: "#fff", borderRadius: 4, padding: "13px 28px", fontSize: 15, fontWeight: 700, fontFamily: T.fontHead, textDecoration: "none" },
-  formLabel: { display: "block", fontSize: 12, fontWeight: 600, color: T.textSecondary, marginBottom: 6, fontFamily: T.fontBody, letterSpacing: "0.3px" },
-  formInput: { width: "100%", padding: "10px 14px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, fontSize: 14, color: T.textPrimary, outline: "none", fontFamily: T.fontBody, boxSizing: "border-box", appearance: "none" },
-  formErr: { color: T.red, fontSize: 11, marginTop: 4, display: "block", fontFamily: T.fontBody },
-  primaryBtn: { flex: 1, padding: "13px", background: T.blue, color: "#fff", border: "none", borderRadius: 4, fontSize: 15, fontWeight: 700, fontFamily: T.fontHead, cursor: "pointer" },
-  secondaryBtn: { padding: "12px 20px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 4, color: T.textSecondary, fontSize: 14, fontWeight: 600, fontFamily: T.fontBody, cursor: "pointer" },
-};
