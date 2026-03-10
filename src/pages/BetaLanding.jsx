@@ -944,28 +944,6 @@ export default function BetaLanding() {
 
         <Divider />
 
-        {/* WHAT IT COSTS */}
-        <section style={section}>
-          <Eyebrow>WHAT IT COSTS</Eyebrow>
-          <PricingGrid />
-          <div style={{ marginTop: 20, borderLeft: "2px solid #1a2438", paddingLeft: 16 }}>
-            <p
-              style={{
-                fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: 11,
-                lineHeight: 1.8,
-                color: "#445570",
-                margin: 0,
-              }}
-            >
-              Reps who join during early access lock in today's rate permanently. When pricing
-              increases at launch, yours doesn't.
-            </p>
-          </div>
-        </section>
-
-        <Divider />
-
         {/* WHAT THIS INVOLVES */}
         <section style={section}>
           <Eyebrow>WHAT THIS INVOLVES</Eyebrow>
