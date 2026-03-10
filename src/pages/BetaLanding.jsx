@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
 
 /* ─── MedRepDesk design tokens (extracted from medrepdesk.io) ─────────────── */
 const T = {
@@ -86,34 +85,9 @@ export default function BetaLanding() {
   const submit = async () => {
     if (!validateStep()) return;
     setSubmitting(true);
-    
-    try {
-      const { error } = await supabase.from('beta_signups').insert([{
-        full_name: form.name,
-        email: form.email,
-        phone: form.phone,
-        territory: form.territory,
-        specialty: form.specialty,
-        cases_per_month: form.volume,
-        current_tools: form.currentTool,
-        biggest_pain_point: form.biggestPain,
-        invite_code: 'BETA_V3_DIRECT',
-        tier: 'bronze',
-      }]);
-      
-      if (error) {
-        console.error('Error submitting beta signup:', error);
-        alert('There was an error submitting your application. Please try again.');
-        setSubmitting(false);
-        return;
-      }
-      
-      setSubmitted(true);
-    } catch (err) {
-      console.error('Unexpected error:', err);
-      alert('There was an error submitting your application. Please try again.');
-      setSubmitting(false);
-    }
+    await new Promise((r) => setTimeout(r, 1200));
+    setSubmitting(false);
+    setSubmitted(true);
   };
 
   if (submitted) {

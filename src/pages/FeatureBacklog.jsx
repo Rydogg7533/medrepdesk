@@ -7,7 +7,7 @@ const T = {
   bgCardHover: "rgba(255,255,255,0.045)",
   border: "rgba(255,255,255,0.08)",
   borderHover: "rgba(255,255,255,0.14)",
-  blue: "#3b82f6",
+  blue: "#d4a843",
   blueDim: "rgba(59,130,246,0.1)",
   blueBright: "#60a5fa",
   teal: "#10b981",

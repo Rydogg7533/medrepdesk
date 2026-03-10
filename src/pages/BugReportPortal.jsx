@@ -3,7 +3,7 @@ import { useState } from "react";
 const T = {
   bgBase: "#09090b", bgCard: "rgba(255,255,255,0.03)", bgCardBorder: "rgba(255,255,255,0.08)",
   bgNav: "rgba(9,9,11,0.85)", textPrimary: "#ffffff", textSecondary: "rgba(255,255,255,0.6)",
-  textMuted: "rgba(255,255,255,0.35)", blue: "#3b82f6", blueBright: "#60a5fa",
+  textMuted: "rgba(255,255,255,0.35)", blue: "#d4a843", blueBright: "#60a5fa",
   teal: "#10b981", tealBright: "#34d399", amber: "#f59e0b", amberBright: "#fbbf24",
   red: "#f87171", silver: "#c0c0c0",
   fontHead: "'Outfit', system-ui, sans-serif", fontBody: "'Inter', system-ui, -apple-system, sans-serif",

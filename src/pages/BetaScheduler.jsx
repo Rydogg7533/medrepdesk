@@ -2,7 +2,7 @@ import { useState } from "react";
 
 const T = {
   bg: "#09090b",
-  blue: "#3b82f6",
+  blue: "#d4a843",
   blueDim: "rgba(59,130,246,0.1)",
   blueBright: "#60a5fa",
   teal: "#10b981",
@@ -71,7 +71,7 @@ export default function BetaScheduler() {
           color: white; font-family: inherit; text-align: left; width: 100%;
         }
         .slot:hover:not(.booked) { border-color: rgba(59,130,246,0.4); background: rgba(59,130,246,0.06); }
-        .slot.selected { border-color: #3b82f6; background: rgba(59,130,246,0.1); }
+        .slot.selected { border-color: #d4a843; background: rgba(59,130,246,0.1); }
         .slot.booked { opacity: 0.25; cursor: default; }
         .input {
           background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);

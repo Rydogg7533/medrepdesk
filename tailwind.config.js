@@ -5,6 +5,10 @@ export default {
   theme: {
     extend: {
       colors: {
+        gold: {
+          DEFAULT: '#d4a843',
+          dim: '#a07830',
+        },
         brand: {
           50: 'rgb(var(--app-accent-rgb, 15 76 129) / 0.06)',
           100: 'rgb(var(--app-accent-rgb, 15 76 129) / 0.12)',
@@ -30,9 +34,9 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['"DM Sans"', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
         outfit: ['Outfit', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+        mono: ['"IBM Plex Mono"', 'JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       spacing: {
         'safe-top': 'env(safe-area-inset-top, 0px)',

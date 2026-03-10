@@ -10,7 +10,7 @@ const PLAN_FILTERS = [
 
 const PLAN_BADGE_STYLES = {
   all: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  pro: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  pro: "bg-[#d4a843]/10 text-[#d4a843] border-[#d4a843]/20",
   dist: "bg-amber-500/10 text-amber-400 border-amber-500/20",
 };
 
@@ -21,7 +21,7 @@ function FeatureCard({ feature }) {
 
   return (
     <div
-      className="rounded-2xl border border-white/5 bg-white/[0.03] p-5 transition-all duration-200 cursor-pointer hover:bg-white/[0.06]"
+      className="rounded-lg border border-white/5 bg-white/[0.03] p-5 transition-all duration-200 cursor-pointer hover:bg-white/[0.06]"
       onClick={() => setExpanded(!expanded)}
     >
       <div className="flex items-start justify-between gap-3">
@@ -40,7 +40,7 @@ function FeatureCard({ feature }) {
             </p>
           )}
         </div>
-        <span className={`flex-shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full border ${badgeStyle}`}>
+        <span className={`flex-shrink-0 text-[10px] font-semibold px-2 py-1 rounded border ${badgeStyle}`}>
           {badge.label}
         </span>
       </div>
@@ -48,7 +48,7 @@ function FeatureCard({ feature }) {
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
         <div className="flex flex-wrap gap-1">
           {feature.tags.slice(0, 3).map(tag => (
-            <span key={tag} className="text-[10px] text-gray-500 bg-white/5 px-2 py-0.5 rounded-full">
+            <span key={tag} className="text-[10px] text-gray-500 bg-white/5 px-2 py-0.5 rounded">
               {tag}
             </span>
           ))}
@@ -79,11 +79,11 @@ export default function FeaturesSearch() {
 
       {/* Header */}
       <div className="text-center mb-10">
-        <h2 className="text-sm font-semibold uppercase tracking-widest text-blue-400 mb-3">
+        <h2 className="font-mono text-[11px] tracking-[0.15em] font-bold text-[#d4a843] uppercase mb-3">
           Feature Explorer
         </h2>
         <h3 className="text-3xl sm:text-4xl font-bold text-white mb-3 leading-tight">
-          Does MedRepDesk do <em className="text-blue-400 not-italic">that</em>?
+          Does MedRepDesk do <em className="text-[#d4a843] not-italic">that</em>?
         </h3>
         <p className="text-gray-400 text-base max-w-xl mx-auto">
           Search {totalFeatures}+ features. Find the exact capability you're looking for.
@@ -99,7 +99,7 @@ export default function FeaturesSearch() {
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder='Try "PO tracking", "commission", "voice", "iPhone"...'
-            className="w-full pl-11 pr-4 py-4 rounded-2xl border-2 border-white/10 focus:border-blue-500 focus:outline-none text-white text-sm bg-white/5 shadow-sm transition-colors placeholder-gray-500"
+            className="w-full pl-11 pr-4 py-4 rounded-lg border-2 border-white/10 focus:border-[#d4a843] focus:outline-none text-white text-sm bg-white/5 shadow-sm transition-colors placeholder-gray-500"
           />
           {query.length > 0 && (
             <button
@@ -118,9 +118,9 @@ export default function FeaturesSearch() {
           <button
             key={cat.id}
             onClick={() => setCategory(cat.id)}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded text-xs font-semibold transition-all whitespace-nowrap ${
               category === cat.id
-                ? "bg-blue-500 text-white"
+                ? "bg-[#d4a843] text-white"
                 : "bg-white/5 border border-white/10 text-gray-400 hover:border-white/20"
             }`}
           >
@@ -137,10 +137,10 @@ export default function FeaturesSearch() {
           <button
             key={plan.id}
             onClick={() => setPlanFilter(plan.id)}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded text-xs font-semibold transition-all ${
               planFilter === plan.id
-                ? "bg-blue-500 text-white"
-                : "bg-white/5 border border-white/10 text-gray-500 hover:border-blue-500/30"
+                ? "bg-[#d4a843] text-white"
+                : "bg-white/5 border border-white/10 text-gray-500 hover:border-[#d4a843]/30"
             }`}
           >
             {plan.label}
@@ -171,7 +171,7 @@ export default function FeaturesSearch() {
             </p>
             <button
               onClick={() => { setQuery(""); setCategory("all"); setPlanFilter("all"); }}
-              className="text-blue-400 text-sm font-semibold hover:text-blue-300"
+              className="text-[#d4a843] text-sm font-semibold hover:text-[#d4a843]"
             >
               Clear filters
             </button>
@@ -193,7 +193,7 @@ export default function FeaturesSearch() {
           </p>
           <a
             href="/signup"
-            className="inline-block bg-blue-500 hover:bg-blue-400 text-white font-semibold px-8 py-3.5 rounded-xl text-sm transition-colors"
+            className="inline-block bg-[#d4a843] hover:bg-[#a07830] text-white font-semibold px-8 py-3.5 rounded text-sm transition-colors"
           >
             Start Your Free 14-Day Trial
           </a>

@@ -226,7 +226,7 @@ function FAQItem({ q, a }) {
       >
         <span className="text-base font-medium text-white sm:text-lg">{q}</span>
         {open ? (
-          <ChevronUp className="h-5 w-5 shrink-0 text-blue-400" />
+          <ChevronUp className="h-5 w-5 shrink-0 text-[#d4a843]" />
         ) : (
           <ChevronDown className="h-5 w-5 shrink-0 text-gray-500" />
         )}
@@ -243,20 +243,20 @@ function FeatureSection({ section, index }) {
   const isEven = index % 2 === 0;
 
   return (
-    <div className={`rounded-2xl border border-white/5 p-6 sm:p-8 ${isEven ? 'bg-white/[0.03]' : 'bg-white/[0.02]'}`}>
+    <div className={`rounded-lg border border-white/5 p-6 sm:p-8 ${isEven ? 'bg-white/[0.03]' : 'bg-white/[0.02]'}`}>
       <div className="flex items-start gap-4">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500/10">
-          <section.icon className="h-5 w-5 text-blue-400" />
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded bg-gold/10">
+          <section.icon className="h-5 w-5 text-[#d4a843]" />
         </div>
         <div className="min-w-0">
           <h4 className="text-lg font-semibold text-white">{section.title}</h4>
-          <p className="mt-0.5 text-sm text-blue-400">{section.subtitle}</p>
+          <p className="mt-0.5 text-sm text-[#d4a843]">{section.subtitle}</p>
         </div>
       </div>
       <p className="mt-4 text-sm leading-relaxed text-gray-400">{section.description}</p>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="mt-3 flex items-center gap-1 text-xs font-medium text-blue-400 transition-colors hover:text-blue-300"
+        className="mt-3 flex items-center gap-1 text-xs font-medium text-[#d4a843] transition-colors hover:text-[#d4a843]"
       >
         {expanded ? 'Hide details' : 'See what\u2019s included'}
         <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
@@ -282,7 +282,7 @@ export default function Landing() {
       <nav className="sticky top-0 z-50 border-b border-white/5 bg-[#09090B]/80 pt-safe-top backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500 font-bold text-white text-sm">
+            <div className="flex h-8 w-8 items-center justify-center rounded bg-gold font-bold text-white text-sm">
               M
             </div>
             <span className="text-lg font-bold tracking-tight">MedRepDesk</span>
@@ -307,7 +307,7 @@ export default function Landing() {
             </Link>
             <Link
               to="/signup"
-              className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-400"
+              className="rounded bg-gold px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#a07830]"
             >
               Start Free Trial
             </Link>
@@ -317,17 +317,15 @@ export default function Landing() {
 
       {/* ─── Hero ────────────────────────────── */}
       <section className="relative overflow-hidden px-4 pb-20 pt-20 sm:px-6 sm:pt-28 lg:pt-36">
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/10 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#d4a843]/10 via-transparent to-transparent" />
         <div className="relative mx-auto max-w-4xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-4 py-1.5 text-sm text-blue-400">
+          <div className="mb-6 inline-flex items-center gap-2 rounded border border-gold/20 bg-gold/10 px-4 py-1.5 text-sm text-[#d4a843]">
             <Zap className="h-3.5 w-3.5" />
             <span>AI-powered · Built for medical device reps</span>
           </div>
-          <h1 className="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-            You do the surgery.<br />
-            <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-              AI chases the PO.
-            </span>
+          <h1 style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:"clamp(32px,5vw,56px)", fontWeight:700, lineHeight:1.15, letterSpacing:"-0.03em" }}>
+            <span style={{ color:"#ffffff" }}>You do the surgery.</span><br/>
+            <span style={{ color:"#d4a843" }}>AI chases the PO.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-gray-400 sm:text-xl">
             The only rep tool with a dedicated AI that tracks every follow-up, promised date, and underpayment — so nothing falls through the cracks between the OR and your commission check.
@@ -335,14 +333,14 @@ export default function Landing() {
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               to="/signup"
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-500 px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:bg-blue-400 hover:shadow-blue-500/40"
+              className="inline-flex items-center gap-2 rounded bg-gold px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-[#d4a843]/25 transition-all hover:bg-[#a07830] hover:shadow-[#d4a843]/40"
             >
               Start Free Trial
               <ArrowRight className="h-4 w-4" />
             </Link>
             <a
               href="#features"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-8 py-3.5 text-base font-semibold text-gray-300 transition-colors hover:border-white/20 hover:text-white"
+              className="inline-flex items-center gap-2 rounded border border-white/10 px-8 py-3.5 text-base font-semibold text-gray-300 transition-colors hover:border-white/20 hover:text-white"
             >
               See How It Works
             </a>
@@ -355,7 +353,7 @@ export default function Landing() {
         <div className="mx-auto grid max-w-4xl grid-cols-2 gap-8 md:grid-cols-4">
           {STATS.map((s) => (
             <div key={s.label} className="text-center">
-              <div className="font-mono text-3xl font-bold text-blue-400 sm:text-4xl">
+              <div className="font-mono text-3xl font-bold text-[#d4a843] sm:text-4xl">
                 {s.value}
               </div>
               <div className="mt-1 text-sm text-gray-500">{s.label}</div>
@@ -369,10 +367,10 @@ export default function Landing() {
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-12 md:grid-cols-2 md:gap-16">
             <div>
-              <h2 className="text-sm font-semibold uppercase tracking-widest text-red-400">
+              <h2 className="font-mono text-[11px] tracking-[0.15em] font-bold text-[#d4a843] uppercase">
                 The problem
               </h2>
-              <h3 className="mt-3 text-2xl font-bold sm:text-3xl">
+              <h3 className="mt-3 text-2xl font-bold sm:text-3xl text-[#6b7a8d]">
                 Spreadsheets weren't built for the OR
               </h3>
               <ul className="mt-6 space-y-4 text-gray-400">
@@ -390,7 +388,7 @@ export default function Landing() {
               </ul>
             </div>
             <div>
-              <h2 className="text-sm font-semibold uppercase tracking-widest text-emerald-400">
+              <h2 className="font-mono text-[11px] tracking-[0.15em] font-bold text-[#d4a843] uppercase">
                 The solution
               </h2>
               <h3 className="mt-3 text-2xl font-bold sm:text-3xl">
@@ -418,7 +416,7 @@ export default function Landing() {
       <section id="features" className="bg-white/[0.02] px-4 py-20 sm:px-6 sm:py-28">
         <div className="mx-auto max-w-6xl">
           <div className="text-center">
-            <h2 className="text-sm font-semibold uppercase tracking-widest text-blue-400">
+            <h2 className="font-mono text-[11px] tracking-[0.15em] font-bold text-[#d4a843] uppercase">
               Features
             </h2>
             <h3 className="mt-3 text-3xl font-bold sm:text-4xl">
@@ -431,7 +429,7 @@ export default function Landing() {
           </div>
 
           {/* Included banner */}
-          <div className="mx-auto mt-10 max-w-3xl rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-6 py-4 text-center">
+          <div className="mx-auto mt-10 max-w-3xl rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-6 py-4 text-center">
             <p className="text-sm text-emerald-300">
               <span className="font-semibold">Every plan includes:</span>{' '}
               unlimited cases, POs, chase log entries, communications, contacts, surgeon &amp; facility database, distributor management, CSV contact import, push notifications, and unlimited PO photo extraction.
@@ -445,8 +443,8 @@ export default function Landing() {
           </div>
 
           {/* Referral callout */}
-          <div className="mx-auto mt-12 max-w-3xl rounded-2xl border border-blue-500/20 bg-blue-500/5 p-6 text-center sm:p-8">
-            <UserPlus className="mx-auto h-8 w-8 text-blue-400" />
+          <div className="mx-auto mt-12 max-w-3xl rounded-lg border border-gold/20 bg-gold/5 p-6 text-center sm:p-8">
+            <UserPlus className="mx-auto h-8 w-8 text-[#d4a843]" />
             <h4 className="mt-3 text-lg font-semibold">Referral Program — All Plans</h4>
             <p className="mt-2 text-sm text-gray-400">
               Earn 25% of every referred rep's monthly subscription for 12 months. Paid automatically via Stripe on the 1st of each month. Refer 4 reps on Solo and your own subscription is covered.
@@ -459,7 +457,7 @@ export default function Landing() {
       <section id="pricing" className="px-4 py-20 sm:px-6 sm:py-28">
         <div className="mx-auto max-w-6xl">
           <div className="text-center">
-            <h2 className="text-sm font-semibold uppercase tracking-widest text-blue-400">
+            <h2 className="font-mono text-[11px] tracking-[0.15em] font-bold text-[#d4a843] uppercase">
               Pricing
             </h2>
             <h3 className="mt-3 text-3xl font-bold sm:text-4xl">
@@ -473,14 +471,14 @@ export default function Landing() {
             {PLANS.map((plan) => (
               <div
                 key={plan.name}
-                className={`relative rounded-2xl border p-8 ${
+                className={`relative rounded-lg border p-8 ${
                   plan.popular
-                    ? 'border-blue-500/40 bg-blue-500/5 shadow-lg shadow-blue-500/10'
+                    ? 'border-gold/40 bg-gold/5 shadow-lg shadow-[#d4a843]/10'
                     : 'border-white/10 bg-white/[0.03]'
                 }`}
               >
                 {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-blue-500 px-3 py-1 text-xs font-semibold">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded bg-gold px-3 py-1 text-xs font-semibold">
                     Most Popular
                   </div>
                 )}
@@ -497,9 +495,9 @@ export default function Landing() {
                 </div>
                 <Link
                   to="/signup"
-                  className={`mt-6 block rounded-xl py-3 text-center text-sm font-semibold transition-colors ${
+                  className={`mt-6 block rounded py-3 text-center text-sm font-semibold transition-colors ${
                     plan.popular
-                      ? 'bg-blue-500 text-white hover:bg-blue-400'
+                      ? 'bg-gold text-white hover:bg-[#a07830]'
                       : 'bg-white/5 text-white hover:bg-white/10'
                   }`}
                 >
@@ -508,7 +506,7 @@ export default function Landing() {
                 <ul className="mt-6 space-y-2.5">
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-start gap-2 text-sm text-gray-400">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-blue-400" />
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#d4a843]" />
                       {f}
                     </li>
                   ))}
@@ -530,7 +528,7 @@ export default function Landing() {
       <section id="faq" className="bg-white/[0.02] px-4 py-20 sm:px-6 sm:py-28">
         <div className="mx-auto max-w-3xl">
           <div className="text-center">
-            <h2 className="text-sm font-semibold uppercase tracking-widest text-blue-400">
+            <h2 className="font-mono text-[11px] tracking-[0.15em] font-bold text-[#d4a843] uppercase">
               FAQ
             </h2>
             <h3 className="mt-3 text-3xl font-bold sm:text-4xl">
@@ -548,9 +546,9 @@ export default function Landing() {
       {/* ─── Final CTA ───────────────────────── */}
       <section className="px-4 py-20 sm:px-6 sm:py-28">
         <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl font-bold sm:text-4xl lg:text-5xl">
+          <h2 className="text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
             Ready to stop chasing{' '}
-            <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+            <span style={{color:"#d4a843"}}>
               spreadsheets?
             </span>
           </h2>
@@ -560,7 +558,7 @@ export default function Landing() {
           </p>
           <Link
             to="/signup"
-            className="mt-10 inline-flex items-center gap-2 rounded-xl bg-blue-500 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:bg-blue-400 hover:shadow-blue-500/40"
+            className="mt-10 inline-flex items-center gap-2 rounded bg-gold px-8 py-4 text-base font-semibold text-white shadow-lg shadow-[#d4a843]/25 transition-all hover:bg-[#a07830] hover:shadow-[#d4a843]/40"
           >
             Start Your Free 14-Day Trial
             <ArrowRight className="h-4 w-4" />
@@ -573,7 +571,7 @@ export default function Landing() {
       <footer className="border-t border-white/5 px-4 py-12 sm:px-6">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 sm:flex-row">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-500 text-xs font-bold text-white">
+            <div className="flex h-7 w-7 items-center justify-center rounded bg-gold text-xs font-bold text-white">
               M
             </div>
             <span className="font-semibold tracking-tight">MedRepDesk</span>
