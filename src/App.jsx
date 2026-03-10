@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
@@ -126,6 +127,87 @@ function PlaceholderPage({ title }) {
   );
 }
 
+function BetaAnnouncementBar() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem('beta_bar_dismissed') === '1');
+
+  const show = !dismissed && location.pathname === '/';
+
+  if (show) {
+    document.body.style.paddingTop = '40px';
+  } else {
+    document.body.style.paddingTop = '';
+  }
+
+  if (!show) return null;
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 40,
+        zIndex: 1000,
+        backgroundColor: '#d4a843',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        fontFamily: "'IBM Plex Mono', monospace",
+        fontSize: 12,
+        fontWeight: 600,
+        letterSpacing: '0.03em',
+        color: '#09090f',
+      }}
+    >
+      <span>⚡ Early access is open — 10 spots remaining.</span>
+      <button
+        onClick={() => navigate('/beta')}
+        style={{
+          background: 'none',
+          border: '1px solid #09090f',
+          borderRadius: 4,
+          padding: '2px 10px',
+          cursor: 'pointer',
+          fontFamily: "'IBM Plex Mono', monospace",
+          fontSize: 12,
+          fontWeight: 600,
+          letterSpacing: '0.03em',
+          color: '#09090f',
+          textDecoration: 'none',
+        }}
+      >
+        Apply now →
+      </button>
+      <button
+        onClick={() => {
+          localStorage.setItem('beta_bar_dismissed', '1');
+          setDismissed(true);
+          document.body.style.paddingTop = '';
+        }}
+        style={{
+          position: 'absolute',
+          right: 12,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          fontSize: 18,
+          color: '#09090f',
+          lineHeight: 1,
+          padding: 4,
+        }}
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
 function App() {
   return (
     <PersistQueryClientProvider client={queryClient} persistOptions={{ persister: idbPersister, maxAge: 1000 * 60 * 60 * 24 }}>
@@ -134,6 +216,7 @@ function App() {
           <ThemeProvider>
           <ToastProvider>
           <ThemeLoader />
+          <BetaAnnouncementBar />
           <Routes>
             {/* Auth routes (no AppLayout) */}
             <Route path="/signin" element={<PublicRoute><SignIn /></PublicRoute>} />
