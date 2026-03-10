@@ -37,6 +37,26 @@ export const GRADIENT_PRESETS = [
   },
 ];
 
+export const GRADIENT_DIRECTIONS = [
+  { id: 'to bottom', label: 'Top → Bottom' },
+  { id: 'to right', label: 'Left → Right' },
+  { id: '135deg', label: '135°' },
+  { id: '225deg', label: '225°' },
+];
+
+export const IMAGE_PRESETS = [
+  { id: 'mountains', label: 'Mountains', url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1080&q=80&auto=format' },
+  { id: 'ocean-waves', label: 'Ocean', url: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=1080&q=80&auto=format' },
+  { id: 'forest-path', label: 'Forest', url: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=1080&q=80&auto=format' },
+  { id: 'desert-dunes', label: 'Dunes', url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=1080&q=80&auto=format' },
+  { id: 'northern-lights', label: 'Aurora', url: 'https://images.unsplash.com/photo-1483347756197-71ef80e95f73?w=1080&q=80&auto=format' },
+  { id: 'cherry-blossom', label: 'Blossom', url: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?w=1080&q=80&auto=format' },
+  { id: 'abstract-dark', label: 'Dark', url: 'https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=1080&q=80&auto=format' },
+  { id: 'city-lights', label: 'City', url: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=1080&q=80&auto=format' },
+  { id: 'tropical', label: 'Tropical', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1080&q=80&auto=format' },
+  { id: 'starry-sky', label: 'Stars', url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1080&q=80&auto=format' },
+];
+
 export const ACCENT_PRESETS = [
   { id: 'blue', label: 'MedRepDesk Blue', color: '#0F4C81' },
   { id: 'slate', label: 'Slate', color: '#475569' },

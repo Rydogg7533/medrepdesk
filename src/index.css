@@ -70,8 +70,9 @@ body.app-theme-active {
 
 /* --- Theme surface overrides (outside @layer so they beat Tailwind utilities) --- */
 
-/* Cards: background applied via JS in ThemeContext (inline styles) */
+/* Cards: background applied via CSS variable from ThemeContext */
 html[data-custom-theme="true"] .themed-card {
+  background-color: var(--app-card-bg, white) !important;
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.45),
     0 2px 8px rgba(0, 0, 0, 0.3),

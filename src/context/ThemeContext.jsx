@@ -65,7 +65,7 @@ function applyBlackOverlay(hexColor, overlayOpacity = 0.5) {
   return `rgb(${r2}, ${g2}, ${b2})`;
 }
 
-function recalculateTextColors(bgColor, cardOverlay, isDark) {
+function recalculateTextColors(bgColor, cardOverlay, isDark, isImageMode, cardColor) {
   const root = document.documentElement;
   const bg = parseBgToRgb(bgColor || (isDark ? '#111827' : '#f9fafb'));
 
@@ -74,14 +74,27 @@ function recalculateTextColors(bgColor, cardOverlay, isDark) {
   root.style.setProperty('--app-bg-text-color', bgText);
   root.style.setProperty('--app-bg-text-secondary', getMuted(bgText, 0.6));
 
-  // Card surface text — blend card base (white=255 or dark=31) with #2a2a2a overlay
+  // Card surface text
   const overlay = parseFloat(cardOverlay ?? 0);
-  const baseR = isDark ? 31 : 255;
-  const baseG = isDark ? 41 : 255;
-  const baseB = isDark ? 55 : 255;
-  const sr = Math.round(baseR * (1 - overlay) + 42 * overlay);
-  const sg = Math.round(baseG * (1 - overlay) + 42 * overlay);
-  const sb = Math.round(baseB * (1 - overlay) + 42 * overlay);
+
+  let sr, sg, sb;
+  if (isImageMode && cardColor) {
+    // Image mode: card bg is rgba(cardColor, cardOpacity)
+    // Blend card color at given opacity over the background
+    const cc = parseBgToRgb(cardColor);
+    sr = Math.round(bg.r * (1 - overlay) + cc.r * overlay);
+    sg = Math.round(bg.g * (1 - overlay) + cc.g * overlay);
+    sb = Math.round(bg.b * (1 - overlay) + cc.b * overlay);
+  } else {
+    // Solid/gradient: white card darkened with black overlay
+    const baseR = isDark ? 31 : 255;
+    const baseG = isDark ? 41 : 255;
+    const baseB = isDark ? 55 : 255;
+    sr = Math.round(baseR * (1 - overlay));
+    sg = Math.round(baseG * (1 - overlay));
+    sb = Math.round(baseB * (1 - overlay));
+  }
+
   const cardText = getContrastText(sr, sg, sb);
   root.style.setProperty('--app-text-color', cardText);
   root.style.setProperty('--app-text-secondary', getMuted(cardText, 0.55));
@@ -94,15 +107,23 @@ const THEME_DEFAULTS = {
   bg_type: 'color',
   bg_color: '#f8fafc',
   bg_gradient: null,
+  custom_gradient_color1: '#667eea',
+  custom_gradient_color2: '#764ba2',
+  custom_gradient_direction: '135deg',
   bg_image_url: null,
-  overlay_opacity: 0.5,
+  image_preset_id: null,
+  overlay_opacity: 0.3,
   card_opacity: 0,
+  card_color: '#ffffff',
   auto_text_color: true,
   accent_color: '#0F4C81',
 };
 
 function resolveThemeBgColor(p) {
   if (p.bg_type === 'gradient' && p.bg_gradient) {
+    if (p.bg_gradient === 'custom') {
+      return p.custom_gradient_color1 || '#667eea';
+    }
     const preset = GRADIENT_PRESETS.find((g) => g.id === p.bg_gradient);
     const match = preset?.css?.match(/#[0-9a-fA-F]{6}/);
     return match ? match[0] : '#667eea';
@@ -111,13 +132,24 @@ function resolveThemeBgColor(p) {
   return p.bg_color || '#f8fafc';
 }
 
+function buildGradientCss(p) {
+  if (p.bg_gradient === 'custom') {
+    const c1 = p.custom_gradient_color1 || '#667eea';
+    const c2 = p.custom_gradient_color2 || '#764ba2';
+    const dir = p.custom_gradient_direction || '135deg';
+    return `linear-gradient(${dir}, ${c1} 0%, ${c2} 100%)`;
+  }
+  const preset = GRADIENT_PRESETS.find((g) => g.id === p.bg_gradient);
+  return preset ? preset.css : 'none';
+}
+
 // Apply background to #app-bg-canvas fixed div (iOS-compatible, no background-attachment)
 function applyThemeBackground(p) {
   const bgEl = document.getElementById('app-bg-canvas');
   if (!bgEl) return;
 
   if (p.bg_type === 'image' && p.bg_image_url) {
-    const overlay = p.overlay_opacity ?? 0.5;
+    const overlay = p.overlay_opacity ?? 0.3;
     const w = window.innerWidth;
     const h = window.innerHeight;
     bgEl.style.backgroundImage = `linear-gradient(rgba(0,0,0,${overlay}), rgba(0,0,0,${overlay})), url("${p.bg_image_url}")`;
@@ -126,8 +158,7 @@ function applyThemeBackground(p) {
     bgEl.style.backgroundRepeat = 'no-repeat';
     bgEl.style.backgroundColor = '#1a1a2e';
   } else if (p.bg_type === 'gradient' && p.bg_gradient) {
-    const preset = GRADIENT_PRESETS.find((g) => g.id === p.bg_gradient);
-    bgEl.style.backgroundImage = preset ? preset.css : 'none';
+    bgEl.style.backgroundImage = buildGradientCss(p);
     bgEl.style.backgroundSize = '100% 100%';
     bgEl.style.backgroundRepeat = 'no-repeat';
     bgEl.style.backgroundPosition = '';
@@ -191,15 +222,28 @@ function applyCustomTheme(prefs) {
 
   // Resolve the effective background color
   const resolvedBg = resolveThemeBgColor(p);
-  const bgRgb = hexToRgb(resolvedBg);
 
   // Apply background to #root and nav elements
   applyThemeBackground(p);
   applyNavBackground(p);
 
-  // Card overlay and nav background
+  // Card background
   const cardOverlay = p.card_opacity ?? 0;
   root.style.setProperty('--app-card-overlay', String(cardOverlay));
+
+  if (p.bg_type === 'image') {
+    // Image mode: card bg = rgba(cardColor, cardOpacity)
+    const cc = hexToRgb(p.card_color || '#ffffff');
+    root.style.setProperty('--app-card-bg', `rgba(${cc.r}, ${cc.g}, ${cc.b}, ${cardOverlay})`);
+  } else {
+    // Solid/gradient mode: darken white card with black overlay
+    if (cardOverlay > 0) {
+      const v = Math.round(255 * (1 - cardOverlay));
+      root.style.setProperty('--app-card-bg', `rgb(${v}, ${v}, ${v})`);
+    } else {
+      root.style.removeProperty('--app-card-bg');
+    }
+  }
 
   if (p.bg_type === 'image' && p.bg_image_url) {
     root.style.setProperty('--app-nav-bg', 'transparent');
@@ -208,7 +252,8 @@ function applyCustomTheme(prefs) {
   }
 
   // Recalculate text colors for both bg and card surfaces
-  recalculateTextColors(resolvedBg, cardOverlay, isDark);
+  const isImageMode = p.bg_type === 'image';
+  recalculateTextColors(resolvedBg, cardOverlay, isDark, isImageMode, p.card_color);
 
   // Accent color
   const accent = p.accent_color || '#0F4C81';
@@ -228,6 +273,7 @@ function applyCustomTheme(prefs) {
 function clearCustomTheme() {
   const root = document.documentElement;
   root.style.removeProperty('--app-card-overlay');
+  root.style.removeProperty('--app-card-bg');
   root.style.removeProperty('--app-nav-bg');
   root.style.removeProperty('--app-accent-rgb');
   root.style.removeProperty('--app-accent-light-rgb');
