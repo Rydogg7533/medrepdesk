@@ -149,7 +149,7 @@ export default function BetaLanding() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 16, marginBottom: 20 }}>
           {TIERS.map((tier) => (
             <div key={tier.name} style={{ ...s.glassCard, borderColor: `${tier.color}35`, position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", inset: 0, background: `${tier.color}08`, pointerEvents: "none", borderRadius: 16 }} />
+              <div style={{ position: "absolute", inset: 0, background: `${tier.color}08`, pointerEvents: "none", borderRadius: 8 }} />
               <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18, position: "relative" }}>
                 <span style={{ fontSize: 32 }}>{tier.icon}</span>
                 <div>
@@ -166,7 +166,7 @@ export default function BetaLanding() {
             </div>
           ))}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 14, background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: 10, padding: "16px 20px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: 8, padding: "16px 20px" }}>
           <span style={{ fontSize: 18 }}>🔒</span>
           <div>
             <span style={{ color: T.textPrimary, fontWeight: 700, fontFamily: T.fontHead, fontSize: 14 }}>Price Lock Guarantee — </span>
@@ -189,8 +189,8 @@ export default function BetaLanding() {
               { icon: "🔔", label: "Smart Alerts", color: T.red, desc: "Push notifications for tomorrow's cases, missed promised dates, overdue POs." },
               { icon: "📊", label: "Weekly Digest", color: T.tealBright, desc: "Monday morning AI briefing: what's due, overdue, and what you earned." },
             ].map((f) => (
-              <div key={f.label} style={{ background: T.bgCard, border: `1px solid ${T.bgCardBorder}`, borderRadius: 12, padding: 20 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: `${f.color}15`, border: `1px solid ${f.color}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, marginBottom: 12 }}>{f.icon}</div>
+              <div key={f.label} style={{ background: T.bgCard, border: `1px solid ${T.bgCardBorder}`, borderRadius: 8, padding: 20 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 4, background: `${f.color}15`, border: `1px solid ${f.color}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, marginBottom: 12 }}>{f.icon}</div>
                 <div style={{ fontSize: 14, fontWeight: 700, fontFamily: T.fontHead, color: f.color, marginBottom: 6 }}>{f.label}</div>
                 <div style={{ color: T.textSecondary, fontSize: 13, lineHeight: 1.6, fontFamily: T.fontBody }}>{f.desc}</div>
               </div>
@@ -210,8 +210,8 @@ export default function BetaLanding() {
             { icon: "💬", color: T.blue, title: "Discord Check-ins", desc: "Weekly check-ins with the team. Real talk about what's working and what isn't." },
             { icon: "🎥", color: T.gold, title: "Testimonial (Gold)", desc: "60-sec video or a G2/Capterra review. Optional — but unlocks your 3rd free month." },
           ].map((n) => (
-            <div key={n.title} style={{ background: T.bgCard, border: `1px solid ${T.bgCardBorder}`, borderRadius: 12, padding: 24 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: `${n.color}15`, color: n.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, marginBottom: 12 }}>{n.icon}</div>
+            <div key={n.title} style={{ background: T.bgCard, border: `1px solid ${T.bgCardBorder}`, borderRadius: 8, padding: 24 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 4, background: `${n.color}15`, color: n.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, marginBottom: 12 }}>{n.icon}</div>
               <div style={{ fontSize: 15, fontWeight: 700, fontFamily: T.fontHead, color: T.textPrimary, marginBottom: 8 }}>{n.title}</div>
               <div style={{ color: T.textSecondary, fontSize: 13, lineHeight: 1.6, fontFamily: T.fontBody }}>{n.desc}</div>
             </div>
@@ -271,7 +271,7 @@ export default function BetaLanding() {
                 {errors.invite_code && <span style={s.formErr}>{errors.invite_code}</span>}
               </div>
               <FInp field="referred_by_name" label="Who referred you? (optional)" placeholder="Ryan, John..." form={form} set={set} errors={errors} />
-              <div style={{ display: "flex", gap: 12, background: "rgba(88,101,242,0.1)", border: "1px solid rgba(88,101,242,0.2)", borderRadius: 10, padding: 14, marginTop: 8 }}>
+              <div style={{ display: "flex", gap: 12, background: "rgba(88,101,242,0.1)", border: "1px solid rgba(88,101,242,0.2)", borderRadius: 8, padding: 14, marginTop: 8 }}>
                 <span style={{ fontSize: 18 }}>💬</span>
                 <div>
                   <div style={{ color: T.textPrimary, fontWeight: 700, fontSize: 13, fontFamily: T.fontHead }}>You'll get a Discord invite after approval</div>
@@ -301,12 +301,12 @@ export function Nav({ activePage }) {
       <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet" />
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <a href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: T.blue, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 15, color: "#fff", fontFamily: T.fontHead }}>M</div>
+          <div style={{ width: 32, height: 32, borderRadius: 4, background: T.blue, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 15, color: "#fff", fontFamily: T.fontHead }}>M</div>
           <span style={{ fontSize: 16, fontWeight: 700, color: T.textPrimary, fontFamily: T.fontHead }}>MedRepDesk</span>
         </a>
         <div style={{ display: "flex", gap: 4 }}>
           {[["🐛 Bug Report", "/beta/bugs"], ["💡 Features", "/beta/features"], ["📊 My Progress", "/beta/dashboard"], ["💬 Discord", "https://discord.gg/medrepdesk"]].map(([label, href]) => (
-            <a key={href} href={href} style={{ color: T.textSecondary, fontSize: 13, fontFamily: T.fontBody, textDecoration: "none", padding: "5px 12px", borderRadius: 6 }}>{label}</a>
+            <a key={href} href={href} style={{ color: T.textSecondary, fontSize: 13, fontFamily: T.fontBody, textDecoration: "none", padding: "5px 12px", borderRadius: 4 }}>{label}</a>
           ))}
         </div>
         <div style={{ background: "rgba(245,158,11,0.1)", color: T.amberBright, fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 4, letterSpacing: "1.5px", fontFamily: T.fontHead, border: "1px solid rgba(245,158,11,0.25)" }}>BETA</div>
@@ -320,7 +320,7 @@ export function Footer() {
     <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "36px 24px", background: T.bgBase }}>
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 7, background: T.blue, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 13, color: "#fff", fontFamily: T.fontHead }}>M</div>
+          <div style={{ width: 28, height: 28, borderRadius: 4, background: T.blue, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 13, color: "#fff", fontFamily: T.fontHead }}>M</div>
           <span style={{ fontSize: 15, fontWeight: 700, color: T.textPrimary, fontFamily: T.fontHead }}>MedRepDesk</span>
         </div>
         <p style={{ color: T.textMuted, fontSize: 13, fontFamily: T.fontBody, margin: "0 0 12px" }}>Built for the reps who move instruments, chase POs, and make it happen.</p>
@@ -361,24 +361,24 @@ const s = {
   centerPage: { display: "flex", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 56px)", padding: 24 },
   section: { padding: "72px 24px" },
   sectionInner: { maxWidth: 1000, margin: "0 auto" },
-  glassCard: { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: "28px 30px", maxWidth: 480, width: "100%" },
+  glassCard: { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "28px 30px", maxWidth: 480, width: "100%" },
   eyebrow: { fontSize: 11, fontWeight: 700, letterSpacing: "2px", color: T.blue, fontFamily: T.fontHead, marginBottom: 12, textTransform: "uppercase" },
   h1: { fontSize: "clamp(2.4rem,6vw,4rem)", fontWeight: 800, fontFamily: T.fontHead, lineHeight: 1.1, letterSpacing: "-1.5px", marginBottom: 20, color: T.textPrimary },
   h2: { fontSize: "clamp(1.6rem,3vw,2rem)", fontWeight: 800, fontFamily: T.fontHead, letterSpacing: "-0.5px", color: T.textPrimary },
   h2center: { fontSize: "clamp(1.6rem,3vw,2rem)", fontWeight: 800, fontFamily: T.fontHead, letterSpacing: "-0.5px", color: T.textPrimary, textAlign: "center", marginBottom: 10 },
   bodyText: { color: T.textSecondary, fontSize: 15, lineHeight: 1.7, fontFamily: T.fontBody },
   subText: { color: T.textSecondary, textAlign: "center", fontSize: 15, fontFamily: T.fontBody, marginBottom: 36, lineHeight: 1.6 },
-  pill: { display: "inline-flex", alignItems: "center", background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 999, padding: "6px 16px", fontSize: 12, fontFamily: T.fontBody, color: T.textSecondary, marginBottom: 24 },
+  pill: { display: "inline-flex", alignItems: "center", background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 4, padding: "6px 16px", fontSize: 12, fontFamily: T.fontBody, color: T.textSecondary, marginBottom: 24 },
   hero: { position: "relative", padding: "96px 24px 80px", textAlign: "center", overflow: "hidden" },
   heroGlow: { position: "absolute", inset: 0, background: "radial-gradient(ellipse 80% 50% at 50% 0%,rgba(59,130,246,0.12) 0%,transparent 70%)", pointerEvents: "none" },
-  statsRow: { display: "inline-flex", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "16px 32px", marginBottom: 32 },
+  statsRow: { display: "inline-flex", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "16px 32px", marginBottom: 32 },
   statItem: { textAlign: "center", padding: "0 24px" },
   statNum: { display: "block", fontSize: 26, fontWeight: 800, fontFamily: T.fontHead, color: T.blueBright },
   statLabel: { display: "block", fontSize: 11, color: T.textMuted, fontFamily: T.fontBody, marginTop: 2, letterSpacing: "0.5px" },
-  cta: { display: "inline-block", background: T.blue, color: "#fff", borderRadius: 8, padding: "13px 28px", fontSize: 15, fontWeight: 700, fontFamily: T.fontHead, textDecoration: "none" },
+  cta: { display: "inline-block", background: T.blue, color: "#fff", borderRadius: 4, padding: "13px 28px", fontSize: 15, fontWeight: 700, fontFamily: T.fontHead, textDecoration: "none" },
   formLabel: { display: "block", fontSize: 12, fontWeight: 600, color: T.textSecondary, marginBottom: 6, fontFamily: T.fontBody, letterSpacing: "0.3px" },
   formInput: { width: "100%", padding: "10px 14px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, fontSize: 14, color: T.textPrimary, outline: "none", fontFamily: T.fontBody, boxSizing: "border-box", appearance: "none" },
   formErr: { color: T.red, fontSize: 11, marginTop: 4, display: "block", fontFamily: T.fontBody },
-  primaryBtn: { flex: 1, padding: "13px", background: T.blue, color: "#fff", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 700, fontFamily: T.fontHead, cursor: "pointer" },
-  secondaryBtn: { padding: "12px 20px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: T.textSecondary, fontSize: 14, fontWeight: 600, fontFamily: T.fontBody, cursor: "pointer" },
+  primaryBtn: { flex: 1, padding: "13px", background: T.blue, color: "#fff", border: "none", borderRadius: 4, fontSize: 15, fontWeight: 700, fontFamily: T.fontHead, cursor: "pointer" },
+  secondaryBtn: { padding: "12px 20px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 4, color: T.textSecondary, fontSize: 14, fontWeight: 600, fontFamily: T.fontBody, cursor: "pointer" },
 };
