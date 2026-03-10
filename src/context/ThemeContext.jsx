@@ -74,11 +74,14 @@ function recalculateTextColors(bgColor, cardOverlay, isDark) {
   root.style.setProperty('--app-bg-text-color', bgText);
   root.style.setProperty('--app-bg-text-secondary', getMuted(bgText, 0.6));
 
-  // Card surface text — bg color darkened by card overlay
+  // Card surface text — blend card base (white=255 or dark=31,41,55) with overlay
   const overlay = parseFloat(cardOverlay ?? 0);
-  const sr = Math.round(bg.r * (1 - overlay));
-  const sg = Math.round(bg.g * (1 - overlay));
-  const sb = Math.round(bg.b * (1 - overlay));
+  const baseR = isDark ? 31 : 255;
+  const baseG = isDark ? 41 : 255;
+  const baseB = isDark ? 55 : 255;
+  const sr = Math.round(baseR * (1 - overlay) + 42 * overlay);
+  const sg = Math.round(baseG * (1 - overlay) + 42 * overlay);
+  const sb = Math.round(baseB * (1 - overlay) + 42 * overlay);
   const cardText = getContrastText(sr, sg, sb);
   root.style.setProperty('--app-text-color', cardText);
   root.style.setProperty('--app-text-secondary', getMuted(cardText, 0.55));
@@ -89,7 +92,7 @@ function recalculateTextColors(bgColor, cardOverlay, isDark) {
 
 const THEME_DEFAULTS = {
   bg_type: 'color',
-  bg_color: '#f8fafc',
+  bg_color: '#09090f',
   bg_gradient: null,
   bg_image_url: null,
   overlay_opacity: 0.5,
@@ -105,7 +108,7 @@ function resolveThemeBgColor(p) {
     return match ? match[0] : '#667eea';
   }
   if (p.bg_type === 'image') return '#1a1a2e';
-  return p.bg_color || '#f8fafc';
+  return p.bg_color || '#09090f';
 }
 
 // Apply background to #app-bg-canvas fixed div (iOS-compatible, no background-attachment)
@@ -128,10 +131,10 @@ function applyThemeBackground(p) {
     bgEl.style.backgroundSize = '100% 100%';
     bgEl.style.backgroundRepeat = 'no-repeat';
     bgEl.style.backgroundPosition = '';
-    bgEl.style.backgroundColor = p.bg_color || '#f8fafc';
+    bgEl.style.backgroundColor = p.bg_color || '#09090f';
   } else {
     bgEl.style.backgroundImage = 'none';
-    bgEl.style.backgroundColor = p.bg_color || '#f8fafc';
+    bgEl.style.backgroundColor = p.bg_color || '#09090f';
     bgEl.style.backgroundSize = '';
     bgEl.style.backgroundPosition = '';
     bgEl.style.backgroundRepeat = '';
@@ -252,7 +255,7 @@ function applyCustomTheme(prefs) {
     `${Math.round(ac.r * 0.85)} ${Math.round(ac.g * 0.85)} ${Math.round(ac.b * 0.85)}`
   );
 
-  const isCustom = p.bg_type !== 'color' || p.bg_color !== '#f8fafc' || p.card_opacity > 0 || p.accent_color !== '#0F4C81';
+  const isCustom = p.bg_type !== 'color' || p.bg_color !== '#09090f' || p.card_opacity > 0 || p.accent_color !== '#0F4C81';
   root.dataset.customTheme = isCustom ? 'true' : 'false';
 }
 
