@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -65,6 +66,8 @@ import PayPeriodSummary from '@/pages/PayPeriodSummary';
 import Onboarding from '@/pages/Onboarding';
 import TermsOfService from '@/pages/legal/TermsOfService';
 import PrivacyPolicy from '@/pages/legal/PrivacyPolicy';
+import Blog from '@/pages/Blog';
+import BlogPost from '@/pages/BlogPost';
 import SubscriptionGate from '@/components/SubscriptionGate';
 import ThemeLoader from '@/components/ThemeLoader';
 
@@ -210,14 +213,15 @@ function BetaAnnouncementBar() {
 
 function App() {
   return (
-    <PersistQueryClientProvider client={queryClient} persistOptions={{ persister: idbPersister, maxAge: 1000 * 60 * 60 * 24 }}>
-      <BrowserRouter>
-        <AuthProvider>
-          <ThemeProvider>
-          <ToastProvider>
-          <ThemeLoader />
-          <BetaAnnouncementBar />
-          <Routes>
+    <HelmetProvider>
+      <PersistQueryClientProvider client={queryClient} persistOptions={{ persister: idbPersister, maxAge: 1000 * 60 * 60 * 24 }}>
+        <BrowserRouter>
+          <AuthProvider>
+            <ThemeProvider>
+            <ToastProvider>
+            <ThemeLoader />
+            <BetaAnnouncementBar />
+            <Routes>
             {/* Auth routes (no AppLayout) */}
             <Route path="/signin" element={<PublicRoute><SignIn /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><SignUp /></PublicRoute>} />
@@ -230,6 +234,8 @@ function App() {
             {/* Public pages (no auth) */}
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
 
             {/* Beta Program pages (public, no auth) */}
             <Route path="/beta" element={<BetaLanding />} />
@@ -297,6 +303,7 @@ function App() {
         </AuthProvider>
       </BrowserRouter>
     </PersistQueryClientProvider>
+    </HelmetProvider>
   );
 }
 
